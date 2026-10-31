@@ -1,0 +1,731 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Kaggle Project Decision Lab: overfitting, leaderboards and leakage (Chapter 6).">
+<title>Too Good to Be True · QMB 6358 Decision Lab</title>
+<style>
+/* Decision Labs: shared styles. Single reading column; step pills on top; each step is a card. */
+:root{
+  --bg:#f4f6f5; --card:#ffffff; --ink:#1d2b30; --muted:#5a6b72; --line:#d6dedb; --soft:#eef3f1;
+  --accent:#0e4d6c; --accent-ink:#ffffff; --accent-soft:#e3eef3;
+  --good:#24723a; --good-soft:#e5f2e8; --warn:#8a5a00; --warn-soft:#fbf0d9; --bad:#a63a2a; --bad-soft:#f8e4e0;
+  --book:#7d6210; --book-soft:#f8f1dc;
+  --c1:#0e4d6c; --c2:#3f8fbf; --c3:#d0862b; --c4:#8c5aa8; --c5:#5d8f3c; --hi:#c2410c;
+  --on-c1:#ffffff; --on-c2:#0b1f29; --on-c3:#24160a; --on-c4:#ffffff;
+  --grid:#e3e8e6;
+  --sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#0f1517; --card:#162024; --ink:#e3ebe8; --muted:#9fb0b3; --line:#2b3a3f; --soft:#1c282c;
+  --accent:#6cb6d8; --accent-ink:#0f1517; --accent-soft:#183342;
+  --good:#6fcf8a; --good-soft:#173322; --warn:#e7b65a; --warn-soft:#33280f; --bad:#f08a78; --bad-soft:#3a1d18;
+  --book:#dcbf6a; --book-soft:#2e2814;
+  --c1:#6cb6d8; --c2:#9ad0ee; --c3:#e8a85a; --c4:#c39ae0; --c5:#93c76e; --hi:#fb8c4a; --grid:#24323a; --on-c1:#0f1517; --on-c2:#0f1517; --on-c3:#0f1517; --on-c4:#0f1517; color-scheme:dark; } }
+:root[data-theme="dark"]{
+  --bg:#0f1517; --card:#162024; --ink:#e3ebe8; --muted:#9fb0b3; --line:#2b3a3f; --soft:#1c282c;
+  --accent:#6cb6d8; --accent-ink:#0f1517; --accent-soft:#183342;
+  --good:#6fcf8a; --good-soft:#173322; --warn:#e7b65a; --warn-soft:#33280f; --bad:#f08a78; --bad-soft:#3a1d18;
+  --book:#dcbf6a; --book-soft:#2e2814;
+  --c1:#6cb6d8; --c2:#9ad0ee; --c3:#e8a85a; --c4:#c39ae0; --c5:#93c76e; --hi:#fb8c4a; --grid:#24323a; --on-c1:#0f1517; --on-c2:#0f1517; --on-c3:#0f1517; --on-c4:#0f1517; color-scheme:dark; }
+
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0; background:var(--bg); color:var(--ink); font:16px/1.55 var(--sans);}
+.wrap{max-width:880px; margin:0 auto; padding:20px max(16px, env(safe-area-inset-right)) 56px max(16px, env(safe-area-inset-left));}
+h1,h2,h3{line-height:1.25; margin:0; text-wrap:balance}
+h1{font-size:clamp(26px, 5vw, 34px); letter-spacing:-0.01em}
+h2{font-size:21px}
+h3{font-size:16px}
+p{margin:0}
+a{color:var(--accent)}
+.eyebrow{font-size:12px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); font-weight:600}
+.lede{color:var(--muted); max-width:62ch}
+.meta{font-size:13px; color:var(--muted)}
+header.lab{display:grid; gap:8px; margin-bottom:16px}
+.num{font-variant-numeric:tabular-nums}
+.mono{font-family:var(--mono)}
+
+/* step pills */
+nav.steps{position:sticky; top:0; z-index:5; background:var(--bg); padding:8px 0 10px; display:flex; gap:6px; overflow-x:auto; scrollbar-width:none; border-bottom:1px solid var(--line); margin-bottom:16px}
+nav.steps::-webkit-scrollbar{display:none}
+.pill{flex:0 0 auto; font:inherit; font-size:14px; border:1px solid var(--line); background:var(--card); color:var(--ink); border-radius:999px; padding:6px 12px; cursor:pointer; white-space:nowrap}
+.pill .n{display:inline-block; min-width:1.4em; font-weight:700; color:var(--muted)}
+.pill[aria-current="step"]{background:var(--accent); border-color:var(--accent); color:var(--accent-ink)}
+.pill[aria-current="step"] .n{color:var(--accent-ink)}
+.pill.done:not([aria-current="step"]) .n{color:var(--good)}
+
+/* step cards */
+section.step{display:none; background:var(--card); border:1px solid var(--line); border-radius:12px; padding:20px; gap:16px}
+section.step.on{display:grid}
+.step > h2 .k{color:var(--muted); font-weight:600; margin-right:6px}
+.row{display:flex; gap:10px; flex-wrap:wrap; align-items:center}
+.spread{justify-content:space-between}
+.grid2{display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:14px}
+@media (max-width:680px){ .grid2{grid-template-columns:1fr} section.step{padding:16px} }
+.panel{background:var(--soft); border-radius:10px; padding:14px; display:grid; gap:10px; min-width:0}
+.note{font-size:14px; color:var(--muted)}
+.callout{border-left:4px solid var(--accent); background:var(--accent-soft); padding:10px 14px; border-radius:0 8px 8px 0; font-size:15px}
+.big{font-size:28px; font-weight:700; font-variant-numeric:tabular-nums; line-height:1.1}
+.stat{display:grid; gap:2px}
+.stat .lab{font-size:12px; color:var(--muted); text-transform:uppercase; letter-spacing:.06em}
+.stats{display:grid; grid-template-columns:repeat(auto-fit, minmax(130px,1fr)); gap:10px}
+
+/* book chip */
+.book{display:inline-flex; align-items:center; gap:4px; font-size:12px; font-weight:600; color:var(--book); background:var(--book-soft); border-radius:999px; padding:2px 9px; white-space:nowrap; vertical-align:1px}
+.book::before{content:""; width:10px; height:8px; border:1.5px solid currentColor; border-radius:1px 1px 2px 2px; border-top-width:1.5px; display:inline-block}
+
+/* buttons and controls */
+button{font:inherit}
+.btn{border:1px solid var(--accent); background:var(--accent); color:var(--accent-ink); border-radius:8px; padding:8px 14px; cursor:pointer; font-weight:600}
+.btn.ghost{background:transparent; color:var(--accent)}
+.btn:disabled{opacity:.5; cursor:default}
+.btn:focus-visible,.pill:focus-visible,.opt:focus-visible,.seg button:focus-visible,input:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+.seg{display:inline-flex; flex-wrap:nowrap; border:1px solid var(--line); border-radius:8px; overflow:hidden; background:var(--card); max-width:100%}
+.rate{display:grid}
+.rate-row{display:grid; grid-template-columns:1fr auto; gap:8px 14px; align-items:center; padding:10px 0; border-bottom:1px solid var(--line)}
+.rate-row:last-child{border-bottom:0}
+@media (max-width:520px){ .rate-row{grid-template-columns:1fr} }
+.seg button{border:0; border-right:1px solid var(--line); background:transparent; color:var(--ink); padding:6px 10px; cursor:pointer; font-size:14px}
+.seg button:last-child{border-right:0}
+.seg button[aria-pressed="true"]{background:var(--accent); color:var(--accent-ink)}
+.ctl{display:grid; gap:4px; min-width:0}
+.ctl > .seg{justify-self:start}
+.ctl label,.ctl .lab{font-size:13px; color:var(--muted); font-weight:600}
+input[type=range]{width:100%; accent-color:var(--accent)}
+.check{display:flex; align-items:center; gap:8px; font-size:15px; padding:4px 0; cursor:pointer}
+.check input{width:18px; height:18px; accent-color:var(--accent)}
+
+/* multiple-choice with instant feedback */
+.quiz{display:grid; gap:10px; border:1px solid var(--line); border-radius:10px; padding:14px}
+.quiz .q{font-weight:600}
+.opts{display:grid; gap:8px}
+.opt{text-align:left; border:1px solid var(--line); background:var(--card); color:var(--ink); border-radius:8px; padding:10px 12px; cursor:pointer; display:flex; gap:10px; align-items:flex-start}
+.opt .mk{flex:0 0 22px; height:22px; border-radius:50%; border:1.5px solid var(--line); display:grid; place-items:center; font-size:13px; font-weight:700; color:var(--muted)}
+.opt:hover{border-color:var(--accent)}
+.opt.picked.right{border-color:var(--good); background:var(--good-soft)}
+.opt.picked.right .mk{border-color:var(--good); background:var(--good); color:var(--card)}
+.opt.picked.wrong{border-color:var(--warn); background:var(--warn-soft)}
+.opt.picked.wrong .mk{border-color:var(--warn); background:var(--warn); color:var(--card)}
+.opt.picked.ok{border-color:var(--accent); background:var(--accent-soft)}
+.opt.picked.ok .mk{border-color:var(--accent); background:var(--accent); color:var(--card)}
+.fb{border-radius:8px; padding:10px 12px; font-size:15px; display:none}
+.fb.show{display:block}
+.fb.right{background:var(--good-soft)}
+.fb.wrong{background:var(--warn-soft)}
+.fb.ok{background:var(--accent-soft)}
+.fb b{display:block; margin-bottom:2px}
+
+/* tables */
+.tbl{overflow-x:auto}
+table{border-collapse:collapse; width:100%; font-size:14px}
+th,td{padding:6px 8px; border-bottom:1px solid var(--line); text-align:left; vertical-align:top}
+th{font-size:12px; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); font-weight:600}
+td.r,th.r{text-align:right; font-variant-numeric:tabular-nums}
+td.r{white-space:nowrap}
+
+/* charts */
+svg.chart{width:100%; height:auto; display:block; overflow:visible}
+svg.chart text{fill:var(--muted); font:12px var(--sans)}
+svg.chart text.ink{fill:var(--ink)}
+svg.chart text.strong{fill:var(--ink); font-weight:700}
+svg.chart .grid{stroke:var(--grid); stroke-width:1}
+svg.chart .axis{stroke:var(--line); stroke-width:1}
+.legend{display:flex; flex-wrap:wrap; gap:6px 14px; font-size:13px; color:var(--muted)}
+.legend span{display:inline-flex; align-items:center; gap:6px}
+.legend i{width:12px; height:12px; border-radius:3px; display:inline-block}
+
+/* risk lights */
+.lights{display:grid; grid-template-columns:repeat(auto-fit, minmax(190px,1fr)); gap:8px}
+.light{display:grid; grid-template-columns:auto 1fr; gap:2px 10px; align-items:start; border:1px solid var(--line); border-radius:8px; padding:8px 10px; font-size:14px}
+.light .dot{width:14px; height:14px; border-radius:50%; background:var(--line); margin-top:3px; grid-row:span 2}
+.light.on{border-color:var(--warn); background:var(--warn-soft)}
+.light.on .dot{background:var(--warn); box-shadow:0 0 0 3px color-mix(in srgb, var(--warn) 25%, transparent)}
+.light .t{font-weight:600}
+.light .d{color:var(--muted); font-size:13px}
+
+/* prompt box */
+.prompt{font-family:var(--mono); font-size:13.5px; line-height:1.5; background:var(--soft); border:1px solid var(--line); border-radius:8px; padding:12px; white-space:pre-wrap; word-break:break-word}
+footer{margin-top:28px; font-size:13px; color:var(--muted); display:grid; gap:6px; max-width:70ch}
+.nav-next{display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap; border-top:1px solid var(--line); padding-top:14px}
+.sr{position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0)}
+@media (prefers-reduced-motion: no-preference){ section.step.on{animation:fade .2s ease-out} @keyframes fade{from{opacity:.4; transform:translateY(3px)} to{opacity:1; transform:none}} }
+
+h2:focus{outline:none}
+@media (max-width:520px){ table{font-size:13px} th,td{padding:6px 5px} th{letter-spacing:.02em} }
+
+</style>
+</head>
+<body>
+<noscript><div class="wrap"><p class="callout"><strong>This lab cannot run here.</strong> It needs JavaScript, which this viewer blocks (as Canvas file previews do). Please use the lab link in your Reading Guide, or download this file and open it in your web browser.</p></div></noscript>
+<style>
+.ans{border:1px solid var(--line); border-left:4px solid var(--c2); border-radius:0 10px 10px 0; background:var(--card); padding:12px 14px; display:grid; gap:8px; font-size:15px}
+.ans .who{font-size:12px; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); font-weight:600}
+.ans ol{margin:0; padding-left:22px; display:grid; gap:6px}
+.chips{display:flex; flex-wrap:wrap; gap:4px}
+.chips span{font-size:12px; border:1px solid var(--line); border-radius:999px; padding:1px 8px; background:var(--card)}
+.chips span.x{border-style:dashed; color:var(--muted)}
+tr.mine td{background:var(--accent-soft); font-weight:600}
+tr.honest td:nth-child(2){text-decoration:underline; text-decoration-color:var(--good); text-underline-offset:3px}
+.dq{display:grid; gap:10px}
+</style>
+<div class="wrap">
+<header class="lab">
+  <span class="eyebrow">QMB 6358 · Kaggle Project Decision Lab · with the Kaggle competition</span>
+  <h1>Too Good to Be True</h1>
+  <p class="lede">In the Kaggle competition, a model can look better and better on the houses it learned from and still get worse on the houses that count. In this lab, you add predictors until the fit looks excellent, chase the leaderboard, meet a feature that is too good to be true, and then review the decisions that an AI tool made for you.</p>
+  <p class="meta">This lab takes about 20 minutes and also works on a phone. Nothing is graded or saved.</p>
+</header>
+<nav class="steps" aria-label="Lab steps"></nav>
+
+<section class="step" id="s1" data-title="More predictors">
+  <h2><span class="k">1</span>More predictors, better fit?</h2>
+  <p>Steps 1 to 4 use a synthetic town modeled on the Kaggle data: 400 training houses with known prices and 400 hidden test houses whose prices the models never see, just as in the competition. Every model in this lab predicts the log of the sale price (step 2 explains why), and its score is the RMSE of the log prices (which the course calls RMSLE), so lower is better.</p>
+  <p>Please move the slider to add predictors one at a time, first the ten house features and then 25 extra columns. The extra columns are random numbers: I generated 1,000 of them and kept the 25 that happened to fit the training houses best, which is what any automatic search for &ldquo;the best predictors&rdquo; does when it can choose from many columns (the Kaggle file has 79).</p>
+  <div class="panel">
+    <div class="ctl"><label for="kslider">Predictors in the model: <strong id="k-label"></strong></label>
+      <input id="kslider" type="range" min="1" max="35" step="1" value="10"></div>
+    <div class="row" id="k-presets"></div>
+    <div class="chips" id="k-chips" aria-label="Predictors in the model"></div>
+  </div>
+  <div class="stats">
+    <div class="stat"><span class="lab">Training R²</span><span class="big" id="st-r2"></span></div>
+    <div class="stat"><span class="lab">Adjusted R²</span><span class="big" id="st-adj"></span></div>
+    <div class="stat"><span class="lab">Score, training houses</span><span class="big" id="st-train"></span></div>
+    <div class="stat"><span class="lab">Score, hidden test houses</span><span class="big" id="st-test"></span></div>
+  </div>
+  <div class="grid2">
+    <div class="panel"><h3>Fit on the training houses</h3><div id="c-fit"></div><div class="legend"><span><i style="background:var(--c1)"></i>R²</span><span><i style="background:var(--c3)"></i>Adjusted R²</span></div></div>
+    <div class="panel"><h3>Score (RMSE of the log prices)</h3><div id="c-score"></div><div class="legend"><span><i style="background:var(--c2)"></i>Training houses</span><span><i style="background:var(--hi)"></i>Hidden test houses</span></div></div>
+  </div>
+  <p class="note">The shaded area marks the extra (random) columns. Adjusted R² charges a small price for each added column, but these columns were picked because they fit the training houses, so they pass that test by chance <span class="book">§5.9.6 · p.&nbsp;247</span>.</p>
+  <div id="q1a"></div>
+  <div id="q1b"></div>
+</section>
+
+<section class="step" id="s2" data-title="Why the log">
+  <h2><span class="k">2</span>Why the log?</h2>
+  <p>Sale prices are right-skewed, i.e. most houses sell for moderate prices and a few sell for much more <span class="book">§2.5.4 · p.&nbsp;50</span>. Taking the log pulls in the long right tail, which is one of the transformations Novikov describes for skewed variables <span class="book">Novikov · p.&nbsp;17</span>.</p>
+  <div class="panel">
+    <div class="row spread"><h3 id="h-hist">Training houses</h3><div id="hist-toggle"></div></div>
+    <div id="c-hist"></div>
+    <p class="note" id="hist-note"></p>
+  </div>
+  <p>Kaggle&rsquo;s score works on the log scale, so it counts <strong>percentage</strong> errors. On the log scale, a difference is (approximately) a percent change, which is the same idea that the book uses for price elasticity <span class="book">§5.5.5 · p.&nbsp;218</span>. Please pick a house price below; the error is always $20,000.</p>
+  <div class="panel">
+    <div class="ctl"><span class="lab">House price (the prediction is $20,000 too high)</span><div id="err-seg"></div></div>
+    <p id="err-out"></p>
+  </div>
+  <div class="panel"><h3>Same ten house features, two ways to model the price</h3><div class="tbl" id="t-log"></div></div>
+  <div id="q2a"></div>
+  <div id="q2b"></div>
+</section>
+
+<section class="step" id="s3" data-title="Leaderboard">
+  <h2><span class="k">3</span>The public leaderboard</h2>
+  <p>In many Kaggle competitions, the leaderboard that you see during the competition (the public leaderboard) scores each submission on only part of the test houses, and the final ranking uses the other part (the private leaderboard). This lab works the same way: 200 of the 400 hidden test houses are public and 200 are private. Below are 20 submissions that a student might make over several weeks. Submissions 8 to 20 add between 2 and 8 columns that an AI tool suggested; in this lab, those columns are random numbers.</p>
+  <div id="q3a"></div>
+  <div class="row"><button class="btn run" type="button" id="reveal">Reveal the private leaderboard</button><button class="btn ghost run" type="button" id="resplit">Draw a new public/private split</button></div>
+  <div class="tbl" id="t-lb"></div>
+  <p class="note" id="lb-note"></p>
+  <div class="panel">
+    <h3>Was it luck?</h3>
+    <p class="note">The button below draws 2,000 random public/private splits of the same 400 test houses and records, each time, where the top public submission lands on the private leaderboard.</p>
+    <div class="row"><button class="btn run" type="button" id="sim">Run 2,000 splits</button></div>
+    <p id="sim-out"></p>
+  </div>
+  <div id="q3b"></div>
+</section>
+
+<section class="step" id="s4" data-title="Leakage">
+  <h2><span class="k">4</span>A feature that is too good to be true</h2>
+  <p>Suppose your AI tool suggests a new feature, <strong>PricePerSqFt = SalePrice / GrLivArea</strong>, and reports that the model has improved dramatically. Please add it and compare the scores.</p>
+  <div class="panel">
+    <div id="leak-toggle"></div>
+    <div class="stats">
+      <div class="stat"><span class="lab">Training R²</span><span class="big" id="lk-r2"></span></div>
+      <div class="stat"><span class="lab">Score, training houses</span><span class="big" id="lk-train"></span></div>
+      <div class="stat"><span class="lab">Score, hidden test houses</span><span class="big" id="lk-test"></span></div>
+    </div>
+    <div id="c-leak"></div>
+    <div class="legend"><span><i style="background:var(--c2)"></i>Training houses</span><span><i style="background:var(--hi)"></i>Hidden test houses</span></div>
+    <p class="note" id="leak-note"></p>
+  </div>
+  <div id="q4"></div>
+  <p class="callout">The book asks leaders to require a leakage check whenever results look &ldquo;too good to be true&rdquo;, since leakage inflates performance during testing and then collapses in production <span class="book">§6.7.6 · p.&nbsp;316</span>. Novikov gives the same warning: make sure that no future information, such as the outcome itself, makes its way into the training data <span class="book">Novikov · p.&nbsp;45</span>.</p>
+</section>
+
+<section class="step" id="s5" data-title="AI decisions">
+  <h2><span class="k">5</span>What the AI decided for you</h2>
+  <p>This step uses the real Kaggle files. Below is the kind of summary that an AI tool returns after it has built a first submission. Every count in it was computed from train.csv and test.csv. Please judge each decision, using the book&rsquo;s list of common data quality failures <span class="book">§6.8.2 · p.&nbsp;319</span> and Novikov&rsquo;s checklist of what makes data &ldquo;good&rdquo; <span class="book">Novikov · p.&nbsp;15</span>.</p>
+  <div id="pipe"></div>
+  <div class="dq" id="dq"></div>
+  <p class="callout">These are the kinds of decisions that the discussion <em>Kaggle Project Discussion - Your First Kaggle Submission</em> asks you to list for your own pipeline (&ldquo;who made the decisions?&rdquo;). Turning raw columns into useful inputs is feature engineering, and each of these choices shapes what the model can learn <span class="book">§6.8.3 · p.&nbsp;319</span>.</p>
+</section>
+
+<section class="step" id="s6" data-title="Ask your AI">
+  <h2><span class="k">6</span>Optional: ask your AI tool to audit your pipeline</h2>
+  <p>The following prompt asks for the checks from this lab, applied to your own Kaggle work. Please paste your code (or a description of every step) where indicated. The questions follow the book&rsquo;s list of questions to ask about validation <span class="book">§6.7.7 · p.&nbsp;316</span>.</p>
+  <div id="prompt"></div>
+  <div class="panel">
+    <h3>Then check the answer</h3>
+    <ul style="margin:0; padding-left:20px; display:grid; gap:6px">
+      <li>Did the tool actually run the cross-validation, or did it only describe how to do it? If it reports numbers, please rerun the code yourself and compare.</li>
+      <li>Does it flag every column built from SalePrice, including ratios and neighborhood averages of the price?</li>
+      <li>Does it know what &ldquo;missing&rdquo; means for each column in this data set (e.g. no pool, no garage), or does it treat every gap as unknown?</li>
+    </ul>
+  </div>
+</section>
+
+<footer>
+  <p>This lab is based on §6.7&ndash;6.8 (and §2.5.4, §5.5.5, §5.9.6, §5.10.3) of <em>Business Analytics in the Age of AI: A New Paradigm for Executives</em> (Jank, 2026) and on pp.&nbsp;15&ndash;19, 30&ndash;33 and 45 of <em>The Math Behind the Machines</em> (Novikov, 2025). The houses in steps 1 to 4 are synthetic (modeled on the Kaggle House Prices data, with invented neighborhood names); no Kaggle rows are included. The counts in step 5 were computed from the competition files train.csv and test.csv.</p>
+  <p>It is part of QMB 6358; nothing you do here is recorded.</p>
+</footer>
+</div>
+
+<script>
+const DATA = {"nb":["Northfield","College Park","Old Mill","Riverside","Oak Ridge","Stonebrook","Meadowview","Briarwood"],"real":["OverallQual","GrLivArea","Neighborhood","YearBuilt","TotalBsmtSF","GarageCars","FullBath","Fireplaces","LotArea","CentralAir"],"desc":{"OverallQual":"overall quality (1-10)","GrLivArea":"living area (sq ft)","Neighborhood":"8 neighborhoods (7 indicator columns)","YearBuilt":"year built","TotalBsmtSF":"basement area (sq ft)","GarageCars":"garage size (cars)","FullBath":"full bathrooms","Fireplaces":"fireplaces","LotArea":"lot area (sq ft)","CentralAir":"central air (1 = yes)"},"seq":[{"k":1,"cols":1,"r2":0.6407,"adj":0.6398,"train":0.2351,"test":0.2515},{"k":2,"cols":2,"r2":0.8151,"adj":0.8141,"train":0.1686,"test":0.1758},{"k":3,"cols":9,"r2":0.8997,"adj":0.8974,"train":0.1242,"test":0.1327},{"k":4,"cols":10,"r2":0.9147,"adj":0.9125,"train":0.1145,"test":0.1258},{"k":5,"cols":11,"r2":0.9198,"adj":0.9175,"train":0.1111,"test":0.124},{"k":6,"cols":12,"r2":0.9224,"adj":0.92,"train":0.1093,"test":0.1216},{"k":7,"cols":13,"r2":0.923,"adj":0.9204,"train":0.1088,"test":0.1208},{"k":8,"cols":14,"r2":0.9244,"adj":0.9216,"train":0.1079,"test":0.1196},{"k":9,"cols":15,"r2":0.9271,"adj":0.9242,"train":0.1059,"test":0.117},{"k":10,"cols":16,"r2":0.9277,"adj":0.9247,"train":0.1054,"test":0.1165},{"k":11,"cols":17,"r2":0.9297,"adj":0.9266,"train":0.1039,"test":0.118},{"k":12,"cols":18,"r2":0.9316,"adj":0.9283,"train":0.1026,"test":0.1188},{"k":13,"cols":19,"r2":0.9334,"adj":0.9301,"train":0.1012,"test":0.1212},{"k":14,"cols":20,"r2":0.9351,"adj":0.9317,"train":0.0999,"test":0.1219},{"k":15,"cols":21,"r2":0.9368,"adj":0.9333,"train":0.0986,"test":0.123},{"k":16,"cols":22,"r2":0.9383,"adj":0.9347,"train":0.0974,"test":0.1238},{"k":17,"cols":23,"r2":0.9402,"adj":0.9365,"train":0.0959,"test":0.1242},{"k":18,"cols":24,"r2":0.942,"adj":0.9383,"train":0.0945,"test":0.1253},{"k":19,"cols":25,"r2":0.9434,"adj":0.9396,"train":0.0933,"test":0.1256},{"k":20,"cols":26,"r2":0.9448,"adj":0.9409,"train":0.0922,"test":0.1261},{"k":21,"cols":27,"r2":0.946,"adj":0.9421,"train":0.0911,"test":0.1271},{"k":22,"cols":28,"r2":0.9474,"adj":0.9434,"train":0.09,"test":0.1276},{"k":23,"cols":29,"r2":0.9486,"adj":0.9446,"train":0.0889,"test":0.13},{"k":24,"cols":30,"r2":0.9498,"adj":0.9457,"train":0.0879,"test":0.1301},{"k":25,"cols":31,"r2":0.9509,"adj":0.9468,"train":0.0869,"test":0.1305},{"k":26,"cols":32,"r2":0.9519,"adj":0.9477,"train":0.086,"test":0.131},{"k":27,"cols":33,"r2":0.9529,"adj":0.9487,"train":0.0851,"test":0.1319},{"k":28,"cols":34,"r2":0.954,"adj":0.9497,"train":0.0841,"test":0.1322},{"k":29,"cols":35,"r2":0.9551,"adj":0.9507,"train":0.0831,"test":0.1317},{"k":30,"cols":36,"r2":0.9562,"adj":0.9518,"train":0.0821,"test":0.1328},{"k":31,"cols":37,"r2":0.957,"adj":0.9526,"train":0.0813,"test":0.1332},{"k":32,"cols":38,"r2":0.9579,"adj":0.9534,"train":0.0805,"test":0.1348},{"k":33,"cols":39,"r2":0.9586,"adj":0.9541,"train":0.0798,"test":0.1352},{"k":34,"cols":40,"r2":0.9593,"adj":0.9547,"train":0.0791,"test":0.1365},{"k":35,"cols":41,"r2":0.96,"adj":0.9554,"train":0.0784,"test":0.1384}],"kmin":10,"n_train":400,"n_test":400,"n_pool":1000,"n_extra":25,"price":[217100,89700,187000,149400,231700,275500,79200,183500,99600,128900,101300,97700,180200,163400,133600,329000,311900,181600,187300,151900,95500,269000,296900,169900,102700,173500,202800,105000,96400,187500,140600,215300,550700,279400,103900,180100,120300,98400,141100,130600,328600,271600,177300,163500,145700,155100,142700,146700,294200,134700,296900,272900,112200,292300,223900,103200,380200,222000,123600,88000,297600,113500,259600,233400,282500,119600,248400,185900,236200,152800,154000,156500,157800,394400,170600,185500,185100,149900,136000,590500,128300,190900,173000,216500,154700,71500,144600,192900,94500,232200,300700,145900,202100,148700,177700,127400,154600,161600,363300,243200,107700,159500,189500,78300,147900,142000,172000,118100,138600,140100,123800,149900,197800,166700,126400,76000,154400,155000,145000,152800,114900,347200,168400,187900,134300,180000,112300,193200,368100,261400,130200,114500,252200,189200,462100,266200,226200,205100,116200,179200,165600,196600,106700,189100,97000,75100,139900,189300,350200,301400,141000,128700,154800,155600,281200,424400,78400,218000,205500,121900,117900,164700,96500,215800,134100,125600,195700,160700,145100,182100,106100,185100,163800,142600,144900,110600,247000,118400,179300,100600,172100,211500,194100,129500,263800,121600,170100,168300,87200,187600,162800,79400,179000,259500,77300,231400,184000,150700,112500,128900,175700,196000,189600,188400,177800,179300,198300,389600,108100,299300,224000,98500,172900,107100,215400,212800,126600,383000,183000,154300,187800,198300,373700,241900,150600,320200,88800,284700,178400,202900,221200,158100,299500,164600,85200,151700,129000,146000,166400,300600,149300,122300,278100,265200,171000,250500,245600,70800,80500,271600,152700,140600,211600,194000,122300,136500,125000,224800,144500,216000,169300,179700,174100,129100,123500,156700,81200,133400,199300,231700,236500,194900,155900,249400,105000,188100,281700,190500,172900,105600,155200,189700,234700,143400,342200,79300,229500,371900,172400,177100,163500,151400,287500,139100,112300,199900,192200,101400,252300,155500,159800,367400,238500,104300,252500,170300,110600,239400,101500,330200,286800,88700,126500,159600,186700,217500,278500,126500,248100,249100,171000,220900,105900,133400,172200,147100,109400,139500,278500,95400,135300,109900,468500,167100,192900,205100,91400,128900,136800,150000,135700,207000,197000,77500,84900,141800,107800,269800,196100,317700,236700,124400,122600,96100,261400,144000,296000,441600,127000,132000,162100,187200,149900,206400,301400,160400,160500,179700,230300,314500,150900,211600,252600,304000,107700,114200,150600,167900,185500,113900,206500,624200,132400,246600,129100,272100,165200,216200,225400,202700,148700,186000,238700,137300,170200,358600,142100,138300,123600,194200],"step2":{"skew_price":1.69,"skew_log":0.28,"mean":186066,"median":170000,"score_lin":0.163,"score_log":0.1165,"neg":0,"mae_lo_lin":11700,"mae_lo_log":9200,"mae_hi_lin":25300,"mae_hi_log":24600,"pe_lo_lin":0.109,"pe_lo_log":0.087,"pe_hi_lin":0.087,"pe_hi_log":0.082,"q1":126825,"q3":224725,"score_forgot_exp":9.55,"score_const":0.4137},"subs":["OverallQual only","+ GrLivArea","+ Neighborhood","+ YearBuilt","+ TotalBsmtSF","+ GarageCars","All 10 house features","All 10 + 5 AI-suggested columns","All 10 + 8 AI-suggested columns","All 10 + 8 AI-suggested columns","All 10 + 4 AI-suggested columns","All 10 + 5 AI-suggested columns","All 10 + 8 AI-suggested columns","All 10 + 5 AI-suggested columns","All 10 + 6 AI-suggested columns","All 10 + 8 AI-suggested columns","All 10 + 2 AI-suggested columns","All 10 + 3 AI-suggested columns","All 10 + 2 AI-suggested columns","All 10 + 6 AI-suggested columns"],"err":[[-1700,-3465,-2808,-1603,-1241,3761,4144,3716,-799,2129,5324,1512,-7740,-955,-6826,-1985,1688,5864,-238,163,-3348,-4227,884,1059,3392,-2862,4211,-1109,-3149,2539,350,1517,1157,-1415,-2476,-3417,3317,2008,-1003,-668,1291,721,1425,723,1498,3909,-1945,-195,-107,123,1164,-1992,2058,274,52,3307,3586,-1615,-2731,-1404,4793,3344,209,2643,-5682,3985,3626,-1388,903,1265,-910,-1666,-2425,-222,-2725,1245,-150,-462,499,872,1566,1513,-1914,3115,4604,-156,-508,4422,1877,3590,-1887,-2513,-2225,444,-2830,1037,-635,2556,-4197,1506,-696,1946,-179,1171,-4439,-3906,-2498,1897,-682,533,400,-3283,1796,-390,-2749,3142,2430,-177,3263,-4129,-456,-1023,-1654,2819,-1616,-2500,-139,2082,-646,358,295,-1429,-1093,1222,-787,3105,1994,-53,-1919,-3377,-1636,2103,3169,2556,-393,-3040,187,-3093,775,-343,2428,-5607,2803,-2405,2110,-4268,2187,-321,587,-408,3103,-4415,-1640,-286,-494,-5636,-4717,-2385,3114,-894,-1241,-66,-160,3614,3339,4823,257,-545,-1417,1130,-1414,-2166,-59,1976,-2064,4063,-5212,1367,1961,-297,24,224,4627,4953,4520,2722,-742,-473,-871,-849,381,609,-2114,-2863,1633,-4885,-1217,1226,3231,4592,1662,-327,-941,2458,464,-1773,-3254,-2625,-1935,-1369,-2085,-4905,-2145,4155,-2107,-6822,-3132,-1541,-154,-1460,4343,4361,-2043,-8253,719,-759,318,5412,-177,3064,924,-190,2291,-2745,459,-724,-1732,-2133,174,-2066,-4801,-2991,-1113,2073,660,-1733,-699,898,1942,3661,2603,-442,749,665,2168,3142,665,-447,3245,2572,5327,-1281,-491,-569,1230,-3405,3189,1509,-1675,2820,-2342,-3730,2254,-106,730,867,-1914,622,-1531,1931,2944,-1773,-3445,-1124,-4900,-3065,433,439,1918,-3550,-415,-843,-3265,3036,156,1871,1304,2246,3530,-1319,1248,-4695,2125,1509,-3240,3035,-733,-657,3557,-4508,142,5694,-920,-1613,-226,3290,1177,-3684,-571,489,-3482,-934,-1571,1177,1610,3677,-4373,-1054,882,1799,-3152,-2832,-2953,1374,1902,731,-171,3066,4774,2876,-44,-3107,1001,-1903,2690,3145,1146,-104,-2016,1888,2133,-2205,-2059,-682,1943,1428,-223,3488,-279,-1130,985,4521,-131,-28,3945,-832,3023,1998,1106,1719,-1834,-5015,859,3811,1395,1699,2452,-899,2236,-1952,-2213,3180,854,-1000,2246,2872,-1037,98,-321,-1471],[-1566,-2805,-1891,-1061,1106,2052,2987,2613,-1747,1436,2145,-808,-3389,-566,-2600,-2482,2038,6508,147,-771,-1036,-2693,-108,1338,1047,-610,1933,-943,-1664,1623,-207,1149,2557,-2256,1360,-3245,2581,134,64,417,2587,-302,-294,-79,1857,2865,-728,1313,-84,188,-1806,-2181,1221,1517,-446,1952,1790,-58,-1078,-1482,3146,1449,1085,1653,-4277,1622,2923,-1831,366,2298,-1851,-733,-1732,-315,-1079,1178,-888,708,-387,-157,289,854,-1552,458,3231,-26,-1664,2982,-112,380,970,-716,-869,-1245,-1309,-685,538,795,-3680,1684,-370,422,-471,-234,-1227,173,-1801,2226,-314,957,913,260,1442,-109,-2852,3438,2870,-1002,2929,-1118,-427,-601,-2570,2351,-2393,1376,607,850,-1085,-709,-208,-1451,1826,-719,308,852,2526,-251,-2941,-2597,-2756,417,963,1189,27,-2113,-1180,-4019,899,726,804,-2830,1253,-165,1799,-777,381,-296,1488,-501,1520,-3036,-1429,465,-2119,642,-1232,-2195,2985,415,-1189,661,1757,2054,1788,2159,751,-1256,-2599,309,-71,-820,-802,1528,-1729,4320,-4339,-123,895,-828,835,779,4785,3986,3598,-363,2051,517,-604,-833,1201,-838,-718,-1025,-339,-2873,-1010,790,373,3492,1817,-118,-3241,2060,-1181,-406,-9,-3015,-2156,-483,366,-2458,-884,2478,-1592,-3317,-1713,1135,-646,538,2764,2447,28,-4153,-1027,2475,-303,3229,-621,1063,2326,973,1224,647,3012,-391,-2598,-1348,530,-1221,-3955,-1985,-2920,994,-1364,-1246,-301,519,1898,3039,594,568,-65,-1197,1563,1619,1446,363,4315,921,2723,-504,519,-2311,1373,-2130,685,174,-748,1438,-492,-2314,-20,2002,737,560,1001,-578,-1144,1641,77,442,-4829,-1835,-4039,-1083,1429,-1014,1439,-3117,-680,-390,-3400,2698,392,1049,-970,2017,728,-271,3130,-2266,671,-791,-1120,3629,1735,1844,2851,-2255,-1219,3106,-61,-760,-794,3219,1703,-1982,2145,-78,-2666,-985,-1122,1123,775,1790,-2845,-488,206,834,-521,-587,-1988,2534,406,1630,464,2318,2519,-188,-282,-2375,1175,843,584,2533,412,-711,-614,618,157,1077,-2031,609,-18,1351,1387,-103,-390,-1599,1788,1615,-1018,-656,2176,-1433,1163,2424,70,280,-1231,-493,-216,2435,-628,3682,1091,-903,1463,369,-827,1238,96,-1012,1164,194,-1545,-580,107,1438],[1088,-1496,-585,-1527,897,175,2205,648,-725,-589,658,414,-1348,-385,-1809,-2172,1036,3248,-297,123,-1936,-1284,-914,2929,-1258,1022,1919,-730,-2788,952,49,1898,-293,20,1393,-2512,697,539,1314,955,1012,-957,-1431,1670,1649,1546,1055,663,-996,-1208,-1762,-1789,955,-135,738,1804,1143,827,-665,-193,2478,-267,7,1451,-3203,-160,2461,-1530,808,22,-1477,-277,-2116,1331,-727,-417,331,902,395,84,-911,1021,-1014,1209,1305,88,658,25,21,-624,2515,982,-933,-1865,102,1198,1807,-419,-3518,1228,340,298,-1379,2124,786,692,-270,2311,-524,2301,2117,-539,1669,962,-1952,2487,1201,-1038,2112,-671,454,450,-1325,990,-875,425,68,1205,91,-420,-2,-232,2514,-303,907,834,2539,1411,-2428,-230,-1188,-1984,-708,1000,141,-1135,-96,-1210,493,-1035,-388,-753,1091,394,-802,-631,2604,-645,491,-354,946,-235,-806,-209,-3311,1689,935,-1527,2658,-163,-1021,688,1133,1373,930,2159,-229,480,-1508,41,1428,263,-519,122,375,1637,-1465,458,1183,-513,561,311,2116,3042,1607,323,1361,2526,115,50,694,-2056,-36,-119,-439,-2281,-156,508,1673,3827,-1373,-15,-1794,732,-57,280,-348,-998,-719,-769,1121,-854,-935,76,-34,-2421,754,358,865,381,1607,1339,380,-3865,-640,1659,672,900,-1985,1009,1038,416,1512,807,3005,-1348,-1587,-288,1590,-1774,-1597,-2518,-1738,1284,-705,315,-2308,665,996,1743,-585,-966,2534,-1834,1221,933,1696,1419,2210,211,3466,140,1484,-1693,1528,-355,141,501,-1270,774,-1846,-1635,-35,1307,-68,218,-894,-270,-26,1338,-309,-36,-2475,-1367,-2011,34,1648,475,601,-700,-1029,302,-1748,-420,1053,1532,473,3163,458,-811,730,-987,-588,301,-1816,1417,2488,1718,1869,418,612,1877,-10,-1272,-1057,583,1281,-77,1363,658,-1507,-887,-1054,1369,-12,1156,-1107,-726,148,1212,1577,-217,-169,760,861,-106,1130,2560,721,849,-3414,-328,762,1140,2296,1017,1630,-489,1663,978,682,964,-1150,-382,400,1079,349,1531,322,-646,242,47,-1045,-389,2671,-1108,1088,1975,1333,853,1355,-266,-1010,-11,-1284,1965,-702,-1059,668,-834,-1979,1133,-181,-357,1165,-282,-1338,-764,2525,2454],[923,-1554,-218,-1051,-186,461,1420,694,-795,-90,813,99,-933,-859,-1506,-3244,264,3112,144,435,-1985,-1664,-1128,3144,-426,909,1969,-1774,-2633,423,-5,1267,-1053,-53,1664,-2371,-401,711,292,759,698,-261,-815,1252,753,1103,1188,523,-702,-966,-1074,-1221,460,-730,966,1916,1008,830,-1469,-812,3029,-160,-544,678,-3618,251,1774,-995,731,301,-2005,3,-2213,1322,-1415,-349,715,1179,819,176,-877,1174,-686,1243,1126,-79,666,307,274,-419,1932,1373,-776,-600,335,1140,1482,-315,-3229,880,1091,-46,-1337,2595,1154,805,129,2676,-731,2705,1373,-338,846,1330,-1425,1973,839,-1111,1786,-577,99,662,-1244,68,-451,119,246,320,279,-376,224,-27,2493,750,765,655,2453,1556,-1770,-13,-1026,-2234,-749,552,-6,-779,337,-1627,556,-565,-564,-340,378,309,-1839,-165,3054,-518,107,-288,1040,-182,-1395,305,-2875,1547,1364,-1364,2597,-44,-703,-178,120,660,486,967,-210,22,-1144,655,1662,-74,-991,-24,-62,1622,-1364,818,653,-398,500,1361,994,2359,1841,403,1422,2958,561,-228,133,-2006,-566,336,-419,-2247,138,1523,2093,2634,-1156,275,-1384,904,-1,324,123,-571,-380,-1175,1453,-474,-394,-213,329,-1762,911,-234,835,1216,1264,1536,-48,-3559,-623,1237,61,735,-1990,22,699,41,1288,548,2303,-1288,-2003,-428,1880,-1406,-1152,-2585,-1364,1405,-1561,718,-1484,785,450,2073,98,-1428,2279,-1586,1268,1176,2286,2083,1607,-566,2811,-340,1840,-1291,773,-32,94,855,-647,1230,-1427,-980,399,1031,-535,-57,-981,-224,606,667,-3,415,-2003,-715,-1768,-47,2043,-466,788,-554,-424,18,-1336,73,833,810,194,3118,342,-1070,-190,-617,-298,-167,-2054,1741,2475,1553,761,-40,930,1872,-203,-1374,-78,804,1056,-842,158,1114,-1490,-1538,-691,710,-430,1749,-1133,-401,-309,989,1228,600,-300,693,-41,252,996,2866,1246,1233,-3038,108,-286,1605,2053,1208,1976,388,2098,209,705,135,-892,-756,-77,1225,1003,1962,413,-724,-395,55,-1155,-1054,1735,-648,1476,1267,1722,1518,1831,71,-993,-610,-1482,1309,-375,-571,439,-1548,-1735,847,546,91,868,-1143,-959,-264,2288,2789],[761,-1726,372,-791,67,386,1582,857,-915,-30,764,24,-1129,-721,-1760,-2992,427,2099,548,362,-2107,-1903,-1198,3132,-456,798,2293,-1759,-2772,516,375,1306,-987,-166,1255,-2313,-202,705,-25,573,1089,132,-664,1287,654,1053,1462,560,-915,-1045,-1249,-883,713,-948,695,1981,780,330,-1557,-703,2986,-81,-803,556,-3351,-128,1818,-852,395,122,-1887,-135,-2234,1608,-1370,-254,530,861,920,153,-851,602,-847,1128,1187,-90,309,382,347,-443,2318,1677,-839,-720,647,1090,1529,-472,-2874,1054,1558,-11,-1193,2403,1476,1116,174,2516,-636,3155,1283,-25,721,995,-1285,1871,820,-1186,1495,-18,661,496,-1102,-77,-658,191,225,432,72,-287,337,55,2415,735,709,574,2521,1498,-1700,89,-902,-2289,-803,423,-151,-887,404,-1300,337,-938,-869,785,377,-5,-1655,-40,3064,-38,369,-295,853,-24,-1405,476,-2785,1715,905,-1412,2470,-233,-788,-178,435,518,580,1075,481,-81,-862,588,1678,171,-1153,23,-94,1382,-928,751,446,-269,27,1223,950,2289,1944,455,1483,3122,796,119,-20,-2324,-909,319,-380,-1907,-86,1457,1508,2788,-1341,245,-197,672,74,98,590,-1674,-451,-1277,1564,-547,-306,-150,43,-1780,814,-357,525,1169,1180,1804,102,-3577,-570,1304,-23,757,-1940,168,585,66,1543,353,1781,-1538,-1893,51,1827,-1411,-735,-2748,-1324,1433,-1370,614,-1505,845,374,1848,177,-1243,2453,-1526,1265,1014,2728,1912,1758,-436,2141,415,1463,-1145,889,85,-50,1105,-653,1213,-1605,-906,405,737,-379,-220,-1510,-344,833,671,187,-141,-2012,-584,-1789,-82,1937,-429,692,-534,-584,178,-1364,53,840,538,-208,3146,235,-930,-429,-521,-462,-2,-2041,1494,2363,1430,724,-88,789,1973,88,-1614,170,821,776,-392,715,1191,-1390,-1338,-644,-66,-466,1940,-648,-452,-335,720,920,-373,-126,590,376,226,947,3072,1274,1225,-3260,413,-445,1810,2297,1104,1777,403,849,44,1048,165,-1888,445,58,992,673,2136,467,-173,-220,-162,-1188,-1030,1873,-520,1451,1330,1408,596,1517,481,-855,-541,-1252,1374,-426,-880,36,-1261,-1764,958,490,109,434,-1127,-370,42,2714,3096],[922,-1516,443,-556,290,176,1722,681,-784,-278,472,192,-710,-839,-1955,-3364,217,1825,785,195,-2024,-1859,-1148,2722,-487,694,2229,-2130,-2552,601,406,1169,-753,-798,1042,-2453,-167,721,-352,370,932,8,-972,1329,417,1063,1656,676,-1068,-935,-1043,-945,758,-907,560,1913,348,239,-1645,-641,3135,106,-1041,290,-3325,-4,1999,-1137,454,-82,-1997,-9,-2138,1927,-1786,-353,367,862,1321,-43,-711,330,-729,1162,1400,-364,17,364,263,-542,2280,1480,-815,-702,578,1073,1726,-202,-3122,851,1658,-352,-1189,2030,1711,992,83,2506,-642,2925,1370,-332,890,839,-1608,1501,795,-1211,1431,-275,475,362,-1222,-458,-529,213,289,256,291,-600,-6,207,2320,607,968,557,2355,1450,-1772,1,-1087,-2139,-938,467,-92,-697,446,-1458,301,-1092,-672,994,462,485,-1728,-341,2510,-116,-46,-259,491,-8,-1532,807,-2348,1962,628,-1329,2087,71,-808,-337,551,878,642,887,355,-29,-863,456,1571,185,-1041,332,31,1149,-577,382,234,-485,10,1022,896,2395,1739,244,1553,3101,951,-75,-303,-2164,-1045,99,-417,-1451,-12,1244,1566,2663,-1342,244,-46,446,-171,-135,552,-1500,-660,-1245,1407,-385,0,-347,314,-1340,922,-285,680,1430,1035,1911,296,-3506,-180,980,196,540,-2127,-70,637,98,1620,528,1601,-1302,-1710,267,2027,-1379,-868,-2414,-1323,1458,-1195,525,-1206,994,707,1945,-2,-1372,2091,-1679,1349,867,2662,2009,1591,-298,1951,713,1310,-827,694,252,-150,1087,-785,1012,-1676,-1247,284,411,-304,-202,-1545,46,926,386,130,-240,-2388,-307,-1775,-220,2264,-314,554,-259,-712,106,-1108,352,985,352,90,3050,138,-921,-432,-258,-571,-46,-2380,1633,2267,1269,899,-331,1062,1883,146,-1622,-44,1242,774,-570,874,889,-1432,-1414,-309,-134,-505,2077,-781,-542,-298,918,1286,-26,-235,520,-28,83,855,3063,1022,1327,-2937,387,-299,1491,2524,989,1620,303,754,205,841,344,-1792,483,179,701,575,1955,210,-404,45,47,-1558,-889,1829,-94,1339,1415,1595,195,1576,189,-847,-685,-862,1297,-622,-642,-27,-1271,-1439,970,339,-190,104,-1112,-749,380,2345,2831],[1277,-1357,984,-122,-313,421,1878,970,-678,-145,532,-90,-558,-633,-1587,-3385,795,2063,285,60,-1737,-1828,-1423,2843,-32,703,2243,-1820,-2238,451,239,707,-650,-980,1068,-2173,-376,700,-490,219,603,205,-938,1864,349,1088,1595,287,-581,-248,-794,-1024,514,-806,910,1840,324,166,-1772,-519,2726,-60,-1104,31,-3417,273,2641,-1127,2,-621,-1625,481,-2091,1471,-1687,-201,631,816,1357,414,-362,300,-330,875,1575,-304,-466,-124,135,-667,1573,922,-991,-646,649,590,1585,-551,-3088,700,1351,-267,-1183,1794,1075,576,269,2438,-262,2801,1233,-437,1084,545,-1892,1130,1097,-1576,1411,-504,237,482,-1321,-1322,-452,627,128,347,425,-95,-254,314,1998,844,902,24,2079,1911,-1449,-547,-1307,-1580,-885,728,103,-482,494,-1508,174,-1216,-368,963,128,315,-1185,-564,2220,-236,-255,-176,308,-115,-961,698,-2425,2254,620,-675,1702,-191,-821,-990,379,341,1142,1034,310,-25,-506,476,1803,598,-897,-4,-207,1100,-534,107,217,-820,-236,640,455,2412,1370,885,1472,3653,606,-159,-637,-2153,-1397,-58,-574,-1412,-283,935,1763,2380,-1270,-155,435,231,-318,138,402,-1615,-1108,-1198,1650,-709,-30,-82,335,-1185,572,-331,499,884,1295,1818,-549,-2593,-121,960,321,755,-1927,471,251,-398,1692,78,1361,-656,-1508,112,2014,-1343,-834,-1780,-1316,1203,-1266,665,-1094,1366,579,1725,-174,-1680,2113,-2167,1342,991,2217,1987,1348,-153,1909,581,1103,-1112,1190,11,-77,1001,-1165,831,-1668,-853,414,592,-371,-82,-1226,120,1041,21,134,25,-2609,-489,-987,-610,1863,-256,800,-868,-1019,-226,-1440,-42,1241,336,469,2335,451,-824,93,-223,-196,161,-2035,1789,2045,871,822,-73,1094,1689,-102,-1699,-389,714,168,-551,762,996,-1602,-660,-289,-226,-1176,2000,-939,-198,-170,1316,984,-235,309,337,860,394,796,3057,1154,1258,-2648,355,-534,1541,2462,1115,1838,598,668,500,760,138,-1748,505,166,675,329,1676,164,-642,-33,-60,-1289,-605,1778,68,1259,1792,1361,197,1416,-7,-784,-150,-886,665,-636,-589,-186,-1213,-1824,659,92,-460,96,-639,-860,146,2315,2455],[1272,-1179,1027,-55,-337,309,1911,1148,-665,-267,693,-143,-590,-803,-1486,-3530,711,2104,452,65,-1623,-1911,-1391,2652,-28,671,2183,-1928,-2182,622,279,755,-539,-697,1083,-2460,-88,699,-602,-1,701,169,-1046,1970,461,1313,1717,242,-535,-120,-804,-1040,673,-782,917,1879,351,244,-1860,-323,2502,-35,-1117,-1,-3433,526,2521,-981,-58,-448,-1596,616,-1988,1390,-1825,-128,502,708,1357,285,-522,458,-194,943,1617,-365,-508,-115,215,-212,1346,823,-815,-638,661,607,1559,-222,-3074,761,1298,-197,-925,1727,743,481,524,2603,-328,2819,1430,-514,1116,519,-2195,1026,1015,-1667,1503,-532,360,535,-1324,-1399,-441,689,229,370,299,-204,-271,475,2127,880,900,-9,2126,1922,-1443,-499,-1288,-1338,-947,911,49,-532,354,-1686,14,-1264,-299,1042,-42,395,-1201,-606,2334,-207,-229,-190,260,-119,-1215,691,-2486,2308,603,-665,1521,-72,-774,-879,321,328,1266,1088,527,8,-776,532,1807,679,-672,-101,-265,1085,-669,77,260,-894,-262,584,507,2514,1217,836,1707,3536,642,-101,-839,-2067,-1382,-30,-672,-1881,-155,1016,1712,2257,-1144,-110,570,502,-369,162,626,-1579,-1222,-1117,1491,-650,-57,30,372,-1299,703,-338,730,1003,1333,1895,-496,-2585,-203,973,291,829,-1881,391,172,-249,1826,230,1360,-563,-1511,143,1781,-1280,-834,-1851,-1421,1260,-1310,604,-1069,1494,641,1799,178,-1642,2180,-2294,1417,937,2104,2022,1550,-10,1934,543,1056,-896,1285,111,14,1018,-1233,937,-1712,-728,388,466,-167,213,-1188,322,987,-91,-96,-251,-2426,-615,-904,-549,2064,-206,864,-1010,-1086,-466,-1245,-74,1249,388,467,2236,272,-1082,19,-155,-234,308,-2188,1925,2245,844,790,-280,841,1804,-106,-1705,-400,567,371,-446,843,1114,-1759,-624,-265,-198,-1156,2010,-1224,-249,-508,1510,830,-337,105,411,924,302,716,3079,1097,1367,-2780,645,-736,1675,2239,1160,1987,266,565,695,617,138,-1816,543,107,629,415,1603,230,-648,-14,-37,-1464,-613,1965,73,1285,1689,1501,283,1385,-134,-716,-186,-828,535,-607,-575,-150,-1180,-1688,650,164,-473,-9,-719,-764,256,2117,2559],[1199,-1320,1150,-167,-498,581,2183,757,-702,-333,712,-40,-449,-846,-1642,-3491,713,1614,419,169,-1770,-1698,-1321,3160,1,807,2102,-1846,-2183,418,255,587,-598,-1057,776,-2302,-283,540,-559,208,717,243,-726,1847,347,1223,1796,345,-805,-92,-729,-779,729,-1081,947,1817,363,-65,-1498,-718,2605,-160,-956,156,-3258,377,2780,-1161,101,-514,-1846,447,-2237,1581,-1908,-307,593,733,1219,317,-503,384,-373,968,1791,-485,-596,-156,332,-909,1587,974,-1137,-664,677,797,1579,-401,-3036,467,1202,-411,-1184,1734,1046,396,502,2405,-232,2861,1288,-493,973,231,-1855,994,1165,-1973,1470,-635,249,443,-1291,-1317,-516,748,-7,362,711,26,-248,366,1743,957,793,180,2199,2009,-1456,-376,-1335,-1642,-973,588,17,-321,521,-1762,-195,-1087,-395,990,297,475,-1182,-733,2339,-108,-207,-172,220,-52,-1014,727,-2453,2246,549,-734,1547,-58,-538,-1216,588,251,1011,802,291,105,-524,643,1512,689,-1043,226,-63,1145,-436,45,-26,-994,-162,463,543,2328,1478,760,1560,3689,343,-224,-704,-2096,-1484,27,-552,-1069,-538,1041,1746,2541,-1079,-165,513,243,-218,100,567,-1511,-1175,-955,1631,-434,-9,-103,305,-1168,357,-371,373,1108,1359,1833,-655,-2268,-280,794,345,877,-2160,486,149,-325,1479,470,1367,-663,-1595,-140,1847,-1418,-839,-1531,-1373,1333,-1021,649,-1101,1363,482,1702,-408,-1446,2076,-2094,1246,1214,2105,1966,1394,-394,1914,813,836,-1177,1569,78,-297,1175,-1059,882,-1363,-904,412,615,-275,-219,-1228,170,983,33,179,73,-2530,-701,-1017,-776,1997,-334,827,-825,-837,-229,-1175,-185,1457,216,391,2073,620,-787,241,-321,-179,157,-2132,1939,1753,617,867,-142,1271,1665,-311,-1845,-359,723,318,-519,691,994,-1600,-699,-505,-342,-1435,2026,-971,-174,-246,987,1073,-169,359,477,737,699,770,3295,1188,1106,-2519,283,-365,1400,2463,1345,1929,647,849,483,645,127,-1781,642,87,717,289,1855,-98,-768,67,108,-1361,-682,1851,63,1523,1719,1650,186,1416,-111,-611,-61,-798,898,-628,-530,-262,-1122,-1781,689,135,-560,246,-678,-930,180,2291,2742],[1203,-1230,763,-272,-134,27,1888,618,-916,-101,549,-35,-374,-266,-1710,-3280,1117,2347,75,9,-1666,-1697,-714,3045,5,512,2395,-1609,-2126,695,201,666,-1104,-1061,1059,-2044,-438,756,-878,85,726,86,-951,1843,310,1007,1965,559,-427,-588,-597,-1349,400,-471,742,1550,151,293,-1651,-169,2706,27,-1202,94,-3055,256,2889,-1144,265,-525,-1434,464,-2209,1277,-1463,-354,796,770,1013,171,-185,353,0,934,961,-44,-445,115,-140,-540,1499,634,-1093,-752,539,808,1970,-183,-3128,686,1284,-207,-1374,1904,456,513,332,2560,0,2513,1241,-328,1158,464,-2185,1090,984,-1665,1759,-685,471,347,-1528,-1609,-486,741,379,762,770,-113,-386,218,2041,492,912,-60,2135,1763,-1690,-705,-970,-1670,-692,847,55,-609,184,-1249,129,-798,-607,814,126,236,-919,-353,2057,-153,-50,-227,13,-191,-1130,430,-2506,2308,835,-446,1830,158,-559,-1198,175,426,1324,920,303,528,-594,625,2120,959,-810,335,-532,1040,-360,146,-89,-731,185,862,297,2715,1349,650,1372,3793,345,-172,-499,-2109,-1240,225,-466,-1478,-175,827,1950,2232,-1160,-86,505,65,-744,-14,486,-1487,-1401,-1404,1746,-703,228,-30,517,-1188,367,-241,241,647,1631,1390,-333,-2565,-188,1321,153,675,-1894,781,204,-367,2057,200,1263,-1054,-1391,462,1903,-1507,-1071,-1689,-1453,1045,-1141,1157,-949,1100,462,1590,140,-1357,1853,-2475,1215,902,2101,1840,1370,-435,1934,399,1186,-1158,1062,42,82,802,-1331,997,-1811,-1068,550,418,-316,35,-1072,320,837,-125,-162,-59,-2730,-420,-529,-751,1995,-238,1003,-681,-964,-489,-1320,200,1636,602,318,2205,662,-575,288,-52,-159,-57,-1894,1590,2345,1091,832,-495,968,1651,-43,-1604,33,652,232,-598,791,1178,-1585,-336,-245,-77,-966,2053,-1370,53,-230,1467,770,-12,75,374,741,280,744,3181,831,1079,-2940,70,-588,1551,2523,1067,1878,342,1338,889,366,-20,-1782,598,174,565,227,1642,420,-523,295,-229,-1265,-631,1518,85,1702,1563,1557,519,1304,15,-617,-58,-956,718,-678,-338,-194,-1393,-2218,353,251,-353,1,-989,-1001,-291,2287,2157],[1222,-1327,905,-96,-187,585,1723,1032,-579,-74,598,-103,-459,-761,-1693,-3345,725,2104,342,93,-1813,-1715,-1591,2922,146,768,2379,-1913,-2089,481,323,798,-507,-977,1144,-2090,-327,901,-428,240,608,245,-958,1973,391,1089,1552,287,-652,-216,-983,-1056,437,-763,819,1796,315,140,-1649,-564,2756,-73,-1155,-6,-3456,411,2662,-1163,70,-482,-1546,497,-1852,1594,-1739,-219,721,665,1388,531,-337,249,-276,1080,1476,-355,-522,-97,219,-631,1481,1007,-961,-669,625,581,1540,-552,-3075,685,1510,-370,-1293,1708,1081,593,354,2495,-202,2840,1326,-455,1189,454,-1919,1167,1139,-1621,1399,-417,320,539,-1237,-1451,-352,592,134,380,468,-218,-311,316,1960,885,925,38,2081,1904,-1470,-514,-1228,-1551,-1028,675,44,-391,401,-1642,254,-1161,-248,984,84,196,-1203,-587,2131,-165,-335,-272,304,-118,-907,686,-2593,2366,659,-635,1863,-59,-953,-1096,396,507,1016,1162,375,71,-615,545,1753,640,-807,-72,-345,1182,-424,-19,237,-894,-143,608,480,2494,1311,889,1408,3557,621,-143,-715,-2107,-1281,-40,-534,-1480,-357,1004,1796,2401,-1312,-274,499,463,-219,177,152,-1758,-1047,-1176,1703,-654,-82,55,368,-1026,460,-269,539,995,1329,1939,-304,-2582,-280,971,343,878,-1852,489,394,-512,1581,134,1458,-601,-1656,129,1984,-1307,-977,-1662,-1386,1181,-1110,619,-908,1465,676,1752,-187,-1555,1975,-2205,1170,1077,2222,2002,1426,-150,1828,607,1112,-1167,1172,-116,-95,1135,-1226,802,-1754,-833,428,532,-384,-182,-1259,157,1087,70,232,32,-2680,-515,-985,-575,1891,-253,770,-1037,-1070,-242,-1414,51,1201,298,477,2347,444,-953,178,-207,-193,177,-1923,1882,2079,860,1057,-182,1239,1780,-137,-1718,-369,860,205,-460,872,969,-1721,-745,-347,-190,-1054,1990,-938,-109,-112,1317,887,-131,504,403,974,416,798,2813,1347,1342,-2656,435,-370,1469,2440,1366,1946,584,704,464,742,491,-1877,612,111,784,407,1767,11,-766,-15,-17,-1166,-551,1543,10,1326,1787,1408,211,1490,14,-897,67,-814,804,-784,-683,-164,-1196,-1784,622,103,-547,106,-798,-916,9,2214,2525],[1410,-1270,866,-173,-471,235,1794,980,-767,34,542,-8,-283,-627,-1618,-3151,803,2177,140,100,-1718,-1751,-1158,2963,85,847,2132,-1762,-2238,585,398,577,-524,-1066,1342,-2100,-291,822,-552,125,538,131,-849,1787,509,1135,1466,145,-774,-273,-803,-854,847,-739,998,1795,437,252,-1736,-444,2748,-64,-1189,-77,-3532,277,2719,-1069,40,-696,-1602,850,-2160,1425,-1784,-221,609,1005,1480,564,-500,524,-388,851,1485,-187,-306,-196,93,-768,1511,893,-1007,-702,734,726,1765,-515,-3232,590,1147,-106,-1304,1767,1155,453,349,2418,-387,2837,1285,-372,1203,348,-1942,1340,1172,-1425,1363,-509,367,411,-1095,-1286,-440,722,242,323,179,-92,38,242,2030,876,1026,-71,1981,1801,-1716,-690,-1181,-1292,-849,1021,-212,-564,515,-1441,276,-1178,-465,969,156,362,-1089,-351,2004,-315,-65,-240,31,-218,-859,578,-2218,2273,927,-1017,1756,-361,-533,-960,561,255,1173,1046,91,-172,-684,605,1588,512,-1044,42,-171,1159,-587,-104,195,-860,-256,552,553,2414,1261,888,1274,3750,612,-95,-453,-2184,-1196,-71,-762,-1431,-440,936,1484,2394,-1441,-21,517,514,-466,246,138,-1795,-998,-1185,1584,-828,-67,-207,466,-1071,638,-112,559,848,1473,1880,-419,-2593,-100,946,473,675,-2036,554,173,-351,1843,228,1423,-686,-1613,146,2058,-1261,-698,-1478,-1211,1058,-1293,703,-907,1349,625,1683,-228,-1628,2187,-2230,1273,1185,1919,1963,1172,68,1983,612,1060,-1082,1266,-30,-145,962,-1315,1169,-1503,-694,298,786,-327,46,-1318,237,1173,115,-15,-102,-2711,-566,-947,-653,1797,-395,841,-894,-1089,-437,-1397,52,1462,554,518,2202,667,-790,128,-31,-163,188,-2031,1703,2177,777,994,-165,912,1581,-192,-1774,-442,528,295,-524,638,993,-1662,-587,-327,-88,-1319,1862,-938,-206,-150,1485,977,-76,181,237,788,395,780,2881,1209,1104,-2882,395,-487,1566,2393,1284,1921,635,704,510,830,13,-1577,576,273,810,150,1481,204,-458,113,182,-1363,-680,1732,-108,1104,1913,1403,78,1381,-28,-631,-286,-803,706,-862,-764,-104,-1294,-1743,680,73,-424,16,-682,-924,92,2340,2351],[1069,-1520,1074,-206,-350,206,1858,1106,-788,-217,420,-234,-644,-573,-1169,-2964,1166,1754,265,132,-1761,-1804,-1592,2757,-17,643,1938,-1646,-1939,393,204,997,-897,-1117,1243,-2321,-833,1001,-365,563,354,137,-1086,1908,356,1283,1712,-27,-768,99,-408,-834,423,-877,842,1646,660,127,-1831,-531,2804,-246,-1036,376,-3459,497,2339,-1209,-394,-1058,-1207,466,-2000,1453,-1243,-399,788,727,1353,478,-348,676,-277,1052,1807,-759,-535,-216,167,-673,1701,701,-863,-588,1050,993,2011,-747,-3101,806,1160,-334,-867,1870,1352,831,294,2457,-282,2808,1139,-527,1166,751,-1776,1185,1381,-1566,1577,-670,487,794,-1395,-1663,-455,821,-123,191,56,-90,-741,430,2339,537,785,-276,2466,2205,-1669,-433,-1646,-1750,-821,636,376,-538,345,-1722,1,-1162,-474,603,-13,368,-921,-350,2032,-491,100,-153,107,180,-1221,807,-2714,1994,216,-974,1644,257,-999,-1423,168,304,1290,1388,582,-82,-517,634,1584,578,-803,-23,-354,862,-332,-48,276,-710,188,710,144,2288,1144,835,1204,3618,490,-307,-835,-2179,-1213,-457,-678,-1690,-253,762,1801,2284,-1426,-266,334,156,12,366,361,-1238,-1038,-1099,1567,-526,157,-13,502,-1087,539,-460,877,962,1281,1763,-388,-2420,-109,575,321,1020,-1737,521,321,-584,1612,223,1300,-591,-1586,162,2269,-1454,-818,-1864,-1284,1135,-1234,506,-904,1409,531,1655,-18,-1932,2329,-2361,1221,959,1861,2275,1573,-266,1802,706,1058,-1169,953,-139,4,1134,-1185,986,-1709,-740,582,428,-382,-55,-1425,159,845,408,-108,-5,-2473,-790,-839,-887,1677,-164,787,-1076,-989,127,-1390,56,1157,329,351,1961,362,-430,-218,-288,-19,367,-2276,1817,2526,786,924,349,1239,1571,-407,-1859,-524,648,-339,-404,676,1196,-1604,-517,-387,-217,-1126,1534,-980,-111,-211,1247,788,-105,493,133,856,215,989,2393,1087,977,-2528,223,-691,1294,2361,1160,1993,117,640,870,231,57,-1974,297,192,998,365,1690,488,-437,68,-205,-1107,-588,1351,81,1535,1589,1261,579,1267,-212,-376,180,-923,711,-724,-854,-53,-1006,-1624,886,147,-456,138,-498,-911,246,2118,2663],[1214,-1276,962,-46,-209,354,1654,1073,-947,-209,436,-91,-720,-362,-1243,-3629,836,2043,222,95,-1624,-2034,-1390,2825,12,900,2314,-1523,-2144,673,165,782,-602,-817,1216,-2242,-116,430,-658,145,572,192,-1081,1775,352,995,1686,374,-499,-92,-720,-1053,206,-881,309,1612,383,13,-1491,-403,2452,-67,-934,352,-3298,-24,2694,-1006,197,-602,-1491,527,-1898,1722,-1697,-233,777,925,1348,556,-73,501,-215,456,1472,-22,-380,-53,315,-889,1754,945,-831,-501,328,720,1586,-533,-2926,601,1621,-248,-961,1973,1215,599,424,2521,-418,2805,1398,-456,964,242,-1949,866,878,-1685,1436,-331,205,459,-1328,-1243,8,774,238,226,374,-158,-351,594,2155,979,668,164,1941,1910,-1384,-250,-1322,-1592,-872,737,114,-573,512,-2024,201,-1110,-118,966,195,250,-1453,-288,2269,-376,-162,-170,17,73,-1053,673,-2236,2370,482,-665,1768,-437,-809,-1062,517,574,1116,1080,325,-45,-319,626,1944,913,-813,7,149,1018,-449,177,139,-702,340,588,343,2444,1552,572,1570,3811,545,-265,-510,-2067,-1243,-149,-647,-1269,-76,724,1718,2162,-1408,-67,479,263,-86,199,335,-1436,-1252,-1128,1568,-762,57,160,368,-1328,675,-64,646,921,1294,1629,-892,-2447,-219,1059,385,1248,-1942,463,-67,-423,1686,-351,1453,-695,-1640,100,1957,-1291,-1106,-1534,-1620,1064,-1452,693,-1088,1374,571,1781,-234,-1565,2051,-2193,1317,1247,2184,1800,1368,-196,1943,1013,1253,-1204,1148,170,69,1200,-1060,992,-1731,-715,609,661,-492,-796,-1397,60,748,262,-18,-84,-2654,-257,-1111,-363,1623,-470,835,-514,-1123,-299,-1404,-25,1278,95,178,2377,699,-913,98,-300,-57,326,-2109,1880,2246,637,572,-50,842,1516,256,-1499,-430,993,94,-532,838,802,-1582,-621,-332,-64,-1347,2309,-844,-124,-297,1269,681,-532,616,170,1054,541,604,3070,1167,1216,-2656,207,-412,1394,2462,1052,1752,845,703,307,712,295,-1636,583,-46,501,545,1725,182,-306,-166,185,-1226,-242,1717,-92,1272,1844,1600,417,1264,76,-785,-351,-705,424,-872,-728,-110,-1271,-1959,761,337,-459,126,-755,-799,-60,2359,2713],[1410,-1156,1125,-74,-467,404,1747,890,-751,-91,567,-353,-499,-701,-1572,-3416,778,2052,433,69,-1701,-2020,-1476,2916,-46,844,2123,-1837,-2257,412,344,671,-765,-988,868,-2254,-598,792,-495,266,688,240,-849,1781,237,1150,1678,264,-674,-173,-842,-997,603,-976,854,1784,401,327,-1713,-600,2774,22,-1179,-19,-3405,254,2753,-1095,188,-629,-1438,532,-1930,1497,-1696,-276,672,868,1383,534,-305,371,-268,814,1484,-379,-373,-64,49,-528,1852,990,-881,-579,668,465,1649,-601,-3086,720,1491,-326,-1312,1659,1127,792,459,2564,-285,2669,1194,-393,1110,492,-1801,1091,1077,-1544,1365,-452,154,464,-1343,-1458,-410,593,246,375,453,41,-249,208,2238,884,696,-15,2044,1878,-1460,-582,-1203,-1642,-655,903,68,-342,395,-1330,281,-1045,-343,888,63,70,-1282,-603,2185,-285,-316,-72,202,-116,-976,696,-2439,2300,640,-708,1783,-286,-809,-905,149,98,1145,1021,349,-76,-534,542,1844,758,-865,-116,0,924,-596,23,-36,-887,-69,721,456,2414,1414,835,1517,3673,364,6,-625,-2131,-1517,154,-469,-1405,-366,777,1722,2187,-1460,-180,549,109,-304,3,347,-1567,-892,-1027,1557,-805,18,178,506,-1068,807,-264,365,998,1049,1775,-322,-2578,-20,994,208,672,-1838,310,220,-594,1732,2,1247,-723,-1586,328,2125,-1198,-884,-1824,-1261,1379,-1357,668,-1266,1275,662,1744,-89,-1792,2095,-2243,1414,767,2345,1921,1300,-301,1798,612,1267,-1134,1112,-153,-199,1067,-1221,786,-1827,-976,353,921,-243,-160,-1111,224,1206,64,-65,165,-2555,-780,-1084,-647,1767,-277,635,-868,-953,-248,-1232,57,1382,340,385,2355,483,-687,132,1,-155,55,-2075,1873,2117,1021,731,-30,1042,1729,-126,-1632,-434,749,207,-533,782,982,-1651,-332,-378,-285,-1277,2045,-953,-280,27,1291,1025,-321,212,333,990,357,868,3169,1019,1446,-2728,298,-524,1548,2467,1017,1704,598,541,555,780,224,-1559,553,121,561,163,1740,180,-679,-31,-10,-1444,-492,1616,-16,1126,1760,1191,132,1316,143,-664,-254,-964,460,-478,-652,-292,-1294,-1783,723,379,-395,120,-517,-835,72,2451,2377],[1441,-1479,1019,146,-256,378,2134,1132,-809,-187,290,-179,-324,-823,-1752,-3688,741,2054,362,132,-1855,-1919,-1256,2630,-53,638,1974,-2032,-2120,672,132,749,-886,-889,954,-2122,-563,887,-561,102,633,400,-1061,1804,349,1216,1903,488,-487,-168,-868,-1109,414,-1012,991,1820,530,88,-1658,-668,2831,-123,-1158,-42,-3619,472,2696,-1160,92,-445,-1697,278,-2104,1455,-1968,-228,622,437,1332,379,-539,70,-670,776,1769,-107,-473,-269,-11,-833,1701,824,-1278,-1032,815,468,1402,-642,-3223,465,1285,-518,-1196,1959,964,622,135,2513,-511,2741,967,-796,1091,393,-1793,970,1143,-1474,1599,-582,108,85,-1175,-1539,-543,508,65,306,202,-301,-331,349,1936,631,620,152,1927,1808,-1321,-588,-839,-1773,-915,626,-172,-311,375,-1457,27,-1121,-317,1133,230,580,-1149,-601,2131,-213,-358,-103,354,-143,-813,768,-2574,1999,458,-713,2066,-57,-861,-1154,622,684,1098,1126,245,73,-756,505,2076,365,-915,286,88,1038,-364,42,104,-969,-248,524,616,2129,1348,760,1875,3534,497,-252,-570,-2094,-1556,-169,-668,-1325,80,767,1921,2382,-1476,45,381,-138,-550,-40,555,-1374,-894,-1147,1585,-521,223,-126,166,-1004,706,-505,743,872,1162,1569,-466,-2522,-156,1126,317,492,-1713,412,229,-413,1883,277,1347,-797,-1543,285,2279,-1366,-779,-1772,-1173,1351,-1441,749,-998,1205,756,1770,-85,-1858,1915,-2350,1295,928,2494,1876,1175,-37,1765,842,776,-1114,1044,142,102,1306,-1225,1023,-1774,-884,307,702,-575,-99,-1191,-10,864,-3,51,-85,-2631,-184,-937,-531,2064,-170,993,-1042,-854,-281,-1380,61,1559,419,321,2252,696,-958,-189,-552,-388,70,-2055,1893,1963,766,821,-136,731,1638,-171,-1785,-211,803,409,-628,673,987,-1593,-631,-154,-437,-1238,1840,-946,-173,-253,1304,1103,-121,345,261,937,247,888,2959,1051,1118,-2679,500,-458,1552,2287,1054,2033,703,768,398,678,320,-1430,561,-205,873,477,1546,42,-598,218,288,-1206,-538,1821,-117,1410,1757,1185,365,1494,-117,-754,-292,-883,672,-924,-462,-18,-1316,-2050,830,-63,-751,150,-782,-906,63,2267,2533],[1265,-1399,907,-324,-313,402,1859,933,-736,-136,560,-66,-627,-690,-1769,-3231,807,2022,346,114,-1729,-1767,-1363,2959,-36,757,2169,-1788,-2263,475,238,776,-579,-924,1037,-2152,-409,734,-422,258,632,311,-978,1783,376,1126,1595,370,-573,-216,-895,-1041,536,-866,930,1897,357,141,-1740,-538,2677,-7,-1083,111,-3329,290,2518,-999,50,-570,-1522,507,-2039,1428,-1761,-222,678,844,1297,290,-297,250,-225,767,1495,-320,-360,-147,173,-653,1505,984,-1015,-577,719,564,1639,-456,-3164,699,1373,-108,-1194,1944,1031,466,227,2430,-262,2824,1205,-415,1162,502,-1841,1131,1080,-1600,1357,-616,245,532,-1372,-1269,-385,584,177,491,474,-104,-281,370,2027,864,878,42,2223,1969,-1418,-589,-1281,-1654,-987,757,115,-471,452,-1508,235,-1235,-299,916,161,355,-1199,-589,2360,-181,-193,-156,383,-30,-863,634,-2395,2319,671,-623,1629,-172,-730,-1057,360,381,1091,1066,290,-39,-481,461,1900,699,-868,155,-209,1075,-521,223,218,-751,-224,540,418,2470,1410,916,1483,3661,596,-170,-537,-2223,-1372,-62,-626,-1406,-254,855,1722,2374,-1169,-225,324,234,-249,139,375,-1600,-1058,-1102,1647,-696,-151,-63,351,-1230,582,-289,474,873,1343,1737,-518,-2599,-148,898,332,845,-1854,556,248,-397,1724,58,1347,-706,-1556,212,1972,-1315,-905,-1805,-1349,1120,-1253,668,-1048,1313,588,1765,-176,-1620,2181,-2129,1335,980,2187,1873,1263,-200,1888,584,1107,-1112,1196,-53,-52,972,-1194,948,-1749,-826,339,572,-370,-101,-1196,57,1041,73,155,-122,-2594,-469,-1083,-587,1739,-300,755,-883,-969,-281,-1447,-111,1177,453,435,2393,423,-936,136,-286,-262,179,-2020,1781,2056,935,807,-93,1214,1768,-167,-1659,-320,683,40,-471,733,1039,-1486,-702,-362,-252,-1234,2086,-979,-348,-178,1254,1107,-236,374,335,996,374,824,3069,1105,1155,-2777,383,-512,1518,2545,1156,1863,639,669,499,853,15,-1758,489,239,800,268,1617,147,-566,-115,-4,-1238,-615,1939,78,1371,1866,1371,60,1390,-8,-851,-128,-863,710,-714,-660,-231,-1182,-1852,652,151,-402,52,-615,-769,124,2330,2482],[1277,-1338,978,-129,-306,427,1887,969,-691,-157,526,-107,-559,-632,-1581,-3361,796,2073,330,59,-1745,-1817,-1370,2828,-42,718,2234,-1803,-2233,442,255,696,-671,-969,1076,-2140,-355,680,-504,245,593,200,-926,1867,353,1085,1635,290,-552,-277,-794,-1007,500,-795,917,1857,359,156,-1778,-485,2717,-72,-1151,28,-3388,268,2629,-1105,9,-613,-1649,486,-2075,1493,-1704,-208,632,794,1337,400,-376,302,-311,883,1586,-315,-477,-126,126,-671,1567,902,-979,-664,649,603,1570,-550,-3083,692,1351,-259,-1183,1766,1070,602,278,2438,-248,2803,1231,-421,1076,564,-1905,1108,1107,-1584,1427,-487,229,497,-1325,-1326,-460,634,113,339,418,-117,-266,310,1991,826,907,7,2093,1893,-1444,-559,-1320,-1583,-874,747,124,-464,497,-1514,166,-1223,-383,977,107,304,-1183,-572,2240,-242,-264,-203,309,-105,-981,712,-2443,2236,635,-651,1722,-178,-831,-990,399,333,1159,1035,352,-25,-520,498,1823,603,-883,0,-202,1106,-535,109,193,-816,-246,613,444,2394,1375,887,1476,3664,596,-138,-627,-2151,-1399,-57,-572,-1398,-284,934,1757,2378,-1288,-154,438,223,-326,127,413,-1641,-1095,-1201,1624,-715,-59,-73,355,-1159,607,-322,489,891,1290,1816,-531,-2569,-135,940,325,746,-1914,495,248,-388,1693,112,1361,-666,-1505,146,2012,-1355,-839,-1816,-1305,1224,-1273,635,-1106,1373,559,1722,-161,-1671,2118,-2189,1369,989,2222,1990,1368,-171,1904,569,1137,-1117,1182,-3,-55,977,-1167,829,-1640,-829,413,580,-356,-59,-1233,111,1041,20,146,34,-2627,-513,-994,-619,1870,-234,800,-856,-1013,-211,-1455,-45,1244,345,432,2328,459,-835,89,-205,-187,139,-2048,1797,2063,891,817,-85,1071,1698,-77,-1705,-398,721,198,-564,778,981,-1598,-681,-283,-235,-1198,1981,-966,-202,-177,1338,985,-225,319,361,874,371,782,3057,1173,1277,-2657,377,-530,1552,2499,1136,1825,613,660,502,775,157,-1739,508,164,686,345,1653,197,-660,-38,-66,-1309,-615,1805,79,1268,1800,1384,193,1440,3,-792,-186,-873,674,-648,-599,-156,-1202,-1821,634,94,-467,115,-615,-880,118,2301,2434],[1186,-1350,903,43,-445,360,1938,1102,-659,34,302,-101,-864,-494,-1779,-3452,837,2139,284,278,-1703,-1787,-1373,2905,-61,694,2201,-1908,-2465,568,172,726,-497,-974,1077,-2292,-366,691,-446,247,712,100,-890,1778,470,1172,1696,289,-766,-58,-924,-925,494,-585,893,1925,221,134,-1551,-353,2868,6,-1064,-20,-3321,446,2653,-1146,117,-510,-1482,472,-2140,1478,-1681,-178,547,690,1207,379,-401,186,-326,1053,1589,-299,-383,-136,136,-732,1615,969,-1061,-613,793,622,1652,-520,-3093,686,1216,-291,-1245,1816,1085,516,204,2536,-299,2729,1246,-472,1141,606,-1992,934,1076,-1477,1441,-423,344,370,-1257,-1347,-256,614,64,261,185,36,-343,493,1904,748,836,9,2054,1883,-1473,-296,-1291,-1641,-929,786,40,-462,419,-1468,73,-1289,-324,1069,149,355,-1269,-696,2261,-157,-376,-234,415,-49,-895,779,-2282,2401,796,-605,1795,-69,-750,-1107,489,337,1229,1011,157,-186,-500,263,1985,671,-880,-74,-174,1100,-560,144,176,-809,-146,635,366,2528,1474,769,1413,3683,752,-198,-414,-2190,-1546,-47,-496,-1406,-303,1030,1764,2177,-1229,-216,359,338,-275,136,263,-1676,-1294,-1133,1647,-707,17,-178,343,-1023,760,-213,540,836,1386,1767,-679,-2465,-178,976,309,752,-1938,433,254,-498,1707,10,1142,-700,-1593,127,2116,-1260,-855,-1803,-1478,1240,-1389,715,-1054,1357,592,1764,-247,-1758,2230,-2011,1391,928,2355,2093,1289,-249,1915,590,1124,-1115,1220,51,13,1025,-1042,819,-1710,-707,602,552,-756,-63,-1110,141,1136,49,68,6,-2686,-569,-966,-493,1661,-186,917,-717,-1111,-242,-1448,-121,1178,407,608,2340,361,-913,205,-177,-228,129,-1993,1728,1925,880,786,-132,1012,1603,-163,-1712,-316,825,156,-726,831,1067,-1492,-682,-205,-348,-1192,1891,-795,-93,-153,1275,1126,-297,500,204,831,341,789,2936,1146,1234,-2589,348,-548,1522,2492,1073,1889,610,665,477,759,316,-1602,582,218,553,260,1777,252,-566,-157,-183,-1471,-440,1885,203,1383,1889,1421,164,1455,-10,-946,43,-809,618,-660,-654,-275,-1047,-1874,623,112,-377,225,-616,-917,331,2282,2268],[1286,-1463,968,-90,-119,455,1982,859,-606,-178,454,-142,-695,-487,-1578,-3274,707,2150,590,0,-1693,-1684,-1813,2621,63,532,2445,-1882,-2382,488,227,553,-598,-953,1045,-2235,-316,671,-487,199,736,105,-971,1934,326,1185,1549,126,-708,-389,-971,-852,323,-879,916,1798,300,284,-1823,-434,2712,15,-1208,97,-3269,298,2795,-1164,64,-692,-1623,399,-2075,1468,-1778,-116,569,824,1421,353,-299,306,-454,817,1585,-284,-447,-7,280,-706,1534,893,-1108,-729,744,487,1754,-493,-3120,704,1378,-319,-1057,1823,1028,773,335,2438,-276,2819,1243,-176,1164,533,-1884,1174,1019,-1531,1384,-358,156,470,-1442,-1197,-595,593,126,438,388,-244,-225,138,2032,799,951,6,2161,1926,-1430,-540,-977,-1731,-874,721,87,-474,569,-1463,323,-1165,-367,814,10,414,-1003,-580,2097,-356,-84,-123,249,-243,-920,827,-2313,2253,578,-873,1660,-217,-927,-944,356,493,1169,1255,344,-155,-667,325,1906,336,-1106,-65,-93,1117,-538,318,157,-947,-186,774,357,2609,1252,1071,1449,3708,602,-128,-668,-2104,-1459,-170,-591,-1216,-290,772,1983,2278,-1464,-167,585,144,-315,65,535,-1607,-800,-997,1416,-622,1,100,354,-859,364,-376,308,918,1462,2047,-522,-2364,-72,781,38,820,-1772,314,-19,-278,1671,-9,1205,-611,-1392,88,2095,-1404,-692,-1731,-1414,1265,-1082,660,-1105,1572,455,1787,-215,-1716,2240,-1966,1363,931,2322,1904,1432,55,1721,912,1207,-1069,818,76,-95,1016,-1225,1000,-1805,-839,456,696,-350,-215,-1361,113,1315,-295,220,-9,-2370,-460,-1048,-562,1953,-352,933,-630,-760,-191,-1328,-38,1329,311,443,2434,576,-863,221,-291,-191,295,-2058,1602,2199,905,790,107,1064,1597,-379,-1658,-333,788,233,-614,797,1100,-1615,-711,-84,-199,-1185,1875,-857,-233,-236,1290,811,-313,328,415,709,452,958,3172,1054,1354,-2652,302,-550,1474,2303,1007,1989,692,763,183,802,296,-1715,473,148,556,330,1676,174,-474,-100,-217,-1244,-492,1590,76,1277,1896,1569,340,1582,193,-1008,-192,-1032,726,-544,-599,-124,-1451,-1728,860,129,-369,477,-908,-945,198,2262,2545]],"pub":[0,3,7,8,10,16,19,21,22,24,25,28,29,30,32,33,34,39,41,42,43,44,45,47,54,57,59,63,68,69,71,72,73,74,78,79,80,82,87,91,92,96,98,100,101,102,103,104,110,111,112,114,115,116,118,119,121,122,124,126,128,130,131,132,137,139,141,142,144,145,150,151,152,153,154,157,159,162,163,164,165,166,168,169,170,171,173,174,175,176,178,179,180,183,188,190,193,196,198,199,201,202,204,205,214,215,216,217,219,220,222,224,225,226,230,232,233,234,238,239,240,241,242,243,244,246,248,249,250,252,255,256,263,267,268,269,270,274,279,280,282,283,285,286,287,288,297,298,299,300,303,306,307,309,310,313,316,318,319,320,322,330,335,336,337,339,341,342,343,344,347,348,351,358,359,361,362,365,367,368,369,370,374,375,376,377,379,380,381,384,385,386,387,388,389,391,393,394,395,396],"sim":{"same":0.0,"gap":0.0024,"rank":11.6,"runs":2000},"step4":{"r2_leak":0.9756,"train_leak":0.0613,"test_leak":0.1561,"r2_real":0.9277,"train_real":0.1054,"test_real":0.1165,"ppsf_med":116},"kag":{"n_train":1460,"n_test":1459,"lotfront_na":259,"lotfront_na_pct":17.7,"lotfront_min":21,"lotfront_na_test":227,"garyr_na":81,"garyr_eq_nogarage":true,"drop_n":31,"drop_price":22,"drop_price_thr":419249,"drop_area":16,"test_big":5,"n_nb":25,"n_nb_test":25,"nb_small":"Blueste","nb_small_n":2,"skew":1.88,"skew_log":0.12,"drop50_pd":["Alley","Fence","MasVnrType","MiscFeature","PoolQC"],"drop50_R":["Alley","Fence","MiscFeature","PoolQC"],"pool_na":1453,"pool_eq":true,"pool_pct":99.5,"masvnr_none":864,"masvnr_na_R":8,"masvnr_pct_pd":59.7,"fireqU_na_pct":47.3,"rows_na_train":339,"rows_na_test":313,"big_n":4,"big_cheap":2,"big_cheap_partial":true,"pools":7}};
+/* Decision Labs: shared helpers (no dependencies). */
+"use strict";
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+const SVGNS = "http://www.w3.org/2000/svg";
+
+function h(tag, attrs, ...kids) {
+  const e = document.createElement(tag);
+  setAttrs(e, attrs);
+  kids.flat().forEach(k => { if (k != null && k !== false) e.append(k.nodeType ? k : document.createTextNode(String(k))); });
+  return e;
+}
+function sv(tag, attrs, ...kids) {
+  const e = document.createElementNS(SVGNS, tag);
+  setAttrs(e, attrs);
+  kids.flat().forEach(k => { if (k != null && k !== false) e.append(k.nodeType ? k : document.createTextNode(String(k))); });
+  return e;
+}
+function setAttrs(e, attrs) {
+  for (const [k, v] of Object.entries(attrs || {})) {
+    if (v == null || v === false) continue;
+    if (k === "html") e.innerHTML = v;
+    else if (k.startsWith("on")) e.addEventListener(k.slice(2), v);
+    else if (k === "style" && typeof v === "object") Object.assign(e.style, v);
+    else e.setAttribute(k, v === true ? "" : v);
+  }
+}
+
+/* ---------- formatting ---------- */
+const money = (x, d = 0) => (x < 0 ? "−$" : "$") + Math.abs(x).toLocaleString("en-US", { minimumFractionDigits: d, maximumFractionDigits: d });
+const kmoney = x => x === 0 ? "$0" : (x < 0 ? "−$" : "$") + (Math.abs(x) >= 1e6 ? (Math.abs(x) / 1e6).toFixed(2) + "M" : Math.round(Math.abs(x) / 1000).toLocaleString("en-US") + "k");
+const pct = (x, d = 1) => (100 * x).toFixed(d) + "%";
+const num = (x, d = 0) => x.toLocaleString("en-US", { minimumFractionDigits: d, maximumFractionDigits: d });
+const signed = (s) => s.replace(/^-/, "−");
+
+/* ---------- random numbers and statistics ---------- */
+function randn() { let u = 0, v = 0; while (u === 0) u = Math.random(); while (v === 0) v = Math.random(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); }
+function erf(x) { // Numerical Recipes erfc approximation (fractional error < 1.2e-7)
+  const t = 1 / (1 + 0.5 * Math.abs(x));
+  const y = 1 - t * Math.exp(-x * x - 1.26551223 + t * (1.00002368 + t * (0.37409196 + t * (0.09678418 + t * (-0.18628806 + t * (0.27886807 + t * (-1.13520398 + t * (1.48851587 + t * (-0.82215223 + t * 0.17087277)))))))));
+  return x >= 0 ? y : -y;
+}
+const normCdf = z => 0.5 * (1 + erf(z / Math.SQRT2));
+function normInv(p) { // Acklam
+  const a = [-3.969683028665376e+01, 2.209460984245205e+02, -2.759285104469687e+02, 1.383577518672690e+02, -3.066479806614716e+01, 2.506628277459239e+00];
+  const b = [-5.447609879822406e+01, 1.615858368580409e+02, -1.556989798598866e+02, 6.680131188771972e+01, -1.328068155288572e+01];
+  const c = [-7.784894002430293e-03, -3.223964580411365e-01, -2.400758277161838e+00, -2.549732539343734e+00, 4.374614347350924e+00, 2.938163982698783e+00];
+  const d = [7.784695709041462e-03, 3.224671290700398e-01, 2.445134137142996e+00, 3.754408661907416e+00];
+  const pl = 0.02425, ph = 1 - pl; let q, r;
+  if (p < pl) { q = Math.sqrt(-2 * Math.log(p)); return (((((c[0] * q + c[1]) * q + c[2]) * q + c[3]) * q + c[4]) * q + c[5]) / ((((d[0] * q + d[1]) * q + d[2]) * q + d[3]) * q + 1); }
+  if (p > ph) { q = Math.sqrt(-2 * Math.log(1 - p)); return -(((((c[0] * q + c[1]) * q + c[2]) * q + c[3]) * q + c[4]) * q + c[5]) / ((((d[0] * q + d[1]) * q + d[2]) * q + d[3]) * q + 1); }
+  q = p - 0.5; r = q * q;
+  return (((((a[0] * r + a[1]) * r + a[2]) * r + a[3]) * r + a[4]) * r + a[5]) * q / (((((b[0] * r + b[1]) * r + b[2]) * r + b[3]) * r + b[4]) * r + 1);
+}
+function tInv(p, df) { // Cornish-Fisher expansion; accurate to ~1e-3 for df >= 5
+  const z = normInv(p), z2 = z * z;
+  return z + (z2 * z + z) / (4 * df) + (5 * z2 * z2 * z + 16 * z2 * z + 3 * z) / (96 * df * df)
+    + (3 * z2 * z2 * z2 * z + 19 * z2 * z2 * z + 17 * z2 * z - 15 * z) / (384 * df * df * df);
+}
+const sum = a => a.reduce((s, x) => s + x, 0);
+const mean = a => sum(a) / a.length;
+function sd(a) { const m = mean(a); return Math.sqrt(sum(a.map(x => (x - m) ** 2)) / (a.length - 1)); }
+function median(a) { const s = [...a].sort((x, y) => x - y), n = s.length; return n % 2 ? s[(n - 1) / 2] : (s[n / 2 - 1] + s[n / 2]) / 2; }
+function wmedian(v, w) { // weighted median (lower median)
+  const idx = v.map((_, i) => i).sort((i, j) => v[i] - v[j]); const tot = sum(w); let c = 0;
+  for (const i of idx) { c += w[i]; if (c >= tot / 2) return v[i]; }
+  return v[idx[idx.length - 1]];
+}
+
+/* ---------- small linear algebra (OLS) ---------- */
+function invert(A) { // Gauss-Jordan; A is square array of arrays
+  const n = A.length, M = A.map((r, i) => [...r, ...Array.from({ length: n }, (_, j) => (i === j ? 1 : 0))]);
+  for (let c = 0; c < n; c++) {
+    let p = c; for (let r = c + 1; r < n; r++) if (Math.abs(M[r][c]) > Math.abs(M[p][c])) p = r;
+    if (Math.abs(M[p][c]) < 1e-12) return null;
+    [M[c], M[p]] = [M[p], M[c]];
+    const pv = M[c][c]; for (let j = 0; j < 2 * n; j++) M[c][j] /= pv;
+    for (let r = 0; r < n; r++) if (r !== c) { const f = M[r][c]; if (f) for (let j = 0; j < 2 * n; j++) M[r][j] -= f * M[c][j]; }
+  }
+  return M.map(r => r.slice(n));
+}
+function ols(y, cols) { // cols: array of predictor columns (no intercept); returns b (with intercept first), se, r2, adjR2, s, XtXi
+  const n = y.length, k = cols.length + 1;
+  const X = (i, j) => (j === 0 ? 1 : cols[j - 1][i]);
+  const XtX = Array.from({ length: k }, () => new Array(k).fill(0)), Xty = new Array(k).fill(0);
+  for (let i = 0; i < n; i++) for (let a = 0; a < k; a++) { const xa = X(i, a); Xty[a] += xa * y[i]; for (let b = a; b < k; b++) XtX[a][b] += xa * X(i, b); }
+  for (let a = 0; a < k; a++) for (let b = 0; b < a; b++) XtX[a][b] = XtX[b][a];
+  const XtXi = invert(XtX); if (!XtXi) return null;
+  const b = XtXi.map(r => sum(r.map((v, j) => v * Xty[j])));
+  let sse = 0; const ym = mean(y); let sst = 0;
+  for (let i = 0; i < n; i++) { let f = 0; for (let a = 0; a < k; a++) f += b[a] * X(i, a); sse += (y[i] - f) ** 2; sst += (y[i] - ym) ** 2; }
+  const df = n - k, s2 = sse / df;
+  return { b, se: XtXi.map((r, i) => Math.sqrt(s2 * r[i])), r2: 1 - sse / sst, adj: 1 - (sse / df) / (sst / (n - 1)), s: Math.sqrt(s2), df, XtXi, n, k };
+}
+
+/* ---------- steps ---------- */
+const Steps = { list: [], onShow: {}, cur: 0 };
+function initSteps() {
+  const nav = $("nav.steps"); Steps.list = $$("section.step");
+  Steps.list.forEach((sec, i) => {
+    const title = sec.dataset.title;
+    nav.append(h("button", { class: "pill", type: "button", "data-i": i, onclick: () => showStep(i) }, h("span", { class: "n" }, i + 1), " ", title));
+    const foot = h("div", { class: "nav-next" });
+    foot.append(i > 0 ? h("button", { class: "btn ghost", type: "button", onclick: () => showStep(i - 1) }, "← Back") : h("span"));
+    if (i < Steps.list.length - 1) foot.append(h("button", { class: "btn", type: "button", onclick: () => showStep(i + 1) }, "Next: " + Steps.list[i + 1].dataset.title + " →"));
+    else foot.append(h("span", { class: "note" }, "This is the end of the lab; nothing was saved or graded."));
+    sec.append(foot);
+  });
+  showStep(0, true);
+}
+function showStep(i, first) {
+  Steps.list.forEach((s, j) => s.classList.toggle("on", j === i));
+  $$("nav.steps .pill").forEach((p, j) => { p.toggleAttribute("aria-current", j === i); if (j === i) p.setAttribute("aria-current", "step"); if (j < i) p.classList.add("done"); });
+  Steps.cur = i;
+  const pill = $$("nav.steps .pill")[i]; if (pill && pill.scrollIntoView) pill.scrollIntoView({ block: "nearest", inline: "nearest" });
+  if (!first) {
+    const top = $("nav.steps").getBoundingClientRect().top + window.scrollY; if (window.scrollY > top) window.scrollTo({ top, behavior: "smooth" });
+    const hd = $("h2", Steps.list[i]); if (hd) { hd.setAttribute("tabindex", "-1"); hd.focus({ preventScroll: true }); }
+  }
+  (Steps.onShow[Steps.list[i].id] || []).forEach(f => f());
+}
+function whenShown(id, f) { (Steps.onShow[id] = Steps.onShow[id] || []).push(f); }
+
+/* ---------- multiple-choice with instant feedback ---------- */
+function quiz(host, spec) {
+  const box = h("div", { class: "quiz" });
+  box.append(h("p", { class: "q", html: spec.q }));
+  const opts = h("div", { class: "opts", role: "group" });
+  const fb = h("div", { class: "fb", "aria-live": "polite" });
+  const head = { right: spec.rightHead || "Right.", wrong: "Not quite.", ok: "A reasonable choice." };
+  spec.opts.forEach((o, i) => {
+    const b = h("button", { class: "opt", type: "button" }, h("span", { class: "mk" }, String.fromCharCode(65 + i)), h("span", { html: o.t }));
+    b.addEventListener("click", () => {
+      $$(".opt", opts).forEach(x => x.classList.remove("picked", "right", "wrong", "ok"));
+      b.classList.add("picked", o.k);
+      fb.className = "fb show " + o.k;
+      fb.innerHTML = "<b>" + (o.head || head[o.k]) + "</b>" + o.fb;
+      if (spec.onAnswer) spec.onAnswer(o, i);
+    });
+    opts.append(b);
+  });
+  box.append(opts, fb);
+  host.append(box);
+  return box;
+}
+const book = (sec, page) => '<span class="book">' + sec + (page ? " · p. " + page : "") + "</span>";
+
+/* ---------- copy-a-prompt ---------- */
+function promptBox(host, getText, note) {
+  const pre = h("div", { class: "prompt", tabindex: "0" });
+  const btn = h("button", { class: "btn", type: "button" }, "Copy prompt");
+  const refresh = () => { pre.textContent = getText(); };
+  btn.addEventListener("click", () => {
+    refresh(); const text = pre.textContent;
+    const done = ok => { btn.textContent = ok ? "Copied" : "Selected - please press Ctrl/Cmd+C"; setTimeout(() => (btn.textContent = "Copy prompt"), 1800); };
+    const fallback = () => { const r = document.createRange(); r.selectNodeContents(pre); const s = window.getSelection(); s.removeAllRanges(); s.addRange(r); done(false); };
+    try { navigator.clipboard.writeText(text).then(() => done(true), fallback); } catch (e) { fallback(); }
+  });
+  host.append(h("div", { class: "row spread" }, h("span", { class: "note" }, note || "Please paste it into the AI tool that you use for this course."), btn), pre);
+  refresh();
+  return refresh;
+}
+
+/* ---------- chart helpers ---------- */
+function niceTicks(lo, hi, count = 5) {
+  const span = hi - lo || 1, step0 = span / count, mag = Math.pow(10, Math.floor(Math.log10(step0))), err = step0 / mag;
+  const step = (err >= 7.5 ? 10 : err >= 3.5 ? 5 : err >= 1.5 ? 2 : 1) * mag;
+  const out = []; for (let v = Math.ceil(lo / step) * step; v <= hi + step * 1e-9; v += step) out.push(+v.toPrecision(12));
+  return out;
+}
+const lin = (d0, d1, r0, r1) => v => r0 + (v - d0) / (d1 - d0 || 1) * (r1 - r0);
+function segButtons(host, items, value, onChange, label) {
+  const seg = h("div", { class: "seg", role: "group", "aria-label": label || "" });
+  items.forEach(([v, t]) => {
+    const b = h("button", { type: "button", "aria-pressed": String(v === value) }, t);
+    b.addEventListener("click", () => { $$("button", seg).forEach(x => x.setAttribute("aria-pressed", "false")); b.setAttribute("aria-pressed", "true"); onChange(v); });
+    seg.append(b);
+  });
+  host.append(seg);
+  return seg;
+}
+
+/* M7 Too Good to Be True */
+const D = DATA, SEQ = D.seq, NREAL = D.real.length, KMAX = SEQ.length, S2 = D.step2, S4 = D.step4, K = D.kag;
+const nov = p => '<span class="book">Novikov · p' + (/[–-]/.test(String(p)) ? "p" : "") + ". " + String(p).replace("-", "–") + "</span>";
+const f3 = v => v.toFixed(3), f2 = v => v.toFixed(2), f4 = v => v.toFixed(4);
+const short = s => s.replace("AI-suggested columns", "AI columns");
+const at = k => SEQ[k - 1];
+const REAL10 = at(NREAL);
+const BEST = at(D.kmin);
+
+function charted(hostId, draw) {
+  const host = document.getElementById(hostId);
+  const run = () => { const w = host.clientWidth; if (w > 0) { host.innerHTML = ""; draw(host, w); } };
+  whenShown(host.closest("section.step").id, run);
+  window.addEventListener("resize", run);
+  return run;
+}
+function lineChart(host, w, o) { // o: {lo, hi, ticks, fmt, series:[{key,color,width}], mark}
+  const ml = 46, mr = 10, mt = 10, mb = 30, ht = w < 400 ? 200 : 220;
+  const x = lin(1, KMAX, ml, w - mr), y = lin(o.lo, o.hi, ht - mb, mt);
+  const g = sv("svg", { class: "chart", width: w, height: ht, viewBox: `0 0 ${w} ${ht}`, role: "img", "aria-label": o.label });
+  g.append(sv("rect", { x: x(NREAL + 0.5), y: mt, width: x(KMAX) - x(NREAL + 0.5), height: ht - mb - mt, fill: "var(--warn-soft)", stroke: "var(--warn)", "stroke-opacity": 0.5, "stroke-dasharray": "3 3" }));
+  g.append(sv("text", { x: x(KMAX) - 4, y: mt + 13, "text-anchor": "end" }, "extra columns"));
+  o.ticks.forEach(t => { g.append(sv("line", { class: "grid", x1: ml, x2: w - mr, y1: y(t), y2: y(t) })); g.append(sv("text", { x: ml - 6, y: y(t) + 4, "text-anchor": "end" }, o.fmt(t))); });
+  [1, 10, 20, 30, 35].forEach(t => g.append(sv("text", { x: x(t), y: ht - mb + 16, "text-anchor": "middle" }, t)));
+  g.append(sv("text", { x: (ml + w - mr) / 2, y: ht - 2, "text-anchor": "middle" }, "number of predictors"));
+  o.series.forEach(s => g.append(sv("path", { d: "M" + SEQ.map((r, i) => `${x(i + 1).toFixed(1)},${y(r[s.key]).toFixed(1)}`).join("L"), fill: "none", stroke: s.color, "stroke-width": s.width || 2.5, "stroke-linejoin": "round" })));
+  (o.dots || []).forEach(d => g.append(sv("circle", { cx: x(d.k), cy: y(d.v), r: 5, fill: "var(--card)", stroke: d.color, "stroke-width": 2.5 })));
+  g.append(sv("line", { x1: x(o.mark), x2: x(o.mark), y1: mt, y2: ht - mb, stroke: "var(--ink)", "stroke-dasharray": "4 3" }));
+  o.series.forEach(s => g.append(sv("circle", { cx: x(o.mark), cy: y(at(o.mark)[s.key]), r: 4.5, fill: s.color })));
+  host.append(g);
+}
+
+/* ---------- step 1: add predictors ---------- */
+let k = NREAL;
+const name = i => (i < NREAL ? D.real[i] : "Extra " + (i - NREAL + 1));
+const drawFit = charted("c-fit", (host, w) => lineChart(host, w, { label: "R-squared by number of predictors", lo: 0.6, hi: 1, ticks: [0.6, 0.7, 0.8, 0.9, 1], fmt: f2, mark: k, series: [{ key: "r2", color: "var(--c1)" }, { key: "adj", color: "var(--c3)", width: 2 }] }));
+const drawScore = charted("c-score", (host, w) => lineChart(host, w, { label: "Score by number of predictors", lo: 0.08, hi: 0.26, ticks: [0.08, 0.12, 0.16, 0.2, 0.24], fmt: f2, mark: k, series: [{ key: "train", color: "var(--c2)" }, { key: "test", color: "var(--hi)" }], dots: [{ k: D.kmin, v: BEST.test, color: "var(--hi)" }] }));
+function setK(v) {
+  k = v; $("#kslider").value = v;
+  const r = at(k);
+  $("#k-label").textContent = `${k} (${r.cols} column${r.cols > 1 ? "s" : ""})` + (k > NREAL ? `, including ${k - NREAL} extra` : "");
+  $("#st-r2").textContent = f3(r.r2); $("#st-adj").textContent = f3(r.adj); $("#st-train").textContent = f3(r.train); $("#st-test").textContent = f3(r.test);
+  $("#k-chips").innerHTML = Array.from({ length: k }, (_, i) => `<span class="${i >= NREAL ? "x" : ""}">${name(i)}</span>`).join("");
+  drawFit(); drawScore();
+}
+$("#kslider").addEventListener("input", e => setK(+e.target.value));
+[["OverallQual only", 1], ["All 10 house features", NREAL], [`All ${KMAX}`, KMAX]].forEach(([lab, v]) => $("#k-presets").append(h("button", { class: "btn ghost", type: "button", onclick: () => setK(v) }, lab)));
+whenShown("s1", () => setK(k));
+const ALL = at(KMAX);
+quiz($("#q1a"), {
+  q: `Please move the slider all the way to ${KMAX}. Which of these models would you submit to Kaggle?`,
+  opts: [
+    { t: `All ${KMAX} predictors, since R² and adjusted R² are the highest.`, k: "wrong", fb: `Both measures only look at the training houses. On the hidden test houses, the ${KMAX}-predictor model scores ${f3(ALL.test)}, compared with ${f3(REAL10.test)} for the ten house features. This is overfitting, i.e. the model memorizes quirks of the training houses that do not carry over to new ones ${book("§6.7.1", "314")}.` },
+    { t: "The ten house features, since that model has the best score on the hidden test houses.", k: "right", fb: `From ${NREAL} to ${KMAX} predictors, training R² rises from ${f3(REAL10.r2)} to ${f3(ALL.r2)}, while the test score gets worse, from ${f3(REAL10.test)} to ${f3(ALL.test)}. Novikov calls this high variability, i.e. a model that fits the training data almost perfectly and then falls apart on new data ${nov("30-33")}. The book adds that overfitting is more likely when many predictors are included with weak justification ${book("§5.10.3", "262")}.` },
+    { t: "OverallQual alone, since the simplest model is always the safest.", k: "wrong", fb: `This model is too simple: it scores ${f3(at(1).test)} on the test houses, about twice the error of the ten house features. Novikov calls this high bias, i.e. under-fitting ${nov(31)}. The goal is the sweet spot between the two ${nov(32)}.` }]
+});
+quiz($("#q1b"), {
+  q: "In the real competition, you do not know the test prices. How can you tell, before you submit, that extra columns are hurting?",
+  opts: [
+    { t: "Watch adjusted R², since it penalizes extra columns.", k: "wrong", fb: `In this lab, adjusted R² rose with every one of the ${D.n_extra} random columns, from ${f3(REAL10.adj)} to ${f3(ALL.adj)}. It uses only the training houses, so it cannot see the damage. The book asks for both, i.e. whether adjusted R² improves and whether prediction accuracy improves ${book("§5.9.6", "247")}.` },
+    { t: "Hold back part of train.csv (or use cross-validation) and score the model on houses that it did not learn from.", k: "right", fb: `This is out-of-sample testing, which the book calls non-negotiable ${book("§6.7.2", "314")}, and it is why Novikov separates training, validation and test sets ${nov(19)}. In addition, regularization (e.g. Lasso or Ridge) shrinks less useful coefficients toward zero, which keeps a model with many columns in check ${nov(33)}.` },
+    { t: "Submit each version and keep the one with the best leaderboard score.", k: "ok", fb: "This does score the model on unseen houses, so it is better than looking at R². But if you choose among many submissions by their leaderboard score, the leaderboard itself becomes part of your training. Step 3 shows what that does." }]
+});
+
+/* ---------- step 2: why the log ---------- */
+let histMode = "price";
+const lp = D.price.map(Math.log);
+const drawHist = charted("c-hist", (host, w) => {
+  const ml = 40, mr = 10, mt = 10, mb = 32, ht = 210;
+  const vals = histMode === "price" ? D.price : lp;
+  const lo = histMode === "price" ? 0 : 11, hi = histMode === "price" ? 640000 : 13.5, bw = histMode === "price" ? 20000 : 0.1;
+  const nb = Math.round((hi - lo) / bw), cnt = new Array(nb).fill(0);
+  vals.forEach(v => { const i = Math.min(nb - 1, Math.max(0, Math.floor((v - lo) / bw))); cnt[i]++; });
+  const x = lin(lo, hi, ml, w - mr), ymax = Math.max(...cnt) * 1.1, y = lin(0, ymax, ht - mb, mt);
+  const g = sv("svg", { class: "chart", width: w, height: ht, viewBox: `0 0 ${w} ${ht}`, role: "img", "aria-label": "Histogram of training prices" });
+  niceTicks(0, ymax, 4).forEach(t => { g.append(sv("line", { class: "grid", x1: ml, x2: w - mr, y1: y(t), y2: y(t) })); g.append(sv("text", { x: ml - 6, y: y(t) + 4, "text-anchor": "end" }, t)); });
+  cnt.forEach((c, i) => { if (c) g.append(sv("rect", { x: x(lo + i * bw) + 0.5, y: y(c), width: Math.max(1, x(lo + bw) - x(lo) - 1), height: y(0) - y(c), fill: "var(--c1)" }, sv("title", {}, `${c} houses`))); });
+  const ticks = histMode === "price" ? (w < 460 ? [0, 200000, 400000, 600000] : [0, 100000, 200000, 300000, 400000, 500000, 600000]) : [11, 11.5, 12, 12.5, 13, 13.5];
+  ticks.forEach(t => g.append(sv("text", { x: x(t), y: ht - mb + 16, "text-anchor": "middle" }, histMode === "price" ? kmoney(t) : t)));
+  g.append(sv("text", { x: (ml + w - mr) / 2, y: ht - 2, "text-anchor": "middle" }, histMode === "price" ? "sale price" : "log(sale price)"));
+  if (histMode === "price") [[S2.median, "median", "end"], [S2.mean, "mean", "start"]].forEach(([v, lab, anc]) => {
+    g.append(sv("line", { x1: x(v), x2: x(v), y1: mt, y2: ht - mb, stroke: "var(--ink)", "stroke-dasharray": "4 3" }));
+    g.append(sv("text", { x: x(v) + (anc === "start" ? 4 : -4), y: mt + 10, "text-anchor": anc, class: "strong" }, lab));
+  });
+  host.append(g);
+  $("#hist-note").innerHTML = histMode === "price"
+    ? `Training houses: mean ${money(S2.mean)}, median ${money(S2.median)}, skewness ${f2(S2.skew_price)}. The mean is pulled above the median by the expensive houses.`
+    : `On the log scale, the skewness drops from ${f2(S2.skew_price)} to ${f2(S2.skew_log)}, i.e. the distribution is close to symmetric. (In the Kaggle file train.csv, it drops from ${f2(K.skew)} to ${f2(K.skew_log)}.)`;
+});
+segButtons($("#hist-toggle"), [["price", "Sale price"], ["log", "log(Sale price)"]], "price", v => { histMode = v; drawHist(); }, "Histogram of");
+function showErr(p) {
+  const e = Math.log(p + 20000) - Math.log(p);
+  $("#err-out").innerHTML = `A prediction of ${money(p + 20000)} for a ${money(p)} house is ${pct(20000 / p, 0)} too high. On the log scale, the error is log(${num(p + 20000)}) − log(${num(p)}) = <strong>${f3(e)}</strong>.`;
+}
+segButtons($("#err-seg"), [[100000, "$100,000"], [200000, "$200,000"], [400000, "$400,000"]], 100000, showErr, "House price");
+showErr(100000);
+$("#t-log").append(h("table", {}, h("thead", {}, h("tr", {}, h("th", {}, ""), h("th", { class: "r" }, "Model SalePrice"), h("th", { class: "r" }, "Model log(SalePrice)"))),
+  h("tbody", {},
+    h("tr", {}, h("td", {}, "Kaggle-style score on the hidden test houses"), h("td", { class: "r" }, f3(S2.score_lin)), h("td", { class: "r" }, h("strong", {}, f3(S2.score_log)))),
+    h("tr", {}, h("td", {}, `Typical error, cheapest quarter of test houses (up to ${money(S2.q1)})`), h("td", { class: "r" }, `${money(S2.mae_lo_lin)} (${pct(S2.pe_lo_lin)})`), h("td", { class: "r" }, `${money(S2.mae_lo_log)} (${pct(S2.pe_lo_log)})`)),
+    h("tr", {}, h("td", {}, `Typical error, most expensive quarter (from ${money(S2.q3)})`), h("td", { class: "r" }, `${money(S2.mae_hi_lin)} (${pct(S2.pe_hi_lin)})`), h("td", { class: "r" }, `${money(S2.mae_hi_log)} (${pct(S2.pe_hi_log)})`)))));
+$("#t-log").append(h("p", { class: "note", style: { marginTop: "6px" } }, "The typical error is the median absolute error in dollars (and as a share of the actual price)."));
+quiz($("#q2a"), {
+  q: "Which of these two mistakes costs you more in Kaggle&rsquo;s score?",
+  opts: [
+    { t: "$20,000 too high on a $100,000 house", k: "right", fb: `On the log scale, this error is ${f3(Math.log(1.2))}, compared with ${f3(Math.log(420000 / 400000))} for the same $20,000 on a $400,000 house. That is, the score treats a 20% miss on a cheap house as about ${(Math.log(1.2) / Math.log(1.05)).toFixed(1)} times as bad as a 5% miss on an expensive one. This is also why the model of the dollar price does worse in the table: its errors are about the same size in dollars for cheap and expensive houses, which makes them large percentages for the cheap ones.` },
+    { t: "$20,000 too high on a $400,000 house", k: "wrong", fb: `In dollars the two errors are the same, but Kaggle scores the log prices. The $400,000 house is only 5% off (log error ${f3(Math.log(1.05))}), while the $100,000 house is 20% off (log error ${f3(Math.log(1.2))}).` },
+    { t: "Both cost the same, since both are $20,000.", k: "wrong", fb: `That would be true for an RMSE in dollars. Kaggle&rsquo;s score uses the log prices, so the same $20,000 counts ${f3(Math.log(1.2))} on the $100,000 house and only ${f3(Math.log(1.05))} on the $400,000 house.` }]
+});
+quiz($("#q2b"), {
+  q: "Your model predicts log(SalePrice). What do you put into the submission file?",
+  opts: [
+    { t: "The predictions as they come out of the model.", k: "wrong", fb: `Kaggle expects prices in dollars. If you submit the log values (about 12), the score in this town becomes ${f2(S2.score_forgot_exp)}, which is far worse than predicting the same price for every house (${f3(S2.score_const)}).` },
+    { t: "exp(prediction), i.e. the predictions converted back into dollars.", k: "right", fb: "Kaggle takes the log of whatever you submit, so the submission must be in dollars. In R Commander you can compute the new column with exp(), and with an AI tool it is worth checking that the submission file contains prices and not log prices." },
+    { t: "The predictions multiplied by 1,000.", k: "wrong", fb: "The log is not a change of units. To undo a natural log, please use exp(), which turns a prediction of, say, 12 back into about $162,755." }]
+});
+
+/* ---------- step 3: public vs private ---------- */
+const NS = D.subs.length, NT = D.n_test, ERR = D.err.map(r => r.map(v => (v / 10000) ** 2));
+let mask = new Array(NT).fill(false); D.pub.forEach(i => (mask[i] = true));
+const DEF_MASK = mask.slice();
+let revealed = false;
+function board(m) {
+  const pub = [], pri = [];
+  for (let j = 0; j < NS; j++) { let a = 0, b = 0, na = 0, nb = 0; const e = ERR[j]; for (let i = 0; i < NT; i++) { if (m[i]) { a += e[i]; na++; } else { b += e[i]; nb++; } } pub.push(Math.sqrt(a / na)); pri.push(Math.sqrt(b / nb)); }
+  const rank = v => v.map(x => v.filter(y => y < x).length + 1);
+  return { pub, pri, rpub: rank(pub), rpri: rank(pri) };
+}
+const HONEST = D.subs.indexOf("All 10 house features");
+function drawBoard() {
+  const b = board(mask), order = [...Array(NS).keys()].sort((i, j) => b.pub[i] - b.pub[j]), top = order[0];
+  const t = h("table", {}, h("thead", {}, h("tr", {}, h("th", { class: "r" }, "Rank"), h("th", {}, "Submission"), h("th", { class: "r" }, "Public"), h("th", { class: "r" }, "Private (rank)"))),
+    h("tbody", {}, order.map(i => h("tr", { class: (i === top ? "mine" : "") + (i === HONEST ? " honest" : "") }, h("td", { class: "r" }, b.rpub[i]), h("td", {}, h("strong", {}, `#${i + 1} `), short(D.subs[i])), h("td", { class: "r" }, f4(b.pub[i])),
+      h("td", { class: "r" }, revealed ? `${f4(b.pri[i])} (${b.rpri[i]})` : "?")))));
+  $("#t-lb").innerHTML = ""; $("#t-lb").append(t);
+  const lead = b.pub[order[1]] - b.pub[top];
+  $("#lb-note").innerHTML = `The highlighted row is the top public submission (#${top + 1}); its lead over the next submission is ${f4(lead)}, and the ten house features alone (#${HONEST + 1}, underlined) are ${f4(b.pub[HONEST] - b.pub[top])} behind it. ` +
+    (revealed ? `On the private leaderboard, #${top + 1} finishes in place <strong>${b.rpri[top]}</strong> of ${NS}, and #${HONEST + 1} finishes in place <strong>${b.rpri[HONEST]}</strong>.` : "Please make your choice above, then reveal the private leaderboard.");
+  return b;
+}
+const DEF = board(DEF_MASK), DTOP = DEF.pub.indexOf(Math.min(...DEF.pub)), DSORT = [...DEF.pub].sort((a, b) => a - b);
+quiz($("#q3a"), {
+  q: "Please look at the public leaderboard below. Which submission would you choose as your final one?",
+  opts: [
+    { t: `The top public submission (#${DTOP + 1}, ${D.subs[DTOP]}).`, k: "wrong", fb: `It leads the next submission by only ${f4(DSORT[1] - DSORT[0])}, and its extra columns are random numbers that cannot help on new houses. Please reveal the private leaderboard to see where it lands.` },
+    { t: `The ten house features (#${HONEST + 1}), which is within ${f4(DEF.pub[HONEST] - DEF.pub[DTOP])} of the top and uses only columns you can explain.`, k: "right", fb: "When the public scores are this close, the differences are mostly luck in which houses ended up in the public half. A submission that you can explain, and that did well on out-of-sample checks, is the safer choice. Please reveal the private leaderboard to check." },
+    { t: "The submission with the most AI-suggested columns.", k: "wrong", fb: "More columns do not mean a better model; in step 1, all but one of the 25 extra columns made the hidden-test score worse. Please reveal the private leaderboard to check." }]
+});
+$("#reveal").addEventListener("click", () => { revealed = true; drawBoard(); });
+$("#resplit").addEventListener("click", () => {
+  const idx = [...Array(NT).keys()]; for (let i = NT - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [idx[i], idx[j]] = [idx[j], idx[i]]; }
+  mask = new Array(NT).fill(false); idx.slice(0, NT / 2).forEach(i => (mask[i] = true)); drawBoard();
+});
+$("#sim").addEventListener("click", () => {
+  const runs = 2000; let same = 0, rTop = 0, rHon = 0, top3 = 0;
+  const idx = [...Array(NT).keys()];
+  for (let r = 0; r < runs; r++) {
+    for (let i = NT - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [idx[i], idx[j]] = [idx[j], idx[i]]; }
+    const m = new Array(NT).fill(false); for (let i = 0; i < NT / 2; i++) m[idx[i]] = true;
+    const b = board(m), top = b.pub.indexOf(Math.min(...b.pub));
+    if (b.rpri[top] === 1) same++; if (b.rpri[top] <= 3) top3++;
+    rTop += b.rpri[top]; rHon += b.rpri[HONEST];
+  }
+  $("#sim-out").innerHTML = `In ${num(runs)} random splits, the top public submission finished on average in place <strong>${(rTop / runs).toFixed(1)}</strong> of ${NS} on the private leaderboard; it was ${same ? "the best private submission in " + pct(same / runs) + " of the splits" : "never the best private submission"} and in the private top three in ${pct(top3 / runs)} of the splits. The ten house features (#${HONEST + 1}) finished on average in place <strong>${(rHon / runs).toFixed(1)}</strong>. (The numbers change a little each time you run it.)`;
+});
+whenShown("s3", drawBoard);
+quiz($("#q3b"), {
+  q: "Why does the top public submission tend to fall on the private leaderboard?",
+  opts: [
+    { t: "Its AI-suggested columns stopped working on the private houses.", k: "wrong", fb: "They never worked, since they are random numbers. The submission&rsquo;s public score was lucky on those 200 houses." },
+    { t: "Its public score was partly luck. Choosing the best of 20 nearly equal public scores selects the submission whose errors happened to be smallest on the public houses.", k: "right", fb: `Once you have used the public score to choose among many submissions, that score has become part of your training. A performance claim that rests only on data the model was tuned on is the first red flag in the book&rsquo;s list ${book("§6.7.8", "316")}. In Novikov&rsquo;s terms, the public leaderboard has turned into a validation set, and only the private houses remain a true test set ${nov(19)}.` },
+    { t: "The private houses are harder to predict.", k: "ok", fb: "In the first split this is partly true, since every submission scores worse on the private half. But all submissions face the same private houses, so this does not explain why the top public submission drops below others. Please draw a few new splits: the top public submission keeps changing, which is the sign of luck." }]
+});
+
+/* ---------- step 4: leakage ---------- */
+let leak = false;
+const drawLeak = charted("c-leak", (host, w) => {
+  const lw = w < 460 ? 108 : 150, mr = 50, rh = 30, rows = [["Without PricePerSqFt", S4.train_real, S4.test_real], ["With PricePerSqFt", S4.train_leak, S4.test_leak]];
+  const ht = rows.length * (2 * rh + 10) + 24, x = lin(0, 0.2, lw, w - mr);
+  const g = sv("svg", { class: "chart", width: w, height: ht, viewBox: `0 0 ${w} ${ht}`, role: "img", "aria-label": "Scores with and without the leaked feature" });
+  [0, 0.05, 0.1, 0.15, 0.2].forEach(t => { g.append(sv("line", { class: "grid", x1: x(t), x2: x(t), y1: 2, y2: ht - 20 })); g.append(sv("text", { x: x(t), y: ht - 5, "text-anchor": "middle" }, f2(t))); });
+  rows.forEach(([lab, a, b], i) => {
+    const y0 = 4 + i * (2 * rh + 10), on = (i === 1) === leak;
+    g.append(sv("text", { x: lw - 8, y: y0 + rh + 4, "text-anchor": "end", class: on ? "strong" : "ink" }, lab));
+    [[a, "var(--c2)"], [b, "var(--hi)"]].forEach(([v, c], j) => {
+      g.append(sv("rect", { x: lw, y: y0 + j * rh + 3, width: x(v) - lw, height: rh - 8, rx: 3, fill: c, "fill-opacity": on ? 1 : 0.4 }));
+      g.append(sv("text", { x: x(v) + 5, y: y0 + j * rh + rh / 2 + 3, class: on ? "strong" : "ink" }, f3(v)));
+    });
+  });
+  host.append(g);
+});
+function setLeak(v) {
+  leak = v;
+  $("#lk-r2").textContent = f3(leak ? S4.r2_leak : S4.r2_real);
+  $("#lk-train").textContent = f3(leak ? S4.train_leak : S4.train_real);
+  $("#lk-test").textContent = f3(leak ? S4.test_leak : S4.test_real);
+  $("#leak-note").innerHTML = leak
+    ? `Kaggle&rsquo;s test.csv has no SalePrice, so PricePerSqFt cannot be computed for the test houses. The AI tool therefore filled it with the median price per square foot of each neighborhood in the training data (overall median about ${money(S4.ppsf_med)}). The training score improves from ${f3(S4.train_real)} to ${f3(S4.train_leak)}, while the test score gets worse, from ${f3(S4.test_real)} to ${f3(S4.test_leak)}.`
+    : "This is the model with the ten house features from step 1. Please add the AI&rsquo;s feature.";
+  drawLeak();
+}
+segButtons($("#leak-toggle"), [[false, "Without it"], [true, "With PricePerSqFt"]], false, setLeak, "Leaked feature");
+setLeak(false);
+quiz($("#q4"), {
+  q: `The AI tool reports a training R² of ${f3(S4.r2_leak)}, up from ${f3(S4.r2_real)}. What should you do first?`,
+  opts: [
+    { t: "Submit it, since this is the best model so far.", k: "wrong", fb: `On the hidden test houses, the score gets worse (${f3(S4.test_leak)} compared with ${f3(S4.test_real)}). The feature contains the answer, i.e. the sale price, so it can only &ldquo;work&rdquo; on houses whose price you already know.` },
+    { t: "Ask, for every column, whether it could be computed for a house whose sale price is not yet known.", k: "right", fb: `This is the leakage check. PricePerSqFt is built from SalePrice, which does not exist for the test houses (or for any house that has not been sold yet). The book defines leakage as information that would not be available at the time the decision is made ${book("§6.7.6", "316")}, and it lists astonishingly high performance in a complex problem as a reason to check for it ${book("§6.7.8", "316")}.` },
+    { t: "Ask the AI for more ratio features like this one.", k: "wrong", fb: "More features built from the sale price would make the training fit look even better and the predictions for new houses even worse. Please check where each column comes from first." }]
+});
+
+/* ---------- step 5: the AI's decisions (real Kaggle files) ---------- */
+$("#pipe").append(h("div", { class: "ans" }, h("span", { class: "who" }, "AI pipeline summary (pre-written for this lab)"), h("div", {
+  html: `<p style="margin:0 0 6px">I prepared train.csv (${num(K.n_train)} houses) and test.csv (${num(K.n_test)} houses) and built a regression model. Summary of the preprocessing:</p><ol>
+<li>Filled all missing numeric values with 0 (e.g. LotFrontage, GarageYrBlt, MasVnrArea).</li>
+<li>Removed ${K.drop_n} outliers, i.e. houses whose SalePrice or GrLivArea is more than 3 standard deviations from the mean.</li>
+<li>One-hot encoded Neighborhood (${K.n_nb} columns) and the other text columns.</li>
+<li>Modeled log(SalePrice), since SalePrice is right-skewed (skewness ${f2(K.skew)}).</li>
+<li>Removed ${K.drop50_pd.length} columns with more than 50% missing values: ${K.drop50_pd.join(", ")}.</li></ol>`
+})));
+const DQ = [
+  { q: "Decision 1: &ldquo;Filled all missing numeric values with 0.&rdquo;", opts: [
+    { t: "Keep it, since 0 is a safe default.", k: "wrong", fb: `For LotFrontage, 0 means a house with no street frontage at all, although the smallest recorded frontage is ${K.lotfront_min} feet; ${K.lotfront_na} training houses (${K.lotfront_na_pct}%) and ${K.lotfront_na_test} test houses get this impossible value. In addition, GarageYrBlt is missing for exactly the ${K.garyr_na} houses without a garage, so they now have a garage built in the year 0.` },
+    { t: "Check, column by column, what &ldquo;missing&rdquo; means, and fill each column accordingly.", k: "right", fb: `A value of 0 is reasonable only where &ldquo;missing&rdquo; means &ldquo;none&rdquo;. LotFrontage is unknown for ${K.lotfront_na} training houses (the smallest recorded value is ${K.lotfront_min} feet), and a GarageYrBlt of 0 for the ${K.garyr_na} houses without a garage makes no sense. Novikov&rsquo;s checklist asks the same question: do the values make sense? ${nov(15)}` },
+    { t: "Drop every house with a missing value.", k: "wrong", fb: `That would remove ${K.rows_na_train} of the ${num(K.n_train)} training houses. Moreover, Kaggle needs a prediction for every one of the ${num(K.n_test)} test houses, and ${K.rows_na_test} of them have a missing numeric value, too.` }] },
+  { q: `Decision 2: &ldquo;Removed ${K.drop_n} outliers.&rdquo;`, opts: [
+    { t: "Keep it, since outliers distort a regression.", k: "wrong", fb: `${K.drop_price} of the ${K.drop_n} houses are the most expensive ones in the file (above ${money(K.drop_price_thr)}). Without them, the model has never seen an expensive house, but the test file still has ${K.test_big} houses whose living area is above the rule&rsquo;s cut-off. The book asks you to treat extremes as part of the data story and to classify them before you act on them ${book("§2.5.4", "50")}.` },
+    { t: "Look at the removed houses first, and remove only those that you can explain as errors or special cases.", k: "right", fb: `For instance, ${K.big_n} training houses have more than 4,000 square feet of living area, and ${K.big_cheap} of them sold for less than $200,000 with the sale condition Partial, which is the kind of special case you might remove after a look. In addition, you can never remove test houses, since Kaggle needs a prediction for all ${num(K.n_test)}. The book&rsquo;s own request template says &ldquo;Do NOT delete automatically&rdquo; ${book("§2.11.3", "83")}.` },
+    { t: "Remove even more, e.g. every house beyond 2 standard deviations.", k: "wrong", fb: "This would remove even more of the expensive houses that the model has to predict in the test file. Please classify extremes before you remove anything." }] },
+  { q: `Decision 3: &ldquo;One-hot encoded Neighborhood (${K.n_nb} columns).&rdquo;`, opts: [
+    { t: "Keep it, as long as one neighborhood serves as the baseline in a regression with an intercept.", k: "right", fb: `One-hot encoding makes one column per category ${nov(16)}. A regression with an intercept needs one category left out as the baseline, which is how the book uses indicator variables ${book("§5.9.5", "247")}; with all ${K.n_nb} columns, R reports one coefficient as NA. In addition, ${K.nb_small} has only ${K.nb_small_n} training houses, so its coefficient rests on ${K.nb_small_n} sales.` },
+    { t: "Change it: Neighborhood is text, so drop it.", k: "wrong", fb: "Location is one of the strongest drivers of house prices, and indicator variables are how a regression uses a text column such as Neighborhood." },
+    { t: `Change it: code the neighborhoods as the numbers 1 to ${K.n_nb}.`, k: "wrong", fb: `Then the model would treat the neighborhoods as ordered and equally spaced, as if neighborhood 20 were twice neighborhood 10. One-hot encoding avoids this, since it does not assume any ranking or order ${nov(17)}.` }] },
+  { q: "Decision 4: &ldquo;Modeled log(SalePrice).&rdquo;", opts: [
+    { t: "Keep it, and convert the predictions back with exp() before submitting.", k: "right", fb: `The log matches Kaggle&rsquo;s score and makes the skewed prices close to symmetric (skewness ${f2(K.skew)} becomes ${f2(K.skew_log)} in train.csv). Please check that the submission file contains dollars (step 2).` },
+    { t: "Change it: Kaggle wants prices in dollars, so model the dollars.", k: "wrong", fb: "The submission must be in dollars, but the score is computed on the log scale. A model of the log price fits that score better (step 2), and exp() turns its predictions back into dollars." },
+    { t: "Keep it, and submit the log predictions.", k: "wrong", fb: `Kaggle would then take the log of numbers around 12 and compare it with the log of prices in the hundreds of thousands. In the lab&rsquo;s town, this mistake turns a score of ${f3(S2.score_log)} into ${f2(S2.score_forgot_exp)}.` }] },
+  { q: `Decision 5: &ldquo;Removed ${K.drop50_pd.length} columns with more than 50% missing values.&rdquo;`, opts: [
+    { t: "Keep it, since mostly empty columns cannot help.", k: "ok", fb: `Removing PoolQC costs little, since only ${K.pools} training houses have a pool. But &ldquo;missing&rdquo; often means &ldquo;none&rdquo; in this file: PoolQC is missing for exactly the ${num(K.pool_na)} houses whose PoolArea is 0. Please see the third option for a column that should not be on this list at all.` },
+    { t: "Check what &ldquo;missing&rdquo; means first; for instance, MasVnrType is hardly missing.", k: "right", fb: `In train.csv, ${K.masvnr_none} houses have the value None for MasVnrType (no masonry veneer). Recent versions of pandas, the Python library that AI tools usually use for data, read the word None as missing by default, which is how MasVnrType reached ${K.masvnr_pct_pd}% &ldquo;missing&rdquo;; read with NA as the only missing code (as R does), it has ${K.masvnr_na_R} missing values. This is the inconsistent-definitions problem from the book&rsquo;s list ${book("§6.8.2", "319")}.` },
+    { t: "Fill the missing values with the most common category instead.", k: "wrong", fb: `For PoolQC, &ldquo;missing&rdquo; means &ldquo;no pool&rdquo; for ${num(K.pool_na)} houses, so filling in the most common pool quality would give a pool to houses that have none.` }] }];
+DQ.forEach(d => quiz($("#dq"), d));
+
+/* ---------- step 6 ---------- */
+promptBox($("#prompt"), () => `I am competing in the Kaggle House Prices competition, which scores submissions by the RMSE of the log sale prices. Here is everything I did to produce my current submission:
+
+[Paste your code, or describe every step in order, including anything the AI tool did for you.]
+
+1. For every column in my model, tell me whether it could be computed for a house whose sale price is not yet known. Flag anything that is built from SalePrice.
+2. Run a 5-fold cross-validation on train.csv and compare the cross-validated RMSE of the log prices with my training RMSE. Does the gap suggest overfitting?
+3. Which of my predictors could I remove without making the cross-validated score worse?
+4. List every data decision in my pipeline (missing values, outliers, encoding, transformations), and for each column involved, say what a missing value means in this data set.
+
+Please do not change my model; only report.`);
+
+initSteps();
+
+</script>
+</body>
+</html>

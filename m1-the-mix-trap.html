@@ -1,0 +1,642 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Module 1 Decision Lab: comparing groups fairly (Chapter 2).">
+<title>The Mix Trap · QMB 6358 Decision Lab</title>
+<style>
+/* Decision Labs: shared styles. Single reading column; step pills on top; each step is a card. */
+:root{
+  --bg:#f4f6f5; --card:#ffffff; --ink:#1d2b30; --muted:#5a6b72; --line:#d6dedb; --soft:#eef3f1;
+  --accent:#0e4d6c; --accent-ink:#ffffff; --accent-soft:#e3eef3;
+  --good:#24723a; --good-soft:#e5f2e8; --warn:#8a5a00; --warn-soft:#fbf0d9; --bad:#a63a2a; --bad-soft:#f8e4e0;
+  --book:#7d6210; --book-soft:#f8f1dc;
+  --c1:#0e4d6c; --c2:#3f8fbf; --c3:#d0862b; --c4:#8c5aa8; --c5:#5d8f3c; --hi:#c2410c;
+  --on-c1:#ffffff; --on-c2:#0b1f29; --on-c3:#24160a; --on-c4:#ffffff;
+  --grid:#e3e8e6;
+  --sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#0f1517; --card:#162024; --ink:#e3ebe8; --muted:#9fb0b3; --line:#2b3a3f; --soft:#1c282c;
+  --accent:#6cb6d8; --accent-ink:#0f1517; --accent-soft:#183342;
+  --good:#6fcf8a; --good-soft:#173322; --warn:#e7b65a; --warn-soft:#33280f; --bad:#f08a78; --bad-soft:#3a1d18;
+  --book:#dcbf6a; --book-soft:#2e2814;
+  --c1:#6cb6d8; --c2:#9ad0ee; --c3:#e8a85a; --c4:#c39ae0; --c5:#93c76e; --hi:#fb8c4a; --grid:#24323a; --on-c1:#0f1517; --on-c2:#0f1517; --on-c3:#0f1517; --on-c4:#0f1517; color-scheme:dark; } }
+:root[data-theme="dark"]{
+  --bg:#0f1517; --card:#162024; --ink:#e3ebe8; --muted:#9fb0b3; --line:#2b3a3f; --soft:#1c282c;
+  --accent:#6cb6d8; --accent-ink:#0f1517; --accent-soft:#183342;
+  --good:#6fcf8a; --good-soft:#173322; --warn:#e7b65a; --warn-soft:#33280f; --bad:#f08a78; --bad-soft:#3a1d18;
+  --book:#dcbf6a; --book-soft:#2e2814;
+  --c1:#6cb6d8; --c2:#9ad0ee; --c3:#e8a85a; --c4:#c39ae0; --c5:#93c76e; --hi:#fb8c4a; --grid:#24323a; --on-c1:#0f1517; --on-c2:#0f1517; --on-c3:#0f1517; --on-c4:#0f1517; color-scheme:dark; }
+
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0; background:var(--bg); color:var(--ink); font:16px/1.55 var(--sans);}
+.wrap{max-width:880px; margin:0 auto; padding:20px max(16px, env(safe-area-inset-right)) 56px max(16px, env(safe-area-inset-left));}
+h1,h2,h3{line-height:1.25; margin:0; text-wrap:balance}
+h1{font-size:clamp(26px, 5vw, 34px); letter-spacing:-0.01em}
+h2{font-size:21px}
+h3{font-size:16px}
+p{margin:0}
+a{color:var(--accent)}
+.eyebrow{font-size:12px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); font-weight:600}
+.lede{color:var(--muted); max-width:62ch}
+.meta{font-size:13px; color:var(--muted)}
+header.lab{display:grid; gap:8px; margin-bottom:16px}
+.num{font-variant-numeric:tabular-nums}
+.mono{font-family:var(--mono)}
+
+/* step pills */
+nav.steps{position:sticky; top:0; z-index:5; background:var(--bg); padding:8px 0 10px; display:flex; gap:6px; overflow-x:auto; scrollbar-width:none; border-bottom:1px solid var(--line); margin-bottom:16px}
+nav.steps::-webkit-scrollbar{display:none}
+.pill{flex:0 0 auto; font:inherit; font-size:14px; border:1px solid var(--line); background:var(--card); color:var(--ink); border-radius:999px; padding:6px 12px; cursor:pointer; white-space:nowrap}
+.pill .n{display:inline-block; min-width:1.4em; font-weight:700; color:var(--muted)}
+.pill[aria-current="step"]{background:var(--accent); border-color:var(--accent); color:var(--accent-ink)}
+.pill[aria-current="step"] .n{color:var(--accent-ink)}
+.pill.done:not([aria-current="step"]) .n{color:var(--good)}
+
+/* step cards */
+section.step{display:none; background:var(--card); border:1px solid var(--line); border-radius:12px; padding:20px; gap:16px}
+section.step.on{display:grid}
+.step > h2 .k{color:var(--muted); font-weight:600; margin-right:6px}
+.row{display:flex; gap:10px; flex-wrap:wrap; align-items:center}
+.spread{justify-content:space-between}
+.grid2{display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:14px}
+@media (max-width:680px){ .grid2{grid-template-columns:1fr} section.step{padding:16px} }
+.panel{background:var(--soft); border-radius:10px; padding:14px; display:grid; gap:10px; min-width:0}
+.note{font-size:14px; color:var(--muted)}
+.callout{border-left:4px solid var(--accent); background:var(--accent-soft); padding:10px 14px; border-radius:0 8px 8px 0; font-size:15px}
+.big{font-size:28px; font-weight:700; font-variant-numeric:tabular-nums; line-height:1.1}
+.stat{display:grid; gap:2px}
+.stat .lab{font-size:12px; color:var(--muted); text-transform:uppercase; letter-spacing:.06em}
+.stats{display:grid; grid-template-columns:repeat(auto-fit, minmax(130px,1fr)); gap:10px}
+
+/* book chip */
+.book{display:inline-flex; align-items:center; gap:4px; font-size:12px; font-weight:600; color:var(--book); background:var(--book-soft); border-radius:999px; padding:2px 9px; white-space:nowrap; vertical-align:1px}
+.book::before{content:""; width:10px; height:8px; border:1.5px solid currentColor; border-radius:1px 1px 2px 2px; border-top-width:1.5px; display:inline-block}
+
+/* buttons and controls */
+button{font:inherit}
+.btn{border:1px solid var(--accent); background:var(--accent); color:var(--accent-ink); border-radius:8px; padding:8px 14px; cursor:pointer; font-weight:600}
+.btn.ghost{background:transparent; color:var(--accent)}
+.btn:disabled{opacity:.5; cursor:default}
+.btn:focus-visible,.pill:focus-visible,.opt:focus-visible,.seg button:focus-visible,input:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+.seg{display:inline-flex; flex-wrap:nowrap; border:1px solid var(--line); border-radius:8px; overflow:hidden; background:var(--card); max-width:100%}
+.rate{display:grid}
+.rate-row{display:grid; grid-template-columns:1fr auto; gap:8px 14px; align-items:center; padding:10px 0; border-bottom:1px solid var(--line)}
+.rate-row:last-child{border-bottom:0}
+@media (max-width:520px){ .rate-row{grid-template-columns:1fr} }
+.seg button{border:0; border-right:1px solid var(--line); background:transparent; color:var(--ink); padding:6px 10px; cursor:pointer; font-size:14px}
+.seg button:last-child{border-right:0}
+.seg button[aria-pressed="true"]{background:var(--accent); color:var(--accent-ink)}
+.ctl{display:grid; gap:4px; min-width:0}
+.ctl > .seg{justify-self:start}
+.ctl label,.ctl .lab{font-size:13px; color:var(--muted); font-weight:600}
+input[type=range]{width:100%; accent-color:var(--accent)}
+.check{display:flex; align-items:center; gap:8px; font-size:15px; padding:4px 0; cursor:pointer}
+.check input{width:18px; height:18px; accent-color:var(--accent)}
+
+/* multiple-choice with instant feedback */
+.quiz{display:grid; gap:10px; border:1px solid var(--line); border-radius:10px; padding:14px}
+.quiz .q{font-weight:600}
+.opts{display:grid; gap:8px}
+.opt{text-align:left; border:1px solid var(--line); background:var(--card); color:var(--ink); border-radius:8px; padding:10px 12px; cursor:pointer; display:flex; gap:10px; align-items:flex-start}
+.opt .mk{flex:0 0 22px; height:22px; border-radius:50%; border:1.5px solid var(--line); display:grid; place-items:center; font-size:13px; font-weight:700; color:var(--muted)}
+.opt:hover{border-color:var(--accent)}
+.opt.picked.right{border-color:var(--good); background:var(--good-soft)}
+.opt.picked.right .mk{border-color:var(--good); background:var(--good); color:var(--card)}
+.opt.picked.wrong{border-color:var(--warn); background:var(--warn-soft)}
+.opt.picked.wrong .mk{border-color:var(--warn); background:var(--warn); color:var(--card)}
+.opt.picked.ok{border-color:var(--accent); background:var(--accent-soft)}
+.opt.picked.ok .mk{border-color:var(--accent); background:var(--accent); color:var(--card)}
+.fb{border-radius:8px; padding:10px 12px; font-size:15px; display:none}
+.fb.show{display:block}
+.fb.right{background:var(--good-soft)}
+.fb.wrong{background:var(--warn-soft)}
+.fb.ok{background:var(--accent-soft)}
+.fb b{display:block; margin-bottom:2px}
+
+/* tables */
+.tbl{overflow-x:auto}
+table{border-collapse:collapse; width:100%; font-size:14px}
+th,td{padding:6px 8px; border-bottom:1px solid var(--line); text-align:left; vertical-align:top}
+th{font-size:12px; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); font-weight:600}
+td.r,th.r{text-align:right; font-variant-numeric:tabular-nums}
+td.r{white-space:nowrap}
+
+/* charts */
+svg.chart{width:100%; height:auto; display:block; overflow:visible}
+svg.chart text{fill:var(--muted); font:12px var(--sans)}
+svg.chart text.ink{fill:var(--ink)}
+svg.chart text.strong{fill:var(--ink); font-weight:700}
+svg.chart .grid{stroke:var(--grid); stroke-width:1}
+svg.chart .axis{stroke:var(--line); stroke-width:1}
+.legend{display:flex; flex-wrap:wrap; gap:6px 14px; font-size:13px; color:var(--muted)}
+.legend span{display:inline-flex; align-items:center; gap:6px}
+.legend i{width:12px; height:12px; border-radius:3px; display:inline-block}
+
+/* risk lights */
+.lights{display:grid; grid-template-columns:repeat(auto-fit, minmax(190px,1fr)); gap:8px}
+.light{display:grid; grid-template-columns:auto 1fr; gap:2px 10px; align-items:start; border:1px solid var(--line); border-radius:8px; padding:8px 10px; font-size:14px}
+.light .dot{width:14px; height:14px; border-radius:50%; background:var(--line); margin-top:3px; grid-row:span 2}
+.light.on{border-color:var(--warn); background:var(--warn-soft)}
+.light.on .dot{background:var(--warn); box-shadow:0 0 0 3px color-mix(in srgb, var(--warn) 25%, transparent)}
+.light .t{font-weight:600}
+.light .d{color:var(--muted); font-size:13px}
+
+/* prompt box */
+.prompt{font-family:var(--mono); font-size:13.5px; line-height:1.5; background:var(--soft); border:1px solid var(--line); border-radius:8px; padding:12px; white-space:pre-wrap; word-break:break-word}
+footer{margin-top:28px; font-size:13px; color:var(--muted); display:grid; gap:6px; max-width:70ch}
+.nav-next{display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap; border-top:1px solid var(--line); padding-top:14px}
+.sr{position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0)}
+@media (prefers-reduced-motion: no-preference){ section.step.on{animation:fade .2s ease-out} @keyframes fade{from{opacity:.4; transform:translateY(3px)} to{opacity:1; transform:none}} }
+
+h2:focus{outline:none}
+@media (max-width:520px){ table{font-size:13px} th,td{padding:6px 5px} th{letter-spacing:.02em} }
+
+</style>
+</head>
+<body>
+<noscript><div class="wrap"><p class="callout"><strong>This lab cannot run here.</strong> It needs JavaScript, which this viewer blocks (as Canvas file previews do). Please use the lab link in your Reading Guide, or download this file and open it in your web browser.</p></div></noscript>
+<div class="wrap">
+<header class="lab">
+  <span class="eyebrow">QMB 6358 · Module 1 Decision Lab · after Chapter 2</span>
+  <h1>The Mix Trap</h1>
+  <p class="lede">In this lab, one of the regions looks like the weakest performer. Before anyone acts on that, please follow the chapter's rule for comparing groups and find out what the comparison is really telling you.</p>
+  <p class="meta">This lab takes about 15 minutes and also works on a phone. Nothing is graded or saved.</p>
+</header>
+<nav class="steps" aria-label="Lab steps"></nav>
+
+<section class="step" id="s1" data-title="The gap">
+  <h2><span class="k">1</span>The South looks weakest</h2>
+  <p>We start with 1,000 transactions from the past year, set up in the style of the book's sales case (i.e. five regions and four product categories). The chart shows each region's <strong>median</strong> transaction revenue. Since revenue is right-skewed, a few very large orders would pull the mean up; that is why the median is the better summary of a typical sale <span class="book">§2.5.4 · p.&nbsp;50</span>.</p>
+  <div id="c-gap"></div>
+  <p class="callout" id="gap-callout"></p>
+  <div id="q1"></div>
+</section>
+
+<section class="step" id="s2" data-title="Counts first">
+  <h2><span class="k">2</span>Counts first: exposure and mix</h2>
+  <p>The chapter warns that a comparison of groups can hide two things: the <strong>exposure</strong> (i.e. how many observations each group contributes) and the <strong>mix</strong> (i.e. what the group is selling) <span class="book">§2.6.1 · p.&nbsp;53</span>.</p>
+  <div class="grid2">
+    <div class="panel"><h3>Exposure: transactions per region</h3><div id="c-counts"></div><p class="note" id="counts-note"></p></div>
+    <div class="panel"><div class="row spread"><h3>Mix: what each region sells</h3><div id="mix-toggle"></div></div><div id="c-mix"></div><div class="legend" id="mix-legend"></div></div>
+  </div>
+  <div class="panel"><h3>A typical sale in each product, and who sells it</h3><div class="tbl" id="t-prod"></div><p class="note">This cross-tab follows the idea in <span class="book">§2.6.2 · p.&nbsp;54</span>, i.e. before comparing groups, please check whether two categories travel together.</p></div>
+  <div id="q2"></div>
+</section>
+
+<section class="step" id="s3" data-title="Like with like">
+  <h2><span class="k">3</span>Compare like with like</h2>
+  <p>Next, please compare the regions <em>within</em> each product. Each row is one product, and each dot is one region's median sale for that product. This is the logic of a conditioning plot, which the book calls the power of &ldquo;show me by region/segment/operator&rdquo; <span class="book">§2.7.6 · p.&nbsp;65</span>.</p>
+  <div id="c-within"></div>
+  <div class="legend"><span><i style="background:var(--hi)"></i>South</span><span><i style="background:var(--c1)"></i>Other regions</span></div>
+  <div id="q3"></div>
+</section>
+
+<section class="step" id="s4" data-title="Change the mix">
+  <h2><span class="k">4</span>What if South sold the company-wide mix?</h2>
+  <div id="q4"></div>
+  <div class="panel">
+    <div class="ctl"><label for="mixslider">South's product mix: <span id="mix-label">actual</span></label>
+      <input id="mixslider" type="range" min="0" max="100" step="1" value="0" aria-describedby="mixhelp"></div>
+    <div class="row" id="mix-presets"></div>
+    <p class="note" id="mixhelp">The slider re-weights South's own 193 sales toward the company-wide product mix, without changing any single sale. Since a median moves in steps, the number will jump rather than slide.</p>
+  </div>
+  <div class="grid2">
+    <div class="panel"><h3>Median sale by region</h3><div id="c-sim"></div></div>
+    <div class="panel"><h3>South's product mix</h3><div id="c-southmix"></div><div class="stats"><div class="stat"><span class="lab">South median</span><span class="big" id="south-med"></span></div><div class="stat"><span class="lab">Gap to the other regions</span><span class="big" id="south-rank"></span></div></div></div>
+  </div>
+  <p class="callout">How South sells did not change, only <em>which products</em> its sales come from - and that is what we mean by "mix".</p>
+</section>
+
+<section class="step" id="s5" data-title="Pattern → Action">
+  <h2><span class="k">5</span>From pattern to action</h2>
+  <p>The chapter connects data exploration and decisions with a chain of three steps: the <strong>pattern</strong> (i.e. what you see in the data), the <strong>insight</strong> (i.e. what it means in business terms) and the <strong>action</strong> (i.e. what you will do differently, and what you will monitor) <span class="book">§2.9.1 · p.&nbsp;73</span>.</p>
+  <div class="callout" id="pattern"></div>
+  <div id="q5a"></div>
+  <div id="q5b"></div>
+  <div class="panel">
+    <h3>How much does this finding matter?</h3>
+    <p class="note">Please rate it on the four criteria in <span class="book">§2.9.2 · p.&nbsp;74</span> and then compare with the book.</p>
+    <div id="rate" class="rate"></div>
+    <div class="row"><button class="btn ghost" type="button" id="rate-show">Compare with the book's view</button></div>
+    <div class="fb ok" id="rate-fb" aria-live="polite"></div>
+  </div>
+</section>
+
+<section class="step" id="s6" data-title="Ask your AI">
+  <h2><span class="k">6</span>Optional: test your AI tool</h2>
+  <p>If you like, please paste the following prompt into your AI tool. It uses the numbers from this lab and follows the request templates in <span class="book">§2.11.4 · p.&nbsp;86</span>.</p>
+  <div id="prompt"></div>
+  <div class="panel">
+    <h3>Then check the answer</h3>
+    <ul style="margin:0; padding-left:20px; display:grid; gap:6px">
+      <li>Recompute the AI's made-up example: does it really show a region that looks worse overall, but not within each product?</li>
+      <li>Does it avoid blaming the South team, given that South sells as well as everyone else within each product?</li>
+      <li>Does it ask <em>why</em> South's mix differs (e.g. assortment, local demand or pricing) before anyone moves budget?</li>
+    </ul>
+  </div>
+</section>
+
+<footer>
+  <p>This lab is based on Chapter 2 of <em>Business Analytics in the Age of AI: A New Paradigm for Executives</em> (Jank, 2026). The 1,000 transactions are synthetic; they match the region counts and the median revenue in Table 2.9 (p.&nbsp;58), while the product-mix pattern was built specifically for this lab.</p>
+  <p>It is part of QMB 6358; nothing you do here is recorded.</p>
+</footer>
+</div>
+
+<script>
+const DATA = {"regions":["North","South","East","West","Central"],"products":["Electronics","Home","Sports","Beauty"],"r":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4],"p":[1,1,2,1,1,1,1,3,1,1,1,2,1,3,0,1,2,3,2,1,2,3,3,2,1,2,2,3,2,2,1,1,3,1,0,3,2,2,2,0,2,3,1,1,1,2,1,0,2,3,0,1,1,1,0,1,2,0,0,2,2,0,0,0,0,1,1,2,0,1,3,1,2,0,2,3,3,3,3,0,2,1,1,2,1,3,1,2,1,2,3,1,1,3,0,2,1,2,3,3,1,1,2,1,1,0,2,0,0,1,1,2,0,0,1,3,3,1,0,1,0,3,3,3,0,0,1,0,2,0,0,0,2,3,0,1,0,1,2,3,0,3,1,0,3,3,1,1,0,1,0,3,2,1,3,2,0,2,3,1,1,0,1,3,3,3,2,2,1,2,1,1,1,2,3,1,1,0,1,0,2,2,2,1,1,3,2,1,2,1,1,0,1,2,2,1,1,0,0,0,2,0,1,1,0,3,0,2,0,0,1,0,1,2,1,2,3,3,3,3,2,2,3,1,0,2,0,0,1,1,0,1,2,3,3,1,2,0,0,1,3,0,2,1,3,3,2,3,3,1,1,3,3,3,3,3,3,2,2,3,3,2,2,2,2,0,1,3,0,3,2,3,3,1,2,3,3,2,3,1,3,2,2,3,0,1,2,2,1,3,0,1,1,3,1,1,2,0,3,1,1,0,1,3,2,2,2,3,2,3,3,1,3,3,2,3,3,3,1,1,2,1,3,1,3,3,3,1,3,3,3,0,3,0,2,2,0,3,1,3,1,3,3,1,1,0,0,2,3,1,0,3,2,3,2,0,2,2,3,1,1,3,2,1,1,1,1,2,3,2,3,1,1,1,1,0,1,3,3,0,3,0,1,3,3,0,3,2,2,2,3,0,1,1,2,1,2,2,3,0,3,3,2,3,1,2,0,0,0,3,3,3,3,1,1,3,1,1,3,2,2,0,2,1,3,2,2,3,3,2,0,3,0,2,2,0,1,3,3,0,1,1,1,3,1,2,1,3,1,3,2,0,0,2,1,2,1,1,2,1,1,0,2,0,2,0,3,2,0,1,3,1,2,1,0,1,0,1,3,0,2,1,2,2,0,1,1,0,3,0,0,0,1,0,0,1,1,1,1,0,0,2,3,3,0,1,2,0,1,0,2,1,3,3,0,3,2,2,3,0,3,2,1,3,1,1,3,0,1,2,1,2,2,3,2,3,2,0,1,0,3,2,2,2,3,0,2,0,1,2,1,1,2,3,2,0,1,3,0,1,2,0,0,2,0,1,3,3,1,0,1,1,1,3,1,2,1,1,1,2,0,0,0,3,0,3,0,0,2,3,2,0,3,1,3,0,1,3,1,0,2,2,0,3,1,0,3,2,0,0,3,1,0,0,0,2,2,3,1,2,3,1,1,2,1,0,0,1,0,1,1,1,0,3,2,0,3,3,0,2,2,3,2,3,1,1,0,0,0,1,0,2,0,1,2,0,0,0,2,2,1,0,2,1,1,1,1,1,1,2,2,3,2,0,0,3,2,1,3,2,3,0,1,0,3,2,3,1,3,3,0,2,1,3,2,2,2,2,1,2,2,3,0,0,2,1,0,1,2,0,1,2,0,2,0,3,3,1,0,0,3,0,1,3,3,0,2,0,2,1,3,3,3,2,2,3,1,2,0,1,0,0,1,2,2,1,0,3,2,3,0,3,2,2,0,1,2,2,1,3,3,3,3,2,1,1,0,0,2,3,2,3,0,3,0,3,0,2,1,3,0,2,2,3,1,3,2,1,0,2,2,0,3,1,0,0,1,1,0,2,1,3,1,3,3,3,2,2,2,1,1,2,2,2,2,1,1,2,0,2,0,1,1,1,2,1,1,2,1,1,1,2,2,2,2,2,1,1,3,0,1,2,3,3,0,1,0,1,3,0,2,2,2,3,1,2,0,3,2,3,0,1,2,1,0,1,0,3,1,1,1,3,1,3,0,0,2,3,1,0,0,2,2,3,3,2,2,0,3,3,2,1,1,3,3,2,3,2,1,2,2,3,1,1,0,3,1,1,1,1,1,3,0,0,1,1,2,1,1,2,0,0,2,1,0,2,3,0,1,3,1,1,1,1,0,2,2,0,0,3,2,2,1,1,1,1,1,3,3,0,2,3,0,1,2,2,0,3,0,2,1,2,0,3,3,1,2,1,2,0,2,1,2,1,2,1,0,2,3,3,2,3,0,3,2,3,2,3,0,1,0,2,3,1,3,1,0,2,1,2],"v":[1490.34,40.49,556.62,161.08,96.63,326.15,712.25,120.45,900.09,1243.16,156.27,76.1,483.4,187.29,83.39,261.5,252.07,527.21,2142.11,446.78,1525.38,210.45,144.17,239.22,4266.49,204.48,114.1,743.52,1046.99,377.64,1637.53,340.28,85.44,494.8,749.91,297.89,1213.49,552.89,195.44,584.64,179.96,64.52,1384.47,1379.54,902.37,124.86,129.29,1891.25,261.57,1187.02,358.97,1373.73,302.66,420.46,756.16,335.38,308.95,514.01,238.65,266.08,376.25,1743.79,382.07,796.35,1498.97,667.4,341.89,347.78,172.38,436.69,452.59,983.66,612.76,1979.99,882.59,180.33,231.23,179.24,328.22,379.26,1128.34,1194.37,150.08,1152.53,312.67,638.06,545.22,83.05,1778.14,569.52,204.2,751.88,1726.6,160.47,258.68,734.35,485.35,560.17,344.37,456.65,1263.35,322.11,280.2,198.98,137.69,791.66,354.93,1275.21,361.99,1435.7,2652.14,1315.2,511.32,376.88,218.43,488.11,131.77,317.01,349.66,1990.59,1293.86,279.43,152.54,90.64,85.84,309.31,748.71,853.66,444.13,232.09,2565.55,636.76,159.35,640.05,1469.55,212.88,215.38,1131.76,103.6,181.51,1125.0,431.27,524.2,515.57,153.3,143.24,715.57,1929.82,1891.6,1944.51,643.92,90.66,861.26,509.8,371.28,673.49,2809.28,388.73,284.96,502.21,72.34,862.65,366.85,170.77,157.99,417.69,414.66,448.93,991.89,36.65,494.61,240.32,1637.02,1292.14,200.57,173.72,853.69,654.65,565.5,1136.28,261.05,2309.13,113.16,161.72,791.9,133.48,618.45,1343.97,388.55,528.26,1161.96,585.38,538.09,462.82,550.3,768.27,1515.04,396.43,524.82,297.26,522.15,419.86,189.97,679.17,353.46,424.41,336.25,4466.57,2370.4,784.41,1590.41,1806.86,885.63,207.6,966.09,461.07,85.86,414.79,27.52,218.27,160.09,315.9,357.29,398.22,1510.61,286.63,768.41,200.22,821.82,686.21,1538.03,586.95,951.1,142.05,1277.57,1272.92,318.01,454.15,820.37,1982.67,855.78,639.93,647.4,512.79,434.43,400.85,123.94,439.72,71.17,483.74,289.85,159.41,219.92,378.29,552.34,118.47,238.49,1581.47,343.25,713.88,440.95,382.02,274.46,230.26,120.32,608.61,324.01,171.37,753.97,71.82,131.77,93.79,50.87,514.73,699.51,78.78,145.08,467.78,491.11,563.23,49.07,465.09,706.85,29.3,690.27,464.61,567.73,1315.2,150.29,251.17,1451.88,289.18,509.06,222.31,746.17,550.4,75.19,1902.62,237.48,192.89,178.08,195.35,1312.58,127.94,1268.61,337.75,484.28,338.5,573.7,427.98,163.73,267.56,461.2,75.32,713.93,1400.24,93.53,176.6,1340.75,589.57,324.54,268.75,499.99,1174.81,235.19,212.43,142.65,1988.0,372.69,279.11,147.84,5034.31,73.85,241.62,77.97,208.83,196.88,46.89,706.37,213.79,574.44,795.69,250.7,1046.76,1264.97,1111.87,2523.44,528.34,460.65,499.85,1002.89,287.43,294.7,189.45,2678.74,248.27,52.39,351.76,326.1,329.55,263.67,22.98,127.35,154.7,514.11,263.36,109.44,347.82,137.89,206.63,257.17,1620.76,1403.65,335.49,32.33,391.26,733.07,426.17,166.57,550.1,139.21,665.79,849.98,175.53,52.13,2641.01,264.48,455.98,96.65,222.87,250.25,606.11,194.44,660.69,2902.91,202.5,255.95,1302.22,314.38,1016.24,525.97,376.83,392.99,133.27,1254.79,172.87,467.16,1018.38,311.35,892.47,455.96,104.1,1148.95,175.6,1295.07,157.12,616.83,196.37,525.55,561.12,115.27,1713.44,725.57,484.75,203.25,137.18,399.21,48.13,123.91,99.19,1213.89,55.97,137.69,27.03,400.95,255.79,549.36,147.84,313.37,488.88,228.07,668.16,253.39,110.4,258.23,171.91,285.18,108.16,2100.77,482.64,577.14,514.8,4389.03,572.83,213.98,1125.81,303.25,838.41,243.63,182.48,443.97,964.9,202.03,282.73,276.38,688.15,252.5,177.71,206.44,432.04,91.28,1169.39,72.58,4295.62,834.12,399.9,589.35,166.54,158.38,771.11,156.78,446.25,461.19,181.49,132.55,632.69,241.9,675.69,45.58,632.82,608.07,625.03,510.91,568.78,717.33,310.1,356.4,207.67,469.55,828.5,329.55,1798.38,232.01,332.16,2543.56,755.04,709.49,508.65,256.89,380.63,209.76,493.91,230.18,785.79,738.7,781.35,286.44,253.07,110.15,543.68,241.85,269.09,439.5,116.83,361.13,182.62,31.17,520.37,272.06,291.07,1183.99,3380.03,619.48,30.55,448.37,440.42,278.15,1627.14,924.03,566.86,170.72,121.28,291.3,1770.75,255.0,1792.81,408.76,283.99,1052.37,59.25,148.48,121.09,1695.01,38.75,442.5,824.47,506.79,734.86,630.26,66.05,965.11,648.31,1099.49,169.29,607.76,260.9,353.96,408.97,694.96,918.39,587.12,1131.13,595.72,76.89,111.71,210.65,316.9,496.49,300.07,1246.03,316.41,829.49,618.99,741.54,2500.88,609.94,717.95,681.88,188.32,253.96,202.41,263.59,606.21,65.78,695.94,538.56,71.56,491.43,3147.35,944.48,54.21,1480.51,544.9,242.96,337.42,1318.48,182.22,147.92,824.38,813.18,688.72,224.54,1998.96,167.54,295.79,68.27,180.91,473.1,471.95,457.81,54.27,5672.2,1178.05,93.78,256.16,300.94,865.06,804.65,801.8,449.2,475.09,488.63,803.67,803.35,362.37,705.59,387.14,66.97,361.07,423.91,197.3,832.23,422.81,314.22,217.23,112.06,350.72,454.1,219.82,398.53,1354.12,455.37,976.24,791.02,365.93,562.49,505.07,2422.88,174.39,96.23,1394.38,336.72,932.53,227.89,758.88,201.98,1080.35,298.46,395.23,730.53,451.7,165.03,197.73,359.72,656.65,67.8,289.63,537.35,286.3,148.43,180.88,814.5,964.12,299.48,323.08,332.27,309.38,820.51,40.62,113.72,2211.04,1070.75,1925.89,450.93,100.64,632.11,410.19,723.5,1370.92,103.05,446.12,79.43,3295.36,1423.19,150.69,175.8,762.29,823.13,519.63,255.28,189.2,692.1,93.58,2746.15,2304.54,229.32,89.14,350.96,4036.79,707.59,67.29,424.32,342.09,88.9,558.9,1081.1,668.16,1894.43,613.48,136.43,204.84,586.63,137.58,209.99,354.34,63.99,1297.45,394.58,1342.84,695.09,106.87,995.68,796.99,538.55,2006.62,512.68,1775.06,61.76,895.57,306.09,1002.0,364.89,136.43,193.9,790.67,427.08,584.44,570.86,706.71,41.97,225.78,408.09,43.89,308.76,303.51,205.58,345.04,187.72,68.99,69.5,348.66,424.42,365.88,258.21,1002.12,1222.63,578.34,289.24,545.65,80.28,368.38,537.57,540.74,189.98,443.57,39.9,448.28,1283.8,2220.71,194.02,427.83,2030.4,374.97,313.11,698.35,1044.87,1022.24,719.96,312.52,297.36,463.9,102.23,3758.12,249.52,496.59,279.72,584.15,1541.7,433.87,289.8,228.28,708.51,90.17,831.55,378.32,516.33,2621.43,433.44,490.17,334.0,308.61,782.29,53.35,787.92,208.13,1930.09,688.93,265.29,131.3,271.83,188.74,169.36,265.94,1368.17,714.68,457.61,500.53,780.76,96.87,1867.17,988.32,740.07,380.12,313.96,232.43,94.03,2515.08,166.61,110.04,191.01,203.67,345.3,96.81,218.22,51.43,580.13,821.33,554.69,154.45,284.38,427.71,124.61,894.34,603.0,284.72,306.5,1313.68,257.44,637.8,2258.22,352.38,175.14,575.4,288.06,1861.26,469.44,1147.54,89.63,407.93,1767.22,294.99,580.1,1161.04,56.69,137.53,1390.2,882.35,827.12,156.85,638.23,409.85,730.02,346.38,57.87,201.84,213.3,362.39,230.72,260.74,642.59,2083.74,525.07,785.59,224.5,1008.06,99.01,590.57,2547.58,420.17,2606.31,239.19,189.4,1228.23,532.07,1406.62,543.99,294.18,1383.91,191.36,100.02,1178.54,548.33,1661.82,1706.35,515.43,314.63,350.24,1005.21,510.48,226.24,939.82,250.74,149.07,712.45,670.39,651.43,938.78,407.02,1271.59,95.22,1023.08,292.96,279.38,921.3,181.42,1614.18,297.05,1174.03,466.96,673.25,431.85,150.8,240.25,731.79,713.88,285.72,793.45,270.05,1155.54,505.95,261.57,287.5,278.27,69.26,49.79,1185.85,77.02,275.96,400.94,646.65,198.69,617.65,72.06,1733.69,571.22,281.03,1567.73,259.07,426.67,443.47,631.05,325.51,444.5,150.13,97.88,247.02,303.96,149.89,650.82,207.62,1531.86,84.95,535.9,891.94,238.79,277.95,404.26,169.9,1187.15,61.16]};
+/* Decision Labs: shared helpers (no dependencies). */
+"use strict";
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+const SVGNS = "http://www.w3.org/2000/svg";
+
+function h(tag, attrs, ...kids) {
+  const e = document.createElement(tag);
+  setAttrs(e, attrs);
+  kids.flat().forEach(k => { if (k != null && k !== false) e.append(k.nodeType ? k : document.createTextNode(String(k))); });
+  return e;
+}
+function sv(tag, attrs, ...kids) {
+  const e = document.createElementNS(SVGNS, tag);
+  setAttrs(e, attrs);
+  kids.flat().forEach(k => { if (k != null && k !== false) e.append(k.nodeType ? k : document.createTextNode(String(k))); });
+  return e;
+}
+function setAttrs(e, attrs) {
+  for (const [k, v] of Object.entries(attrs || {})) {
+    if (v == null || v === false) continue;
+    if (k === "html") e.innerHTML = v;
+    else if (k.startsWith("on")) e.addEventListener(k.slice(2), v);
+    else if (k === "style" && typeof v === "object") Object.assign(e.style, v);
+    else e.setAttribute(k, v === true ? "" : v);
+  }
+}
+
+/* ---------- formatting ---------- */
+const money = (x, d = 0) => (x < 0 ? "−$" : "$") + Math.abs(x).toLocaleString("en-US", { minimumFractionDigits: d, maximumFractionDigits: d });
+const kmoney = x => x === 0 ? "$0" : (x < 0 ? "−$" : "$") + (Math.abs(x) >= 1e6 ? (Math.abs(x) / 1e6).toFixed(2) + "M" : Math.round(Math.abs(x) / 1000).toLocaleString("en-US") + "k");
+const pct = (x, d = 1) => (100 * x).toFixed(d) + "%";
+const num = (x, d = 0) => x.toLocaleString("en-US", { minimumFractionDigits: d, maximumFractionDigits: d });
+const signed = (s) => s.replace(/^-/, "−");
+
+/* ---------- random numbers and statistics ---------- */
+function randn() { let u = 0, v = 0; while (u === 0) u = Math.random(); while (v === 0) v = Math.random(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); }
+function erf(x) { // Numerical Recipes erfc approximation (fractional error < 1.2e-7)
+  const t = 1 / (1 + 0.5 * Math.abs(x));
+  const y = 1 - t * Math.exp(-x * x - 1.26551223 + t * (1.00002368 + t * (0.37409196 + t * (0.09678418 + t * (-0.18628806 + t * (0.27886807 + t * (-1.13520398 + t * (1.48851587 + t * (-0.82215223 + t * 0.17087277)))))))));
+  return x >= 0 ? y : -y;
+}
+const normCdf = z => 0.5 * (1 + erf(z / Math.SQRT2));
+function normInv(p) { // Acklam
+  const a = [-3.969683028665376e+01, 2.209460984245205e+02, -2.759285104469687e+02, 1.383577518672690e+02, -3.066479806614716e+01, 2.506628277459239e+00];
+  const b = [-5.447609879822406e+01, 1.615858368580409e+02, -1.556989798598866e+02, 6.680131188771972e+01, -1.328068155288572e+01];
+  const c = [-7.784894002430293e-03, -3.223964580411365e-01, -2.400758277161838e+00, -2.549732539343734e+00, 4.374614347350924e+00, 2.938163982698783e+00];
+  const d = [7.784695709041462e-03, 3.224671290700398e-01, 2.445134137142996e+00, 3.754408661907416e+00];
+  const pl = 0.02425, ph = 1 - pl; let q, r;
+  if (p < pl) { q = Math.sqrt(-2 * Math.log(p)); return (((((c[0] * q + c[1]) * q + c[2]) * q + c[3]) * q + c[4]) * q + c[5]) / ((((d[0] * q + d[1]) * q + d[2]) * q + d[3]) * q + 1); }
+  if (p > ph) { q = Math.sqrt(-2 * Math.log(1 - p)); return -(((((c[0] * q + c[1]) * q + c[2]) * q + c[3]) * q + c[4]) * q + c[5]) / ((((d[0] * q + d[1]) * q + d[2]) * q + d[3]) * q + 1); }
+  q = p - 0.5; r = q * q;
+  return (((((a[0] * r + a[1]) * r + a[2]) * r + a[3]) * r + a[4]) * r + a[5]) * q / (((((b[0] * r + b[1]) * r + b[2]) * r + b[3]) * r + b[4]) * r + 1);
+}
+function tInv(p, df) { // Cornish-Fisher expansion; accurate to ~1e-3 for df >= 5
+  const z = normInv(p), z2 = z * z;
+  return z + (z2 * z + z) / (4 * df) + (5 * z2 * z2 * z + 16 * z2 * z + 3 * z) / (96 * df * df)
+    + (3 * z2 * z2 * z2 * z + 19 * z2 * z2 * z + 17 * z2 * z - 15 * z) / (384 * df * df * df);
+}
+const sum = a => a.reduce((s, x) => s + x, 0);
+const mean = a => sum(a) / a.length;
+function sd(a) { const m = mean(a); return Math.sqrt(sum(a.map(x => (x - m) ** 2)) / (a.length - 1)); }
+function median(a) { const s = [...a].sort((x, y) => x - y), n = s.length; return n % 2 ? s[(n - 1) / 2] : (s[n / 2 - 1] + s[n / 2]) / 2; }
+function wmedian(v, w) { // weighted median (lower median)
+  const idx = v.map((_, i) => i).sort((i, j) => v[i] - v[j]); const tot = sum(w); let c = 0;
+  for (const i of idx) { c += w[i]; if (c >= tot / 2) return v[i]; }
+  return v[idx[idx.length - 1]];
+}
+
+/* ---------- small linear algebra (OLS) ---------- */
+function invert(A) { // Gauss-Jordan; A is square array of arrays
+  const n = A.length, M = A.map((r, i) => [...r, ...Array.from({ length: n }, (_, j) => (i === j ? 1 : 0))]);
+  for (let c = 0; c < n; c++) {
+    let p = c; for (let r = c + 1; r < n; r++) if (Math.abs(M[r][c]) > Math.abs(M[p][c])) p = r;
+    if (Math.abs(M[p][c]) < 1e-12) return null;
+    [M[c], M[p]] = [M[p], M[c]];
+    const pv = M[c][c]; for (let j = 0; j < 2 * n; j++) M[c][j] /= pv;
+    for (let r = 0; r < n; r++) if (r !== c) { const f = M[r][c]; if (f) for (let j = 0; j < 2 * n; j++) M[r][j] -= f * M[c][j]; }
+  }
+  return M.map(r => r.slice(n));
+}
+function ols(y, cols) { // cols: array of predictor columns (no intercept); returns b (with intercept first), se, r2, adjR2, s, XtXi
+  const n = y.length, k = cols.length + 1;
+  const X = (i, j) => (j === 0 ? 1 : cols[j - 1][i]);
+  const XtX = Array.from({ length: k }, () => new Array(k).fill(0)), Xty = new Array(k).fill(0);
+  for (let i = 0; i < n; i++) for (let a = 0; a < k; a++) { const xa = X(i, a); Xty[a] += xa * y[i]; for (let b = a; b < k; b++) XtX[a][b] += xa * X(i, b); }
+  for (let a = 0; a < k; a++) for (let b = 0; b < a; b++) XtX[a][b] = XtX[b][a];
+  const XtXi = invert(XtX); if (!XtXi) return null;
+  const b = XtXi.map(r => sum(r.map((v, j) => v * Xty[j])));
+  let sse = 0; const ym = mean(y); let sst = 0;
+  for (let i = 0; i < n; i++) { let f = 0; for (let a = 0; a < k; a++) f += b[a] * X(i, a); sse += (y[i] - f) ** 2; sst += (y[i] - ym) ** 2; }
+  const df = n - k, s2 = sse / df;
+  return { b, se: XtXi.map((r, i) => Math.sqrt(s2 * r[i])), r2: 1 - sse / sst, adj: 1 - (sse / df) / (sst / (n - 1)), s: Math.sqrt(s2), df, XtXi, n, k };
+}
+
+/* ---------- steps ---------- */
+const Steps = { list: [], onShow: {}, cur: 0 };
+function initSteps() {
+  const nav = $("nav.steps"); Steps.list = $$("section.step");
+  Steps.list.forEach((sec, i) => {
+    const title = sec.dataset.title;
+    nav.append(h("button", { class: "pill", type: "button", "data-i": i, onclick: () => showStep(i) }, h("span", { class: "n" }, i + 1), " ", title));
+    const foot = h("div", { class: "nav-next" });
+    foot.append(i > 0 ? h("button", { class: "btn ghost", type: "button", onclick: () => showStep(i - 1) }, "← Back") : h("span"));
+    if (i < Steps.list.length - 1) foot.append(h("button", { class: "btn", type: "button", onclick: () => showStep(i + 1) }, "Next: " + Steps.list[i + 1].dataset.title + " →"));
+    else foot.append(h("span", { class: "note" }, "This is the end of the lab; nothing was saved or graded."));
+    sec.append(foot);
+  });
+  showStep(0, true);
+}
+function showStep(i, first) {
+  Steps.list.forEach((s, j) => s.classList.toggle("on", j === i));
+  $$("nav.steps .pill").forEach((p, j) => { p.toggleAttribute("aria-current", j === i); if (j === i) p.setAttribute("aria-current", "step"); if (j < i) p.classList.add("done"); });
+  Steps.cur = i;
+  const pill = $$("nav.steps .pill")[i]; if (pill && pill.scrollIntoView) pill.scrollIntoView({ block: "nearest", inline: "nearest" });
+  if (!first) {
+    const top = $("nav.steps").getBoundingClientRect().top + window.scrollY; if (window.scrollY > top) window.scrollTo({ top, behavior: "smooth" });
+    const hd = $("h2", Steps.list[i]); if (hd) { hd.setAttribute("tabindex", "-1"); hd.focus({ preventScroll: true }); }
+  }
+  (Steps.onShow[Steps.list[i].id] || []).forEach(f => f());
+}
+function whenShown(id, f) { (Steps.onShow[id] = Steps.onShow[id] || []).push(f); }
+
+/* ---------- multiple-choice with instant feedback ---------- */
+function quiz(host, spec) {
+  const box = h("div", { class: "quiz" });
+  box.append(h("p", { class: "q", html: spec.q }));
+  const opts = h("div", { class: "opts", role: "group" });
+  const fb = h("div", { class: "fb", "aria-live": "polite" });
+  const head = { right: spec.rightHead || "Right.", wrong: "Not quite.", ok: "A reasonable choice." };
+  spec.opts.forEach((o, i) => {
+    const b = h("button", { class: "opt", type: "button" }, h("span", { class: "mk" }, String.fromCharCode(65 + i)), h("span", { html: o.t }));
+    b.addEventListener("click", () => {
+      $$(".opt", opts).forEach(x => x.classList.remove("picked", "right", "wrong", "ok"));
+      b.classList.add("picked", o.k);
+      fb.className = "fb show " + o.k;
+      fb.innerHTML = "<b>" + (o.head || head[o.k]) + "</b>" + o.fb;
+      if (spec.onAnswer) spec.onAnswer(o, i);
+    });
+    opts.append(b);
+  });
+  box.append(opts, fb);
+  host.append(box);
+  return box;
+}
+const book = (sec, page) => '<span class="book">' + sec + (page ? " · p. " + page : "") + "</span>";
+
+/* ---------- copy-a-prompt ---------- */
+function promptBox(host, getText, note) {
+  const pre = h("div", { class: "prompt", tabindex: "0" });
+  const btn = h("button", { class: "btn", type: "button" }, "Copy prompt");
+  const refresh = () => { pre.textContent = getText(); };
+  btn.addEventListener("click", () => {
+    refresh(); const text = pre.textContent;
+    const done = ok => { btn.textContent = ok ? "Copied" : "Selected - please press Ctrl/Cmd+C"; setTimeout(() => (btn.textContent = "Copy prompt"), 1800); };
+    const fallback = () => { const r = document.createRange(); r.selectNodeContents(pre); const s = window.getSelection(); s.removeAllRanges(); s.addRange(r); done(false); };
+    try { navigator.clipboard.writeText(text).then(() => done(true), fallback); } catch (e) { fallback(); }
+  });
+  host.append(h("div", { class: "row spread" }, h("span", { class: "note" }, note || "Please paste it into the AI tool that you use for this course."), btn), pre);
+  refresh();
+  return refresh;
+}
+
+/* ---------- chart helpers ---------- */
+function niceTicks(lo, hi, count = 5) {
+  const span = hi - lo || 1, step0 = span / count, mag = Math.pow(10, Math.floor(Math.log10(step0))), err = step0 / mag;
+  const step = (err >= 7.5 ? 10 : err >= 3.5 ? 5 : err >= 1.5 ? 2 : 1) * mag;
+  const out = []; for (let v = Math.ceil(lo / step) * step; v <= hi + step * 1e-9; v += step) out.push(+v.toPrecision(12));
+  return out;
+}
+const lin = (d0, d1, r0, r1) => v => r0 + (v - d0) / (d1 - d0 || 1) * (r1 - r0);
+function segButtons(host, items, value, onChange, label) {
+  const seg = h("div", { class: "seg", role: "group", "aria-label": label || "" });
+  items.forEach(([v, t]) => {
+    const b = h("button", { type: "button", "aria-pressed": String(v === value) }, t);
+    b.addEventListener("click", () => { $$("button", seg).forEach(x => x.setAttribute("aria-pressed", "false")); b.setAttribute("aria-pressed", "true"); onChange(v); });
+    seg.append(b);
+  });
+  host.append(seg);
+  return seg;
+}
+
+/* M1 The Mix Trap */
+const R = DATA.regions, P = DATA.products, S = R.indexOf("South");
+const PCOL = ["var(--c1)", "var(--c2)", "var(--c3)", "var(--c4)"];
+const N = DATA.v.length;
+const byReg = R.map((_, k) => DATA.v.filter((_, i) => DATA.r[i] === k));
+const regMed = byReg.map(median);
+const counts = byReg.map(a => a.length);
+const cell = R.map((_, k) => P.map((_, j) => DATA.v.filter((_, i) => DATA.r[i] === k && DATA.p[i] === j)));
+const mixCount = cell.map(r => r.map(a => a.length));
+const mixShare = mixCount.map((r, k) => r.map(c => c / counts[k]));
+const within = cell.map(r => r.map(median));
+const prodAll = P.map((_, j) => DATA.v.filter((_, i) => DATA.p[i] === j));
+const prodMed = prodAll.map(median);
+const compShare = P.map((_, j) => prodAll[j].length / N);
+const order = R.map((_, k) => k).sort((a, b) => regMed[b] - regMed[a]);
+const others = R.map((_, k) => k).filter(k => k !== S);
+const otherMeds = others.map(k => regMed[k]);
+const fmt$ = v => money(v);
+
+/* ---------- chart helpers ---------- */
+function charted(hostId, draw) {
+  const host = document.getElementById(hostId);
+  const run = () => { const w = host.clientWidth; if (w > 0) { host.innerHTML = ""; draw(host, w); } };
+  const sec = host.closest("section.step"); whenShown(sec.id, run);
+  window.addEventListener("resize", run);
+  return run;
+}
+function hbars(host, w, rows, maxV, valFmt) {
+  const lw = 66, vw = 62, rh = 30, top = 4, ht = rows.length * rh + top + 22;
+  const x = lin(0, maxV, lw, w - vw);
+  const g = sv("svg", { class: "chart", width: w, height: ht, viewBox: `0 0 ${w} ${ht}`, role: "img" });
+  niceTicks(0, maxV, w < 420 ? 3 : 5).forEach(t => {
+    g.append(sv("line", { class: "grid", x1: x(t), x2: x(t), y1: top, y2: ht - 20 }));
+    g.append(sv("text", { x: x(t), y: ht - 6, "text-anchor": "middle" }, valFmt(t)));
+  });
+  rows.forEach((r, i) => {
+    const y = top + i * rh;
+    g.append(sv("text", { x: lw - 8, y: y + rh / 2 + 4, "text-anchor": "end", class: r.hi ? "strong" : "ink" }, r.label));
+    g.append(sv("rect", { x: lw, y: y + 5, width: Math.max(0, x(r.value) - lw), height: rh - 10, rx: 3, fill: r.color || "var(--c1)" }, sv("title", {}, `${r.label}: ${valFmt(r.value)}`)));
+    g.append(sv("text", { x: x(r.value) + 6, y: y + rh / 2 + 4, class: r.hi ? "strong" : "ink" }, valFmt(r.value)));
+  });
+  host.append(g);
+}
+
+/* ---------- step 1 ---------- */
+charted("c-gap", (host, w) => hbars(host, w, order.map(k => ({ label: R[k], value: regMed[k], hi: k === S, color: k === S ? "var(--hi)" : "var(--c1)" })), 500, v => "$" + num(v)));
+$("#gap-callout").innerHTML = `South's typical sale is <strong>${fmt$(regMed[S])}</strong>, while the other four regions sit between ${fmt$(Math.min(...otherMeds))} and ${fmt$(Math.max(...otherMeds))}.`;
+quiz($("#q1"), {
+  q: "South's regional review is next week. What would be your first move?",
+  opts: [
+    { t: "Move part of South's marketing budget to the North, the strongest region.", k: "wrong", fb: "This would act on the gap before anyone understands it. In fact, the chapter's rule for comparing groups is to show the counts first, then the distributions, then summary tables by group, and only then to discuss action " + book("§2.6.1", "54") + "." },
+    { t: "Check how many transactions each region has, and what each region sells.", k: "right", fb: "This is exactly the chapter's rule, i.e. look at the counts first (exposure) and then at what the group is made of (mix). As the book puts it, a region might look worse because it sells more low-priced categories " + book("§2.6.1", "54") + "." },
+    { t: "Schedule sales training for the South team.", k: "wrong", fb: "Training assumes that the team is the problem, but nothing so far tells you <em>why</em> South's median is lower. Please check exposure and mix first " + book("§2.6.1", "54") + "." }]
+});
+
+/* ---------- step 2 ---------- */
+charted("c-counts", (host, w) => hbars(host, w, R.map((r, k) => ({ label: r, value: counts[k], hi: k === S, color: k === S ? "var(--hi)" : "var(--c1)" })), 250, v => num(v)));
+$("#counts-note").textContent = `Every region contributes between ${Math.min(...counts)} and ${Math.max(...counts)} sales, so no median rests on just a handful of transactions. Exposure is therefore not the issue here.`;
+let mixMode = "share";
+const drawMix = charted("c-mix", (host, w) => {
+  const lw = 66, rh = 30, top = 4, ht = R.length * rh + top + 22;
+  const maxV = mixMode === "share" ? 1 : 250;
+  const x = lin(0, maxV, lw, w - 8);
+  const g = sv("svg", { class: "chart", width: w, height: ht, viewBox: `0 0 ${w} ${ht}`, role: "img", "aria-label": "Product mix by region" });
+  niceTicks(0, maxV, w < 420 ? 3 : 4).forEach(t => {
+    g.append(sv("line", { class: "grid", x1: x(t), x2: x(t), y1: top, y2: ht - 20 }));
+    g.append(sv("text", { x: x(t), y: ht - 6, "text-anchor": "middle" }, mixMode === "share" ? Math.round(t * 100) + "%" : num(t)));
+  });
+  R.forEach((r, k) => {
+    const y = top + k * rh; let acc = 0;
+    g.append(sv("text", { x: lw - 8, y: y + rh / 2 + 4, "text-anchor": "end", class: k === S ? "strong" : "ink" }, r));
+    P.forEach((p, j) => {
+      const v = mixMode === "share" ? mixShare[k][j] : mixCount[k][j];
+      const x0 = x(acc), x1 = x(acc + v); acc += v;
+      g.append(sv("rect", { x: x0, y: y + 5, width: Math.max(0, x1 - x0 - 1), height: rh - 10, fill: PCOL[j] }, sv("title", {}, `${r}, ${p}: ${mixCount[k][j]} sales (${pct(mixShare[k][j], 0)})`)));
+      if (x1 - x0 > 30) g.append(sv("text", { x: (x0 + x1) / 2, y: y + rh / 2 + 4, "text-anchor": "middle", style: `fill:var(--on-c${j + 1});font-weight:600` }, mixMode === "share" ? Math.round(v * 100) + "%" : v));
+    });
+    if (k === S) g.append(sv("rect", { x: lw - 2, y: y + 3, width: x(acc) - lw + 3, height: rh - 6, fill: "none", stroke: "var(--hi)", "stroke-width": 2, rx: 3 }));
+  });
+  host.append(g);
+});
+segButtons($("#mix-toggle"), [["share", "Shares"], ["count", "Counts"]], "share", v => { mixMode = v; drawMix(); }, "Show mix as");
+$("#mix-legend").append(...P.map((p, j) => h("span", {}, h("i", { style: { background: PCOL[j] } }), p)));
+$("#t-prod").append(h("table", {}, h("thead", {}, h("tr", {}, h("th", {}, "Product"), h("th", { class: "r" }, "Median sale"), h("th", { class: "r" }, "Share, all"), h("th", { class: "r" }, "Share, South"))),
+  h("tbody", {}, P.map((p, j) => h("tr", {}, h("td", {}, h("i", { style: { display: "inline-block", width: "10px", height: "10px", borderRadius: "2px", background: PCOL[j], marginRight: "6px" } }), p), h("td", { class: "r" }, fmt$(prodMed[j])), h("td", { class: "r" }, pct(compShare[j], 0)), h("td", { class: "r" }, pct(mixShare[S][j], 0)))))));
+const beauty = P.indexOf("Beauty"), elec = P.indexOf("Electronics");
+quiz($("#q2"), {
+  q: "What stands out in these charts?",
+  opts: [
+    { t: "South sells far more Beauty, the lowest-priced category, and far less Electronics.", k: "right", fb: `${pct(mixShare[S][beauty], 0)} of South's sales are Beauty and ${pct(mixShare[S][elec], 0)} are Electronics, compared with ${pct(compShare[beauty], 0)} and ${pct(compShare[elec], 0)} company-wide. Moreover, a typical Beauty sale brings in only ${fmt$(prodMed[beauty])}, while a typical Electronics sale brings in ${fmt$(prodMed[elec])}.` },
+    { t: "South has too few transactions for a fair comparison.", k: "wrong", fb: `South has ${counts[S]} transactions, which is in line with the other regions (${Math.min(...counts)} to ${Math.max(...counts)}). That is, exposure is fine here, so please look at the mix instead.` },
+    { t: "Every region sells about the same mix of products.", k: "wrong", fb: "Please look at South's bar in the mix chart again; its Beauty segment is almost twice as wide as that of any other region." }]
+});
+
+/* ---------- step 3 ---------- */
+charted("c-within", (host, w) => {
+  const lw = w < 460 ? 86 : 96, rh = 54, top = 6, ht = P.length * rh + top + 24, maxV = 1000;
+  const x = lin(0, maxV, lw, w - 12);
+  const g = sv("svg", { class: "chart", width: w, height: ht, viewBox: `0 0 ${w} ${ht}`, role: "img", "aria-label": "Median sale by region within each product" });
+  niceTicks(0, maxV, w < 420 ? 4 : 5).forEach(t => {
+    g.append(sv("line", { class: "grid", x1: x(t), x2: x(t), y1: top, y2: ht - 22 }));
+    g.append(sv("text", { x: x(t), y: ht - 6, "text-anchor": "middle" }, "$" + num(t)));
+  });
+  P.forEach((p, j) => {
+    const y = top + j * rh + rh / 2 - 6;
+    const vals = R.map((_, k) => within[k][j]); const o = others.map(k => within[k][j]);
+    g.append(sv("text", { x: lw - 10, y: y + 4, "text-anchor": "end", class: "ink" }, p));
+    g.append(sv("line", { x1: x(Math.min(...vals)), x2: x(Math.max(...vals)), y1: y, y2: y, stroke: "var(--line)", "stroke-width": 6, "stroke-linecap": "round" }));
+    others.forEach(k => g.append(sv("circle", { cx: x(within[k][j]), cy: y, r: 6, fill: "var(--c1)", "fill-opacity": .8 }, sv("title", {}, `${R[k]}, ${p}: ${fmt$(within[k][j])}`))));
+    g.append(sv("circle", { cx: x(within[S][j]), cy: y, r: 8, fill: "var(--hi)", stroke: "var(--card)", "stroke-width": 2 }, sv("title", {}, `South, ${p}: ${fmt$(within[S][j])}`)));
+    const txt = `South ${fmt$(within[S][j])} · others ${fmt$(Math.min(...o))}–${fmt$(Math.max(...o))}`;
+    g.append(sv("text", { x: lw, y: y + 22, class: "ink", style: "font-size:12px" }, txt));
+  });
+  host.append(g);
+});
+const devs = P.map((_, j) => within[S][j] / mean(others.map(k => within[k][j])) - 1);
+quiz($("#q3"), {
+  q: "Within each product, how does South compare with the other regions?",
+  opts: [
+    { t: "South is the lowest in every product.", k: "wrong", fb: "Please look again. In every row, South's orange dot sits right among the teal dots rather than to the left of them." },
+    { t: "South is about the same as the other regions in every product.", k: "right", fb: `In every product, South's median is within ${Math.round(100 * Math.max(...devs.map(Math.abs)))}% of the other regions' average. That is, the gap in step 1 comes from <em>which</em> products South sells and has little to do with <em>how well</em> South sells them.` },
+    { t: "South is the highest in every product.", k: "wrong", fb: "In each row, South sits in the middle of the pack and is never the highest." }]
+});
+
+/* ---------- step 4 ---------- */
+quiz($("#q4"), {
+  q: "Please make a prediction first: if South had the company-wide product mix, where would its median land?",
+  opts: [
+    { t: "Still well below the other regions", k: "wrong", fb: "Within each product, South sells as well as the others, so with the same mix the gap should close. Please move the slider to check." },
+    { t: `In with the pack (the others run from ${fmt$(Math.min(...otherMeds))} to ${fmt$(Math.max(...otherMeds))})`, k: "right", fb: "Since South matches the others within each product, with the same mix it should land right among them. Please move the slider to check, but do not read too much into its exact rank; with only 193 sales, a median moves by tens of dollars from one sample to the next." },
+    { t: "Far above every other region", k: "wrong", fb: "That would require South to sell much better within each product than what we saw in step 3. Please move the slider to check." }]
+});
+let t = 0, target = compShare, targetName = "company-wide";
+function southSim() {
+  const share = P.map((_, j) => (1 - t) * mixShare[S][j] + t * target[j]);
+  const w = DATA.v.map((_, i) => DATA.r[i] === S ? share[DATA.p[i]] / mixShare[S][DATA.p[i]] : 0).filter((_, i) => DATA.r[i] === S);
+  return { med: wmedian(byReg[S], w), share };
+}
+const drawSim = charted("c-sim", (host, w) => {
+  const s = southSim(); const meds = regMed.map((m, k) => (k === S ? s.med : m));
+  const ord = R.map((_, k) => k).sort((a, b) => meds[b] - meds[a]);
+  hbars(host, w, ord.map(k => ({ label: R[k], value: meds[k], hi: k === S, color: k === S ? "var(--hi)" : "var(--c1)" })), 500, v => "$" + num(v));
+});
+const drawSouthMix = charted("c-southmix", (host, w) => {
+  const s = southSim(); const rows = [["South now", s.share], ["Company", compShare]];
+  const lw = 84, rh = 32, ht = rows.length * rh + 6; const x = lin(0, 1, lw, w - 6);
+  const g = sv("svg", { class: "chart", width: w, height: ht, viewBox: `0 0 ${w} ${ht}`, role: "img" });
+  rows.forEach(([lab, sh], i) => {
+    const y = 3 + i * rh; let acc = 0;
+    g.append(sv("text", { x: lw - 8, y: y + rh / 2 + 4, "text-anchor": "end", class: i === 0 ? "strong" : "ink" }, lab));
+    sh.forEach((v, j) => { const x0 = x(acc), x1 = x(acc + v); acc += v; g.append(sv("rect", { x: x0, y: y + 5, width: Math.max(0, x1 - x0 - 1), height: rh - 10, fill: PCOL[j] })); if (x1 - x0 > 30) g.append(sv("text", { x: (x0 + x1) / 2, y: y + rh / 2 + 4, "text-anchor": "middle", style: `fill:var(--on-c${j + 1});font-weight:600` }, Math.round(v * 100) + "%")); });
+  });
+  host.append(g);
+  const meds = regMed.map((m, k) => (k === S ? s.med : m));
+  $("#south-med").textContent = fmt$(s.med);
+  const gap = s.med - mean(otherMeds); $("#south-rank").textContent = (gap < 0 ? "−" : "+") + fmt$(Math.abs(gap));
+});
+function setMix(v, name, tgt) {
+  t = v / 100; if (tgt) { target = tgt; targetName = name; }
+  $("#mixslider").value = v;
+  $("#mix-label").textContent = t === 0 ? "actual" : t === 1 ? targetName + " mix" : `${Math.round(t * 100)}% of the way to the ${targetName} mix`;
+  drawSim(); drawSouthMix();
+}
+$("#mixslider").addEventListener("input", e => setMix(+e.target.value));
+[["Actual mix", 0, "company-wide", compShare], ["Company-wide mix", 100, "company-wide", compShare]].forEach(([lab, v, nm, tg]) =>
+  $("#mix-presets").append(h("button", { class: "btn ghost", type: "button", onclick: () => setMix(v, nm, tg) }, lab)));
+
+/* ---------- step 5 ---------- */
+$("#pattern").innerHTML = `<strong>Pattern:</strong> South's median sale is the lowest of the five regions (${fmt$(regMed[S])} compared with ${fmt$(Math.min(...otherMeds))}–${fmt$(Math.max(...otherMeds))}), but within each product South's median matches that of the other regions. Moreover, ${pct(mixShare[S][beauty], 0)} of South's sales are Beauty, compared with ${pct(compShare[beauty], 0)} company-wide.`;
+quiz($("#q5a"), {
+  q: "<strong>Insight:</strong> Which insight does this pattern support?",
+  opts: [
+    { t: "South's sales team underperforms.", k: "wrong", fb: "Within each product, South's sales are as large as anyone else's, and a team that sells as well as everyone else, product by product, is not underperforming " + book("§2.6.1", "54") + "." },
+    { t: "South's gap comes from <em>what</em> it sells rather than <em>how well</em> it sells, i.e. its customers buy more low-priced products.", k: "right", fb: "This is the insight step, i.e. turning “South's median is lower” into a business explanation that is actually supported by the data " + book("§2.9.1", "73") + "." },
+    { t: "South's customers are less valuable, so South deserves less investment.", k: "wrong", fb: "The data only show the size of a sale and say nothing about the value of a customer. For instance, smaller baskets can still be frequent, profitable or growing. This claim therefore goes beyond the evidence." }]
+});
+quiz($("#q5b"), {
+  q: "<strong>Action:</strong> What should leadership do, and what should it monitor?",
+  opts: [
+    { t: "Retrain the South team.", k: "wrong", fb: "Training would not change which products South's customers buy; moreover, step 3 showed that the team sells as well as the others." },
+    { t: "Set regional targets that adjust for product mix, find out why South's mix differs (e.g. assortment, local demand or pricing), and track South's mix and within-product medians each quarter.", k: "right", fb: "This is a complete action in the book's sense, i.e. something you will do differently plus what you will monitor afterward " + book("§2.9.1", "73") + "." },
+    { t: "Cut South's marketing budget until its median catches up.", k: "wrong", fb: "This would punish South for its product mix. If South's customers simply prefer lower-priced categories, then the cut would shrink a healthy business." }]
+});
+const crit = [["Impact", "Does it affect a key metric?", "Medium", "It shapes regional targets and bonuses, but total revenue is not at risk."],
+  ["Actionability", "Can someone do something specific about it?", "Low", "There is little the South sales team can do about it, but merchandising could act on the assortment, so for them it is higher."],
+  ["Confidence", "Does the pattern hold up across time and across groups?", "High across groups", "It holds in all four products. Since this lab has no time dimension, please check that next."],
+  ["Urgency", "Does waiting create risk?", "Low", "Nothing will break if the targets are only fixed next quarter."]];
+crit.forEach(([c, q]) => {
+  const ctl = h("div", {}); segButtons(ctl, [["High", "High"], ["Medium", "Medium"], ["Low", "Low"]], null, () => { }, c);
+  $("#rate").append(h("div", { class: "rate-row" }, h("div", {}, h("strong", {}, c), h("br"), h("span", { class: "note" }, q)), ctl));
+});
+$("#rate-show").addEventListener("click", () => {
+  const fb = $("#rate-fb"); fb.classList.add("show");
+  fb.innerHTML = "<b>The book's own example points in the same direction:</b> “a small revenue difference between regions may be low urgency and low actionability if it is driven by product mix” " + book("§2.9.2", "74") + ". South's gap is not small, which raises its impact, but the same logic still holds for actionability and urgency. My own ratings are as follows:<ul style='margin:6px 0 0; padding-left:18px'>" + crit.map(([c, , r, why]) => `<li><strong>${c}: ${r}.</strong> ${why}</li>`).join("") + "</ul>";
+});
+
+/* ---------- step 6 ---------- */
+promptBox($("#prompt"), () =>
+  `I am comparing median transaction revenue across five regions. The South region's median is ${fmt$(regMed[S])}, against ${fmt$(Math.min(...otherMeds))} to ${fmt$(Math.max(...otherMeds))} in the other regions. Within each of our four product categories, South's median is about the same as the other regions'. But ${pct(mixShare[S][beauty], 0)} of South's sales are Beauty products, our cheapest category, against ${pct(compShare[beauty], 0)} company-wide.
+
+1. Explain in plain business language why South looks weakest overall even though it sells as well as the other regions within each product.
+2. Build a small made-up example with two regions and two products that shows the same effect. Show the numbers.
+3. List three questions a manager should ask before changing South's budget or targets.`);
+
+initSteps();
+
+</script>
+</body>
+</html>

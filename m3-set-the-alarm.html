@@ -1,0 +1,693 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Module 1 Decision Lab: the significance level as a policy choice (Chapter 4).">
+<title>Set the Alarm · QMB 6358 Decision Lab</title>
+<style>
+/* Decision Labs: shared styles. Single reading column; step pills on top; each step is a card. */
+:root{
+  --bg:#f4f6f5; --card:#ffffff; --ink:#1d2b30; --muted:#5a6b72; --line:#d6dedb; --soft:#eef3f1;
+  --accent:#0e4d6c; --accent-ink:#ffffff; --accent-soft:#e3eef3;
+  --good:#24723a; --good-soft:#e5f2e8; --warn:#8a5a00; --warn-soft:#fbf0d9; --bad:#a63a2a; --bad-soft:#f8e4e0;
+  --book:#7d6210; --book-soft:#f8f1dc;
+  --c1:#0e4d6c; --c2:#3f8fbf; --c3:#d0862b; --c4:#8c5aa8; --c5:#5d8f3c; --hi:#c2410c;
+  --on-c1:#ffffff; --on-c2:#0b1f29; --on-c3:#24160a; --on-c4:#ffffff;
+  --grid:#e3e8e6;
+  --sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#0f1517; --card:#162024; --ink:#e3ebe8; --muted:#9fb0b3; --line:#2b3a3f; --soft:#1c282c;
+  --accent:#6cb6d8; --accent-ink:#0f1517; --accent-soft:#183342;
+  --good:#6fcf8a; --good-soft:#173322; --warn:#e7b65a; --warn-soft:#33280f; --bad:#f08a78; --bad-soft:#3a1d18;
+  --book:#dcbf6a; --book-soft:#2e2814;
+  --c1:#6cb6d8; --c2:#9ad0ee; --c3:#e8a85a; --c4:#c39ae0; --c5:#93c76e; --hi:#fb8c4a; --grid:#24323a; --on-c1:#0f1517; --on-c2:#0f1517; --on-c3:#0f1517; --on-c4:#0f1517; color-scheme:dark; } }
+:root[data-theme="dark"]{
+  --bg:#0f1517; --card:#162024; --ink:#e3ebe8; --muted:#9fb0b3; --line:#2b3a3f; --soft:#1c282c;
+  --accent:#6cb6d8; --accent-ink:#0f1517; --accent-soft:#183342;
+  --good:#6fcf8a; --good-soft:#173322; --warn:#e7b65a; --warn-soft:#33280f; --bad:#f08a78; --bad-soft:#3a1d18;
+  --book:#dcbf6a; --book-soft:#2e2814;
+  --c1:#6cb6d8; --c2:#9ad0ee; --c3:#e8a85a; --c4:#c39ae0; --c5:#93c76e; --hi:#fb8c4a; --grid:#24323a; --on-c1:#0f1517; --on-c2:#0f1517; --on-c3:#0f1517; --on-c4:#0f1517; color-scheme:dark; }
+
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0; background:var(--bg); color:var(--ink); font:16px/1.55 var(--sans);}
+.wrap{max-width:880px; margin:0 auto; padding:20px max(16px, env(safe-area-inset-right)) 56px max(16px, env(safe-area-inset-left));}
+h1,h2,h3{line-height:1.25; margin:0; text-wrap:balance}
+h1{font-size:clamp(26px, 5vw, 34px); letter-spacing:-0.01em}
+h2{font-size:21px}
+h3{font-size:16px}
+p{margin:0}
+a{color:var(--accent)}
+.eyebrow{font-size:12px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); font-weight:600}
+.lede{color:var(--muted); max-width:62ch}
+.meta{font-size:13px; color:var(--muted)}
+header.lab{display:grid; gap:8px; margin-bottom:16px}
+.num{font-variant-numeric:tabular-nums}
+.mono{font-family:var(--mono)}
+
+/* step pills */
+nav.steps{position:sticky; top:0; z-index:5; background:var(--bg); padding:8px 0 10px; display:flex; gap:6px; overflow-x:auto; scrollbar-width:none; border-bottom:1px solid var(--line); margin-bottom:16px}
+nav.steps::-webkit-scrollbar{display:none}
+.pill{flex:0 0 auto; font:inherit; font-size:14px; border:1px solid var(--line); background:var(--card); color:var(--ink); border-radius:999px; padding:6px 12px; cursor:pointer; white-space:nowrap}
+.pill .n{display:inline-block; min-width:1.4em; font-weight:700; color:var(--muted)}
+.pill[aria-current="step"]{background:var(--accent); border-color:var(--accent); color:var(--accent-ink)}
+.pill[aria-current="step"] .n{color:var(--accent-ink)}
+.pill.done:not([aria-current="step"]) .n{color:var(--good)}
+
+/* step cards */
+section.step{display:none; background:var(--card); border:1px solid var(--line); border-radius:12px; padding:20px; gap:16px}
+section.step.on{display:grid}
+.step > h2 .k{color:var(--muted); font-weight:600; margin-right:6px}
+.row{display:flex; gap:10px; flex-wrap:wrap; align-items:center}
+.spread{justify-content:space-between}
+.grid2{display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:14px}
+@media (max-width:680px){ .grid2{grid-template-columns:1fr} section.step{padding:16px} }
+.panel{background:var(--soft); border-radius:10px; padding:14px; display:grid; gap:10px; min-width:0}
+.note{font-size:14px; color:var(--muted)}
+.callout{border-left:4px solid var(--accent); background:var(--accent-soft); padding:10px 14px; border-radius:0 8px 8px 0; font-size:15px}
+.big{font-size:28px; font-weight:700; font-variant-numeric:tabular-nums; line-height:1.1}
+.stat{display:grid; gap:2px}
+.stat .lab{font-size:12px; color:var(--muted); text-transform:uppercase; letter-spacing:.06em}
+.stats{display:grid; grid-template-columns:repeat(auto-fit, minmax(130px,1fr)); gap:10px}
+
+/* book chip */
+.book{display:inline-flex; align-items:center; gap:4px; font-size:12px; font-weight:600; color:var(--book); background:var(--book-soft); border-radius:999px; padding:2px 9px; white-space:nowrap; vertical-align:1px}
+.book::before{content:""; width:10px; height:8px; border:1.5px solid currentColor; border-radius:1px 1px 2px 2px; border-top-width:1.5px; display:inline-block}
+
+/* buttons and controls */
+button{font:inherit}
+.btn{border:1px solid var(--accent); background:var(--accent); color:var(--accent-ink); border-radius:8px; padding:8px 14px; cursor:pointer; font-weight:600}
+.btn.ghost{background:transparent; color:var(--accent)}
+.btn:disabled{opacity:.5; cursor:default}
+.btn:focus-visible,.pill:focus-visible,.opt:focus-visible,.seg button:focus-visible,input:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+.seg{display:inline-flex; flex-wrap:nowrap; border:1px solid var(--line); border-radius:8px; overflow:hidden; background:var(--card); max-width:100%}
+.rate{display:grid}
+.rate-row{display:grid; grid-template-columns:1fr auto; gap:8px 14px; align-items:center; padding:10px 0; border-bottom:1px solid var(--line)}
+.rate-row:last-child{border-bottom:0}
+@media (max-width:520px){ .rate-row{grid-template-columns:1fr} }
+.seg button{border:0; border-right:1px solid var(--line); background:transparent; color:var(--ink); padding:6px 10px; cursor:pointer; font-size:14px}
+.seg button:last-child{border-right:0}
+.seg button[aria-pressed="true"]{background:var(--accent); color:var(--accent-ink)}
+.ctl{display:grid; gap:4px; min-width:0}
+.ctl > .seg{justify-self:start}
+.ctl label,.ctl .lab{font-size:13px; color:var(--muted); font-weight:600}
+input[type=range]{width:100%; accent-color:var(--accent)}
+.check{display:flex; align-items:center; gap:8px; font-size:15px; padding:4px 0; cursor:pointer}
+.check input{width:18px; height:18px; accent-color:var(--accent)}
+
+/* multiple-choice with instant feedback */
+.quiz{display:grid; gap:10px; border:1px solid var(--line); border-radius:10px; padding:14px}
+.quiz .q{font-weight:600}
+.opts{display:grid; gap:8px}
+.opt{text-align:left; border:1px solid var(--line); background:var(--card); color:var(--ink); border-radius:8px; padding:10px 12px; cursor:pointer; display:flex; gap:10px; align-items:flex-start}
+.opt .mk{flex:0 0 22px; height:22px; border-radius:50%; border:1.5px solid var(--line); display:grid; place-items:center; font-size:13px; font-weight:700; color:var(--muted)}
+.opt:hover{border-color:var(--accent)}
+.opt.picked.right{border-color:var(--good); background:var(--good-soft)}
+.opt.picked.right .mk{border-color:var(--good); background:var(--good); color:var(--card)}
+.opt.picked.wrong{border-color:var(--warn); background:var(--warn-soft)}
+.opt.picked.wrong .mk{border-color:var(--warn); background:var(--warn); color:var(--card)}
+.opt.picked.ok{border-color:var(--accent); background:var(--accent-soft)}
+.opt.picked.ok .mk{border-color:var(--accent); background:var(--accent); color:var(--card)}
+.fb{border-radius:8px; padding:10px 12px; font-size:15px; display:none}
+.fb.show{display:block}
+.fb.right{background:var(--good-soft)}
+.fb.wrong{background:var(--warn-soft)}
+.fb.ok{background:var(--accent-soft)}
+.fb b{display:block; margin-bottom:2px}
+
+/* tables */
+.tbl{overflow-x:auto}
+table{border-collapse:collapse; width:100%; font-size:14px}
+th,td{padding:6px 8px; border-bottom:1px solid var(--line); text-align:left; vertical-align:top}
+th{font-size:12px; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); font-weight:600}
+td.r,th.r{text-align:right; font-variant-numeric:tabular-nums}
+td.r{white-space:nowrap}
+
+/* charts */
+svg.chart{width:100%; height:auto; display:block; overflow:visible}
+svg.chart text{fill:var(--muted); font:12px var(--sans)}
+svg.chart text.ink{fill:var(--ink)}
+svg.chart text.strong{fill:var(--ink); font-weight:700}
+svg.chart .grid{stroke:var(--grid); stroke-width:1}
+svg.chart .axis{stroke:var(--line); stroke-width:1}
+.legend{display:flex; flex-wrap:wrap; gap:6px 14px; font-size:13px; color:var(--muted)}
+.legend span{display:inline-flex; align-items:center; gap:6px}
+.legend i{width:12px; height:12px; border-radius:3px; display:inline-block}
+
+/* risk lights */
+.lights{display:grid; grid-template-columns:repeat(auto-fit, minmax(190px,1fr)); gap:8px}
+.light{display:grid; grid-template-columns:auto 1fr; gap:2px 10px; align-items:start; border:1px solid var(--line); border-radius:8px; padding:8px 10px; font-size:14px}
+.light .dot{width:14px; height:14px; border-radius:50%; background:var(--line); margin-top:3px; grid-row:span 2}
+.light.on{border-color:var(--warn); background:var(--warn-soft)}
+.light.on .dot{background:var(--warn); box-shadow:0 0 0 3px color-mix(in srgb, var(--warn) 25%, transparent)}
+.light .t{font-weight:600}
+.light .d{color:var(--muted); font-size:13px}
+
+/* prompt box */
+.prompt{font-family:var(--mono); font-size:13.5px; line-height:1.5; background:var(--soft); border:1px solid var(--line); border-radius:8px; padding:12px; white-space:pre-wrap; word-break:break-word}
+footer{margin-top:28px; font-size:13px; color:var(--muted); display:grid; gap:6px; max-width:70ch}
+.nav-next{display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap; border-top:1px solid var(--line); padding-top:14px}
+.sr{position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0)}
+@media (prefers-reduced-motion: no-preference){ section.step.on{animation:fade .2s ease-out} @keyframes fade{from{opacity:.4; transform:translateY(3px)} to{opacity:1; transform:none}} }
+
+h2:focus{outline:none}
+@media (max-width:520px){ table{font-size:13px} th,td{padding:6px 5px} th{letter-spacing:.02em} }
+
+</style>
+</head>
+<body>
+<noscript><div class="wrap"><p class="callout"><strong>This lab cannot run here.</strong> It needs JavaScript, which this viewer blocks (as Canvas file previews do). Please use the lab link in your Reading Guide, or download this file and open it in your web browser.</p></div></noscript>
+<div class="wrap">
+<header class="lab">
+  <span class="eyebrow">QMB 6358 · Module 1 Decision Lab · after Chapter 4</span>
+  <h1>Set the Alarm</h1>
+  <p class="lede">You manage the book's 12-ounce bottling line, where every day a test decides whether to stop the line. Please pick a significance level and run a simulated year to find the setting that costs the least.</p>
+  <p class="meta">This lab takes about 20 minutes and also works on a phone. Nothing is graded or saved.</p>
+</header>
+<nav class="steps" aria-label="Lab steps"></nav>
+
+<section class="step" id="s1" data-title="Two mistakes">
+  <h2><span class="k">1</span>Two ways to be wrong</h2>
+  <p>Each morning, the plant samples 10 bottles and runs a one-sided t-test to check whether the average fill is above 12 ounces. If the evidence is strong enough, the line is stopped for recalibration <span class="book">§4.10.3 · p.&nbsp;181</span>. Of course, the test can be wrong in two ways <span class="book">§4.5.1 · p.&nbsp;153</span>:</p>
+  <div class="tbl"><table>
+    <thead><tr><th>Mistake</th><th>What happens</th><th>Cost in the book's plant</th></tr></thead>
+    <tbody>
+      <tr><td><strong>False stop</strong><br><span class="note">Type I error</span></td><td>The line was fine, but the test stopped it.</td><td>$50,000 per stop</td></tr>
+      <tr><td><strong>Missed overfill</strong><br><span class="note">Type II error</span></td><td>The line was overfilling, but the test let it run.</td><td>$12,000 per day, until caught</td></tr>
+    </tbody></table></div>
+  <p>The <strong>significance level</strong> (α) is the false-alarm rate that you are willing to tolerate on days when the line is fine <span class="book">§4.5.3 · p.&nbsp;154</span>. That is, a lower α means fewer false stops, but also more missed overfill.</p>
+  <div id="q1"></div>
+</section>
+
+<section class="step" id="s2" data-title="Run a year">
+  <h2><span class="k">2</span>Run a year</h2>
+  <div class="panel" id="controls2"></div>
+  <div class="row"><button class="btn run" type="button" id="run-year">Run a year</button><button class="btn ghost" type="button" id="run-20">Run 20 years</button></div>
+  <div id="c-year"></div>
+  <div class="legend"><span><i style="background:var(--soft); border:1px solid var(--line)"></i>Normal day</span><span><i style="background:var(--bad)"></i>F: false stop</span><span><i style="background:var(--good)"></i>C: caught the overfill</span><span><i style="background:var(--warn)"></i>M: missed overfill</span></div>
+  <div class="tbl" id="t-year"></div>
+  <p class="note" id="year-note">One year is quite noisy, so please run a few (or run 20 to see the average).</p>
+  <div id="q2"></div>
+</section>
+
+<section class="step" id="s3" data-title="Cheapest α">
+  <h2><span class="k">3</span>Find the cheapest significance level</h2>
+  <p>Instead of simulating one year at a time, the chart below shows the <strong>long-run average</strong> yearly cost at every significance level, for the plant and the assumptions that you choose.</p>
+  <div class="panel" id="controls3"></div>
+  <div class="stats"><div class="stat"><span class="lab">Cheapest <span style="text-transform:none">α</span> for this plant</span><span class="big" id="best-a">–</span></div><div class="stat"><span class="lab">Its yearly cost</span><span class="big" id="best-c">–</span></div><div class="stat"><span class="lab">Your <span style="text-transform:none">α</span> costs</span><span class="big" id="your-c">–</span></div></div>
+  <div id="c-curve"></div>
+  <div class="legend"><span><i style="background:var(--c1)"></i>Total</span><span><i style="background:var(--bad)"></i>False stops</span><span><i style="background:var(--warn)"></i>Missed overfill</span><span><i style="background:var(--good)"></i>Necessary stops</span></div>
+  <div id="q3a"></div>
+  <div id="q3b"></div>
+  <div class="callout" id="contrast"></div>
+</section>
+
+<section class="step" id="s4" data-title="Peeking">
+  <h2><span class="k">4</span>Peeking: looking at the data until you find something</h2>
+  <p>This step looks at a different trap from the same chapter <span class="book">§4.9.4 · p.&nbsp;174</span>. An email A/B test runs for 14 days with 1,000 recipients per version per day. In this case the two versions are <strong>identical</strong> (both convert at 3.0%), so any "winner" is a false alarm.</p>
+  <div id="q4"></div>
+  <div class="panel">
+    <div class="row"><button class="btn run" type="button" id="peek1">Run one test</button><button class="btn ghost" type="button" id="peek500">Run 500 tests</button></div>
+    <p class="note" id="peek-note">Policy A looks only once (on day 14), while Policy B looks every day and declares a winner on the first day that p &lt; 0.05.</p>
+  </div>
+  <div class="grid2">
+    <div class="panel"><h3>One test: the p-value each day</h3><div id="c-path"></div></div>
+    <div class="panel"><h3>False winners across tests</h3><div id="c-peekbars"></div><p class="note" id="peek-count"></p></div>
+  </div>
+  <p class="callout">The book's remedy is good governance, i.e. state the hypotheses and the threshold before the analysis, disclose how many tests (or looks) were run, and confirm exploratory wins with follow-up data <span class="book">§4.9.4 · p.&nbsp;174</span>.</p>
+</section>
+
+<section class="step" id="s5" data-title="Ask your AI">
+  <h2><span class="k">5</span>Optional: ask an AI tool to set the alarm</h2>
+  <p>The following prompt uses the plant and the assumptions that you last chose in steps 2 and 3.</p>
+  <div id="prompt"></div>
+  <div class="panel">
+    <h3>Then check the answer</h3>
+    <ul style="margin:0; padding-left:20px; display:grid; gap:6px">
+      <li>Does it recommend a lower α when false stops get more expensive, and a higher α when overfill gets more expensive? Please change the costs and ask again.</li>
+      <li>Does it keep α (chosen before the data) separate from the p-value (computed from the data)?</li>
+      <li>How close is its recommendation to the cheapest α in step 3? If it differs, which assumptions explain the gap?</li>
+    </ul>
+  </div>
+</section>
+
+<footer>
+  <p>This lab is based on Chapter 4 of <em>Business Analytics in the Age of AI: A New Paradigm for Executives</em> (Jank, 2026), in particular the bottling case (§4.10.3), the significance level as a policy choice (§4.5.3, §4.5.7) and p-hacking (§4.9.4). The lecture plant uses the numbers from the Module 3 slides. How often the machine drifts (and by how much) are assumptions that you can change, since the book does not specify them.</p>
+  <p>It is part of QMB 6358; nothing you do here is recorded.</p>
+</footer>
+</div>
+
+<script>
+const DATA = {"alphas":[0.001,0.0025,0.005,0.01,0.02,0.03,0.05,0.075,0.1,0.15,0.2],"ns":[5,10,20],"shifts":[0.5,0.7,1.0],"crit":{"5":[7.173182219782307,5.597568367075492,4.604094871349992,3.746947387979196,2.9985278732065854,2.600761995049775,2.1318467863266495,1.7781921643757586,1.533206274058944,1.1895668524436944,0.9409645772351816],"10":[4.296805662729918,3.689662392304245,3.249835541592126,2.821437925025809,2.3984409848565056,2.1503752782320316,1.833112932656237,1.5737357850268656,1.3830287383966329,1.0997161963946573,0.8834038596855346],"20":[3.5794001489547154,3.1737245307923256,2.8609346064649794,2.5394831906239625,2.2047013507416082,2.0000174735353595,1.7291328115213682,1.5001887555994797,1.3277282090267986,1.0655073985870136,0.8609505502689286]},"power":{"5|0.5":[0.007407598892848804,0.017743477336932986,0.033823821226262964,0.06323228675522252,0.11504025906236195,0.16056819939655997,0.23899517090352962,0.3207045460198825,0.38970196305877536,0.5013947468839166,0.5887050996263956],"5|0.7":[0.014085659082125479,0.03298511378401155,0.06132544563515304,0.11075750434127704,0.19224473237705203,0.259178164824369,0.3660457762582974,0.4676032513889212,0.5464379213437621,0.661760982365089,0.7419315256588921],"5|1":[0.032092557027351434,0.07217047722085533,0.12837681378178173,0.21837627769117565,0.3500848582424751,0.44590284171137834,0.5797373588621888,0.6879337650398563,0.7604543947511236,0.8498046532824692,0.9007131597142473],"10|0.5":[0.030213102018765647,0.06169816102146023,0.10265291420668754,0.1654013220236383,0.2565796433025036,0.3250320905378263,0.4272898267711785,0.5195662984428051,0.5893075207165076,0.6900753254873181,0.7603193737248483],"10|0.7":[0.07985430014252304,0.14796952514486175,0.22600698181617962,0.3306090909980096,0.46042041862410016,0.5449334141391339,0.6548035298805803,0.739690645695356,0.7959268835113567,0.8661176207447291,0.9076550029189461],"10|1":[0.2381805899427519,0.37706296638511405,0.5041066703854172,0.638948603460427,0.7663409748500755,0.8310136222026445,0.8975169943396828,0.9370097230828133,0.9579726272736275,0.9785956623629656,0.9879221569389856],"20|0.5":[0.13049226014193763,0.2127419523748802,0.2973443096402614,0.40180346387015115,0.5230247411031046,0.5988227260431873,0.6951493382443412,0.7686778205560314,0.8173340494107808,0.8784663710975457,0.9151475704970046],"20|0.7":[0.3649470978844348,0.50042798721521,0.6105060601913729,0.7186075297007943,0.815867646695983,0.8644842077436938,0.9148495541434495,0.9455496463471226,0.9624038043082813,0.979744564845662,0.9880540555566477],"20|1":[0.7924626664778462,0.8833355152967323,0.9324953716804568,0.9653099302333589,0.9846113579920153,0.991204233514653,0.9961028636343131,0.9981644113464736,0.9989979189855541,0.9996239262320177,0.9998328863703688]}};
+/* Decision Labs: shared helpers (no dependencies). */
+"use strict";
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+const SVGNS = "http://www.w3.org/2000/svg";
+
+function h(tag, attrs, ...kids) {
+  const e = document.createElement(tag);
+  setAttrs(e, attrs);
+  kids.flat().forEach(k => { if (k != null && k !== false) e.append(k.nodeType ? k : document.createTextNode(String(k))); });
+  return e;
+}
+function sv(tag, attrs, ...kids) {
+  const e = document.createElementNS(SVGNS, tag);
+  setAttrs(e, attrs);
+  kids.flat().forEach(k => { if (k != null && k !== false) e.append(k.nodeType ? k : document.createTextNode(String(k))); });
+  return e;
+}
+function setAttrs(e, attrs) {
+  for (const [k, v] of Object.entries(attrs || {})) {
+    if (v == null || v === false) continue;
+    if (k === "html") e.innerHTML = v;
+    else if (k.startsWith("on")) e.addEventListener(k.slice(2), v);
+    else if (k === "style" && typeof v === "object") Object.assign(e.style, v);
+    else e.setAttribute(k, v === true ? "" : v);
+  }
+}
+
+/* ---------- formatting ---------- */
+const money = (x, d = 0) => (x < 0 ? "−$" : "$") + Math.abs(x).toLocaleString("en-US", { minimumFractionDigits: d, maximumFractionDigits: d });
+const kmoney = x => x === 0 ? "$0" : (x < 0 ? "−$" : "$") + (Math.abs(x) >= 1e6 ? (Math.abs(x) / 1e6).toFixed(2) + "M" : Math.round(Math.abs(x) / 1000).toLocaleString("en-US") + "k");
+const pct = (x, d = 1) => (100 * x).toFixed(d) + "%";
+const num = (x, d = 0) => x.toLocaleString("en-US", { minimumFractionDigits: d, maximumFractionDigits: d });
+const signed = (s) => s.replace(/^-/, "−");
+
+/* ---------- random numbers and statistics ---------- */
+function randn() { let u = 0, v = 0; while (u === 0) u = Math.random(); while (v === 0) v = Math.random(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); }
+function erf(x) { // Numerical Recipes erfc approximation (fractional error < 1.2e-7)
+  const t = 1 / (1 + 0.5 * Math.abs(x));
+  const y = 1 - t * Math.exp(-x * x - 1.26551223 + t * (1.00002368 + t * (0.37409196 + t * (0.09678418 + t * (-0.18628806 + t * (0.27886807 + t * (-1.13520398 + t * (1.48851587 + t * (-0.82215223 + t * 0.17087277)))))))));
+  return x >= 0 ? y : -y;
+}
+const normCdf = z => 0.5 * (1 + erf(z / Math.SQRT2));
+function normInv(p) { // Acklam
+  const a = [-3.969683028665376e+01, 2.209460984245205e+02, -2.759285104469687e+02, 1.383577518672690e+02, -3.066479806614716e+01, 2.506628277459239e+00];
+  const b = [-5.447609879822406e+01, 1.615858368580409e+02, -1.556989798598866e+02, 6.680131188771972e+01, -1.328068155288572e+01];
+  const c = [-7.784894002430293e-03, -3.223964580411365e-01, -2.400758277161838e+00, -2.549732539343734e+00, 4.374614347350924e+00, 2.938163982698783e+00];
+  const d = [7.784695709041462e-03, 3.224671290700398e-01, 2.445134137142996e+00, 3.754408661907416e+00];
+  const pl = 0.02425, ph = 1 - pl; let q, r;
+  if (p < pl) { q = Math.sqrt(-2 * Math.log(p)); return (((((c[0] * q + c[1]) * q + c[2]) * q + c[3]) * q + c[4]) * q + c[5]) / ((((d[0] * q + d[1]) * q + d[2]) * q + d[3]) * q + 1); }
+  if (p > ph) { q = Math.sqrt(-2 * Math.log(1 - p)); return -(((((c[0] * q + c[1]) * q + c[2]) * q + c[3]) * q + c[4]) * q + c[5]) / ((((d[0] * q + d[1]) * q + d[2]) * q + d[3]) * q + 1); }
+  q = p - 0.5; r = q * q;
+  return (((((a[0] * r + a[1]) * r + a[2]) * r + a[3]) * r + a[4]) * r + a[5]) * q / (((((b[0] * r + b[1]) * r + b[2]) * r + b[3]) * r + b[4]) * r + 1);
+}
+function tInv(p, df) { // Cornish-Fisher expansion; accurate to ~1e-3 for df >= 5
+  const z = normInv(p), z2 = z * z;
+  return z + (z2 * z + z) / (4 * df) + (5 * z2 * z2 * z + 16 * z2 * z + 3 * z) / (96 * df * df)
+    + (3 * z2 * z2 * z2 * z + 19 * z2 * z2 * z + 17 * z2 * z - 15 * z) / (384 * df * df * df);
+}
+const sum = a => a.reduce((s, x) => s + x, 0);
+const mean = a => sum(a) / a.length;
+function sd(a) { const m = mean(a); return Math.sqrt(sum(a.map(x => (x - m) ** 2)) / (a.length - 1)); }
+function median(a) { const s = [...a].sort((x, y) => x - y), n = s.length; return n % 2 ? s[(n - 1) / 2] : (s[n / 2 - 1] + s[n / 2]) / 2; }
+function wmedian(v, w) { // weighted median (lower median)
+  const idx = v.map((_, i) => i).sort((i, j) => v[i] - v[j]); const tot = sum(w); let c = 0;
+  for (const i of idx) { c += w[i]; if (c >= tot / 2) return v[i]; }
+  return v[idx[idx.length - 1]];
+}
+
+/* ---------- small linear algebra (OLS) ---------- */
+function invert(A) { // Gauss-Jordan; A is square array of arrays
+  const n = A.length, M = A.map((r, i) => [...r, ...Array.from({ length: n }, (_, j) => (i === j ? 1 : 0))]);
+  for (let c = 0; c < n; c++) {
+    let p = c; for (let r = c + 1; r < n; r++) if (Math.abs(M[r][c]) > Math.abs(M[p][c])) p = r;
+    if (Math.abs(M[p][c]) < 1e-12) return null;
+    [M[c], M[p]] = [M[p], M[c]];
+    const pv = M[c][c]; for (let j = 0; j < 2 * n; j++) M[c][j] /= pv;
+    for (let r = 0; r < n; r++) if (r !== c) { const f = M[r][c]; if (f) for (let j = 0; j < 2 * n; j++) M[r][j] -= f * M[c][j]; }
+  }
+  return M.map(r => r.slice(n));
+}
+function ols(y, cols) { // cols: array of predictor columns (no intercept); returns b (with intercept first), se, r2, adjR2, s, XtXi
+  const n = y.length, k = cols.length + 1;
+  const X = (i, j) => (j === 0 ? 1 : cols[j - 1][i]);
+  const XtX = Array.from({ length: k }, () => new Array(k).fill(0)), Xty = new Array(k).fill(0);
+  for (let i = 0; i < n; i++) for (let a = 0; a < k; a++) { const xa = X(i, a); Xty[a] += xa * y[i]; for (let b = a; b < k; b++) XtX[a][b] += xa * X(i, b); }
+  for (let a = 0; a < k; a++) for (let b = 0; b < a; b++) XtX[a][b] = XtX[b][a];
+  const XtXi = invert(XtX); if (!XtXi) return null;
+  const b = XtXi.map(r => sum(r.map((v, j) => v * Xty[j])));
+  let sse = 0; const ym = mean(y); let sst = 0;
+  for (let i = 0; i < n; i++) { let f = 0; for (let a = 0; a < k; a++) f += b[a] * X(i, a); sse += (y[i] - f) ** 2; sst += (y[i] - ym) ** 2; }
+  const df = n - k, s2 = sse / df;
+  return { b, se: XtXi.map((r, i) => Math.sqrt(s2 * r[i])), r2: 1 - sse / sst, adj: 1 - (sse / df) / (sst / (n - 1)), s: Math.sqrt(s2), df, XtXi, n, k };
+}
+
+/* ---------- steps ---------- */
+const Steps = { list: [], onShow: {}, cur: 0 };
+function initSteps() {
+  const nav = $("nav.steps"); Steps.list = $$("section.step");
+  Steps.list.forEach((sec, i) => {
+    const title = sec.dataset.title;
+    nav.append(h("button", { class: "pill", type: "button", "data-i": i, onclick: () => showStep(i) }, h("span", { class: "n" }, i + 1), " ", title));
+    const foot = h("div", { class: "nav-next" });
+    foot.append(i > 0 ? h("button", { class: "btn ghost", type: "button", onclick: () => showStep(i - 1) }, "← Back") : h("span"));
+    if (i < Steps.list.length - 1) foot.append(h("button", { class: "btn", type: "button", onclick: () => showStep(i + 1) }, "Next: " + Steps.list[i + 1].dataset.title + " →"));
+    else foot.append(h("span", { class: "note" }, "This is the end of the lab; nothing was saved or graded."));
+    sec.append(foot);
+  });
+  showStep(0, true);
+}
+function showStep(i, first) {
+  Steps.list.forEach((s, j) => s.classList.toggle("on", j === i));
+  $$("nav.steps .pill").forEach((p, j) => { p.toggleAttribute("aria-current", j === i); if (j === i) p.setAttribute("aria-current", "step"); if (j < i) p.classList.add("done"); });
+  Steps.cur = i;
+  const pill = $$("nav.steps .pill")[i]; if (pill && pill.scrollIntoView) pill.scrollIntoView({ block: "nearest", inline: "nearest" });
+  if (!first) {
+    const top = $("nav.steps").getBoundingClientRect().top + window.scrollY; if (window.scrollY > top) window.scrollTo({ top, behavior: "smooth" });
+    const hd = $("h2", Steps.list[i]); if (hd) { hd.setAttribute("tabindex", "-1"); hd.focus({ preventScroll: true }); }
+  }
+  (Steps.onShow[Steps.list[i].id] || []).forEach(f => f());
+}
+function whenShown(id, f) { (Steps.onShow[id] = Steps.onShow[id] || []).push(f); }
+
+/* ---------- multiple-choice with instant feedback ---------- */
+function quiz(host, spec) {
+  const box = h("div", { class: "quiz" });
+  box.append(h("p", { class: "q", html: spec.q }));
+  const opts = h("div", { class: "opts", role: "group" });
+  const fb = h("div", { class: "fb", "aria-live": "polite" });
+  const head = { right: spec.rightHead || "Right.", wrong: "Not quite.", ok: "A reasonable choice." };
+  spec.opts.forEach((o, i) => {
+    const b = h("button", { class: "opt", type: "button" }, h("span", { class: "mk" }, String.fromCharCode(65 + i)), h("span", { html: o.t }));
+    b.addEventListener("click", () => {
+      $$(".opt", opts).forEach(x => x.classList.remove("picked", "right", "wrong", "ok"));
+      b.classList.add("picked", o.k);
+      fb.className = "fb show " + o.k;
+      fb.innerHTML = "<b>" + (o.head || head[o.k]) + "</b>" + o.fb;
+      if (spec.onAnswer) spec.onAnswer(o, i);
+    });
+    opts.append(b);
+  });
+  box.append(opts, fb);
+  host.append(box);
+  return box;
+}
+const book = (sec, page) => '<span class="book">' + sec + (page ? " · p. " + page : "") + "</span>";
+
+/* ---------- copy-a-prompt ---------- */
+function promptBox(host, getText, note) {
+  const pre = h("div", { class: "prompt", tabindex: "0" });
+  const btn = h("button", { class: "btn", type: "button" }, "Copy prompt");
+  const refresh = () => { pre.textContent = getText(); };
+  btn.addEventListener("click", () => {
+    refresh(); const text = pre.textContent;
+    const done = ok => { btn.textContent = ok ? "Copied" : "Selected - please press Ctrl/Cmd+C"; setTimeout(() => (btn.textContent = "Copy prompt"), 1800); };
+    const fallback = () => { const r = document.createRange(); r.selectNodeContents(pre); const s = window.getSelection(); s.removeAllRanges(); s.addRange(r); done(false); };
+    try { navigator.clipboard.writeText(text).then(() => done(true), fallback); } catch (e) { fallback(); }
+  });
+  host.append(h("div", { class: "row spread" }, h("span", { class: "note" }, note || "Please paste it into the AI tool that you use for this course."), btn), pre);
+  refresh();
+  return refresh;
+}
+
+/* ---------- chart helpers ---------- */
+function niceTicks(lo, hi, count = 5) {
+  const span = hi - lo || 1, step0 = span / count, mag = Math.pow(10, Math.floor(Math.log10(step0))), err = step0 / mag;
+  const step = (err >= 7.5 ? 10 : err >= 3.5 ? 5 : err >= 1.5 ? 2 : 1) * mag;
+  const out = []; for (let v = Math.ceil(lo / step) * step; v <= hi + step * 1e-9; v += step) out.push(+v.toPrecision(12));
+  return out;
+}
+const lin = (d0, d1, r0, r1) => v => r0 + (v - d0) / (d1 - d0 || 1) * (r1 - r0);
+function segButtons(host, items, value, onChange, label) {
+  const seg = h("div", { class: "seg", role: "group", "aria-label": label || "" });
+  items.forEach(([v, t]) => {
+    const b = h("button", { type: "button", "aria-pressed": String(v === value) }, t);
+    b.addEventListener("click", () => { $$("button", seg).forEach(x => x.setAttribute("aria-pressed", "false")); b.setAttribute("aria-pressed", "true"); onChange(v); });
+    seg.append(b);
+  });
+  host.append(seg);
+  return seg;
+}
+
+/* M3 Set the Alarm */
+const A = DATA.alphas, DAYS = 250;
+const PLANTS = {
+  book: { name: "Book plant", S: 50000, O: 12000, sigma: 0.0345 },
+  lecture: { name: "Lecture plant", S: 5000, O: 2000, sigma: 0.149 },
+  custom: { name: "Custom", S: 20000, O: 8000, sigma: 0.0345 }
+};
+const FREQ = { rare: [1 / 40, "about every 40 days"], some: [1 / 20, "about every 20 days"], often: [1 / 10, "about every 10 days"] };
+const SIZE = { 0.5: "small", 0.7: "typical", 1.0: "large" };
+const st = { plant: "book", ai: A.indexOf(0.05), n: 10, freq: "some", d: 0.7 };
+const plant = () => PLANTS[st.plant];
+const aLabel = a => (a * 100 < 1 ? (a * 100).toFixed(a * 100 < 0.5 ? 2 : 1).replace(/0$/, "") : String(+(a * 100).toFixed(1))) + "%";
+const power = (n, d, ai) => DATA.power[`${n}|${d}`][ai];
+const crit = (n, ai) => DATA.crit[String(n)][ai];
+
+function expCost(S, O, h, pw, a) { // long-run yearly cost, split by source
+  const pD = h * (1 - pw) / (h * (1 - pw) + pw), pIC = 1 - pD, drift = pIC * h + pD;
+  const fs = pIC * (1 - h) * a * S, cs = drift * pw * S, mo = drift * (1 - pw) * O;
+  return { total: DAYS * (fs + cs + mo), fs: DAYS * fs, cs: DAYS * cs, mo: DAYS * mo };
+}
+const curve = (p, n, d, h) => A.map((a, i) => expCost(p.S, p.O, h, power(n, d, i), a));
+const bestIdx = c => c.reduce((b, x, i) => (x.total < c[b].total ? i : b), 0);
+
+function charted(hostId, draw) {
+  const host = document.getElementById(hostId);
+  const run = () => { const w = host.clientWidth; if (w > 0) { host.innerHTML = ""; draw(host, w); } };
+  whenShown(host.closest("section.step").id, run);
+  window.addEventListener("resize", run);
+  return run;
+}
+
+/* ---------- shared controls (rendered into steps 2 and 3, kept in sync) ---------- */
+const listeners = [];
+function onState(f) { listeners.push(f); }
+function setState(k, v) { st[k] = v; syncControls(); listeners.forEach(f => f()); }
+const ctlSets = [];
+function buildControls(host, withAlpha) {
+  const c = {};
+  const row1 = h("div", { class: "ctl" }, h("span", { class: "lab" }, "Plant"));
+  c.plant = segButtons(row1, [["book", "Book plant"], ["lecture", "Lecture plant"], ["custom", "Custom"]], st.plant, v => setState("plant", v), "Plant");
+  c.econ = h("p", { class: "note" });
+  row1.append(c.econ);
+  c.custom = h("div", { class: "grid2" });
+  const sS = h("input", { type: "range", min: 1000, max: 100000, step: 1000, value: PLANTS.custom.S, "aria-label": "Cost of a stop" });
+  const sO = h("input", { type: "range", min: 500, max: 30000, step: 500, value: PLANTS.custom.O, "aria-label": "Cost of a day of overfill" });
+  const lS = h("label", {}), lO = h("label", {});
+  sS.addEventListener("input", () => { PLANTS.custom.S = +sS.value; setState("plant", "custom"); });
+  sO.addEventListener("input", () => { PLANTS.custom.O = +sO.value; setState("plant", "custom"); });
+  c.custom.append(h("div", { class: "ctl" }, lS, sS), h("div", { class: "ctl" }, lO, sO));
+  c.sS = sS; c.sO = sO; c.lS = lS; c.lO = lO;
+  host.append(row1, c.custom);
+  if (withAlpha) {
+    const ar = h("input", { type: "range", min: 0, max: A.length - 1, step: 1, value: st.ai, "aria-label": "Significance level" });
+    c.alab = h("label", {});
+    ar.addEventListener("input", () => setState("ai", +ar.value));
+    c.ar = ar;
+    host.append(h("div", { class: "ctl" }, c.alab, ar));
+  }
+  const g = h("div", { class: "grid2" });
+  const nr = h("div", { class: "ctl" }, h("span", { class: "lab" }, "Bottles sampled per day"));
+  c.n = segButtons(nr, [[5, "5"], [10, "10"], [20, "20"]], st.n, v => setState("n", v), "Bottles per day");
+  const fr = h("div", { class: "ctl" }, h("span", { class: "lab" }, "Machine starts overfilling (assumption)"));
+  c.freq = segButtons(fr, [["rare", "Rarely"], ["some", "Sometimes"], ["often", "Often"]], st.freq, v => setState("freq", v), "Drift frequency");
+  const dr = h("div", { class: "ctl" }, h("span", { class: "lab" }, "Size of the overfill (assumption)"));
+  c.d = segButtons(dr, [[0.5, "Small"], [0.7, "Typical"], [1.0, "Large"]], st.d, v => setState("d", v), "Drift size");
+  c.assume = h("p", { class: "note" });
+  g.append(nr, fr, dr, h("div", { class: "ctl" }, c.assume));
+  host.append(g);
+  ctlSets.push(c);
+}
+function syncControls() {
+  const p = plant();
+  ctlSets.forEach(c => {
+    const vals = { plant: ["book", "lecture", "custom"], n: [5, 10, 20], freq: ["rare", "some", "often"], d: [0.5, 0.7, 1.0] };
+    for (const k of Object.keys(vals)) $$("button", c[k]).forEach((b, i) => b.setAttribute("aria-pressed", String(vals[k][i] === st[k])));
+    c.econ.textContent = `A stop costs ${money(p.S)}, and a day of overfill costs ${money(p.O)}.` + (st.plant === "lecture" ? " These are the costs from the Module 3 slides (stop $5,000, overfill $2,000 a day)." : st.plant === "book" ? " These are the book's modernized costs (§4.10.3)." : "");
+    c.custom.style.display = st.plant === "custom" ? "grid" : "none";
+    c.lS.textContent = "Cost of a stop: " + money(PLANTS.custom.S); c.lO.textContent = "Cost of a day of overfill: " + money(PLANTS.custom.O);
+    c.sS.value = PLANTS.custom.S; c.sO.value = PLANTS.custom.O;
+    if (c.ar) { c.ar.value = st.ai; c.ar.setAttribute("aria-valuetext", aLabel(A[st.ai])); c.alab.innerHTML = `Significance level α: <strong>${aLabel(A[st.ai])}</strong>`; }
+    const oz = (st.d * p.sigma).toFixed(3);
+    c.assume.textContent = `When the machine drifts, the average fill rises by about ${oz} oz (${SIZE[st.d]}), and this happens ${FREQ[st.freq][1]}. Since the book does not say how often or how far the machine drifts, these are assumptions.`;
+  });
+}
+
+/* ---------- step 1 ---------- */
+quiz($("#q1"), {
+  q: "A false stop costs $50,000 and a missed day of overfill costs $12,000. Which way should this plant lean when it sets α?",
+  opts: [
+    { t: "A lower α, i.e. demand strong evidence before stopping the line.", k: "right", fb: "A single false stop costs about as much as four days of overfill, so false alarms are the expensive mistake here. That is also why leadership in the book chooses 1% " + book("§4.10.3", "182") + ". In step 3 we will check how far down to go." },
+    { t: "A higher α, i.e. stop at the first hint of overfill.", k: "wrong", fb: "This would trigger many $50,000 stops on days when the line is actually fine. When false alarms are the expensive mistake, a conservative threshold makes more sense " + book("§4.5.3", "154") + "." },
+    { t: "It does not matter, so just use the standard 5%.", k: "wrong", fb: "The book makes clear that 5% is only a convention and no law. As it puts it, “The decision is: given the costs of being wrong in either direction, how conservative should we be?” " + book("§4.5.7", "157") + "." }]
+});
+
+/* ---------- step 2: simulate a year ---------- */
+buildControls($("#controls2"), true);
+let year = null, many = null;
+function simYear() {
+  const p = plant(), [hz] = FREQ[st.freq], cv = crit(st.n, st.ai), n = st.n, mu1 = st.d * p.sigma;
+  let drifting = false; const days = [];
+  for (let t = 0; t < DAYS; t++) {
+    if (!drifting && Math.random() < hz) drifting = true;
+    let s = 0, ss = 0; for (let i = 0; i < n; i++) { const x = (drifting ? mu1 : 0) + p.sigma * randn(); s += x; ss += x * x; }
+    const m = s / n, sdv = Math.sqrt((ss - n * m * m) / (n - 1)), tstat = m / (sdv / Math.sqrt(n));
+    const stop = tstat > cv;
+    days.push(stop ? (drifting ? "cs" : "fs") : (drifting ? "mo" : "ok"));
+    if (stop) drifting = false;
+  }
+  const cnt = k => days.filter(d => d === k).length;
+  return { days, fs: cnt("fs"), cs: cnt("cs"), mo: cnt("mo"), S: p.S, O: p.O };
+}
+const yCost = y => (y.fs + y.cs) * y.S + y.mo * y.O;
+const drawYear = charted("c-year", (host, w) => {
+  if (!year) { host.append(h("p", { class: "note" }, "Please press “Run a year”.")); return; }
+  const cols = 25, gap = 2, cs = Math.min(24, Math.floor((w - gap * (cols - 1)) / cols)), rows = Math.ceil(DAYS / cols), ht = rows * (cs + gap);
+  const g = sv("svg", { class: "chart", width: cols * (cs + gap), height: ht, viewBox: `0 0 ${cols * (cs + gap)} ${ht}`, role: "img", "aria-label": "250 production days" });
+  const col = { ok: "var(--soft)", fs: "var(--bad)", cs: "var(--good)", mo: "var(--warn)" };
+  const lab = { ok: "normal day", fs: "false stop", cs: "caught the overfill", mo: "missed overfill" };
+  const mark = { fs: "F", cs: "C", mo: "M" };
+  year.days.forEach((d, i) => {
+    const x0 = (i % cols) * (cs + gap), y0 = Math.floor(i / cols) * (cs + gap);
+    g.append(sv("rect", { x: x0, y: y0, width: cs, height: cs, rx: 2, fill: col[d], stroke: d === "ok" ? "var(--line)" : "none" }, sv("title", {}, `Day ${i + 1}: ${lab[d]}`)));
+    if (mark[d] && cs >= 12) g.append(sv("text", { x: x0 + cs / 2, y: y0 + cs / 2 + 3.5, "text-anchor": "middle", style: `fill:var(--card); font-size:${Math.min(11, cs - 4)}px; font-weight:700`, "aria-hidden": "true" }, mark[d]));
+  });
+  host.append(g);
+});
+function renderTally() {
+  const t = $("#t-year"); t.innerHTML = "";
+  const ec = expCost(plant().S, plant().O, FREQ[st.freq][0], power(st.n, st.d, st.ai), A[st.ai]).total;
+  $("#year-note").innerHTML = many
+    ? `Over 20 simulated years at α = ${aLabel(A[st.ai])}, the average is <strong>${kmoney(many.avg)}</strong> a year (best year ${kmoney(many.min)}, worst ${kmoney(many.max)}), against a long-run average of ${kmoney(ec)}.`
+    : `A single year is quite noisy; the long-run average at this setting is about <strong>${kmoney(ec)}</strong> a year. Please run a few years, or run 20.`;
+  if (!year) return;
+  const rows = [["False stops", year.fs, year.fs * year.S], ["Necessary stops (caught the overfill)", year.cs, year.cs * year.S], ["Days of missed overfill", year.mo, year.mo * year.O]];
+  t.append(h("table", {}, h("thead", {}, h("tr", {}, h("th", { style: { textTransform: "none", letterSpacing: "0" } }, `This year at α = ${aLabel(A[st.ai])}`), h("th", { class: "r" }, "Count"), h("th", { class: "r" }, "Cost"))),
+    h("tbody", {}, rows.map(r => h("tr", {}, h("td", {}, r[0]), h("td", { class: "r" }, r[1]), h("td", { class: "r" }, money(r[2])))),
+      h("tr", {}, h("td", {}, h("strong", {}, "Total")), h("td"), h("td", { class: "r" }, h("strong", {}, money(yCost(year))))))));
+}
+$("#run-year").addEventListener("click", () => { year = simYear(); many = null; drawYear(); renderTally(); });
+$("#run-20").addEventListener("click", () => {
+  const ys = Array.from({ length: 20 }, simYear), cs = ys.map(yCost);
+  year = ys[ys.length - 1]; many = { avg: mean(cs), min: Math.min(...cs), max: Math.max(...cs) };
+  drawYear(); renderTally();
+});
+onState(() => { year = null; many = null; drawYear(); renderTally(); });
+const defBook = curve(PLANTS.book, 10, 0.7, 1 / 20);
+quiz($("#q2"), {
+  q: "With the default settings (i.e. book plant, 10 bottles, drift about every 20 days, typical size), which costs less over a year, α = 5% or α = 1%? Please run a few years of each.",
+  opts: [
+    { t: "α = 5%", k: "wrong", fb: `Please run a few more years. At 5%, the plant stops for nothing about ${Math.round(defBook[A.indexOf(0.05)].fs / PLANTS.book.S)} times a year, at $50,000 each. In the long run, this costs about ${kmoney(defBook[A.indexOf(0.05)].total)} a year at 5%, compared with ${kmoney(defBook[A.indexOf(0.01)].total)} at 1%.` },
+    { t: "α = 1%", k: "right", fb: `In the long run, the plant costs about ${kmoney(defBook[A.indexOf(0.01)].total)} a year at 1%, compared with ${kmoney(defBook[A.indexOf(0.05)].total)} at 5%. The 1% plant misses more overfill days, but it avoids many $50,000 false stops. Of course, any single year can go either way, which is why step 3 looks at the long run.` },
+    { t: "They cost about the same.", k: "wrong", fb: `Over the long run they do not; it is about ${kmoney(defBook[A.indexOf(0.01)].total)} a year at 1%, compared with ${kmoney(defBook[A.indexOf(0.05)].total)} at 5%. Since single years overlap a lot, please run several.` }]
+});
+
+/* ---------- step 3: cost curve ---------- */
+buildControls($("#controls3"), true);
+const drawCurve = charted("c-curve", (host, w) => {
+  const p = plant(), c = curve(p, st.n, st.d, FREQ[st.freq][0]), b = bestIdx(c);
+  const ml = w < 460 ? 46 : 56, mr = 12, mt = 14, mb = 34, ht = w < 460 ? 230 : 280;
+  const lx = a => Math.log10(a), x = lin(lx(A[0]), lx(A[A.length - 1]), ml, w - mr);
+  const ymax = Math.max(...c.map(v => v.total)) * 1.08, y = lin(0, ymax, ht - mb, mt);
+  const g = sv("svg", { class: "chart", width: w, height: ht, viewBox: `0 0 ${w} ${ht}`, role: "img", "aria-label": "Yearly cost by significance level" });
+  niceTicks(0, ymax, 4).forEach(t => { g.append(sv("line", { class: "grid", x1: ml, x2: w - mr, y1: y(t), y2: y(t) })); g.append(sv("text", { x: ml - 6, y: y(t) + 4, "text-anchor": "end" }, kmoney(t))); });
+  [0.001, 0.005, 0.01, 0.02, 0.05, 0.1, 0.2].forEach(a => { if (w < 460 && (a === 0.005 || a === 0.02)) return; g.append(sv("text", { x: x(lx(a)), y: ht - mb + 16, "text-anchor": "middle" }, aLabel(a))); });
+  g.append(sv("text", { x: (ml + w - mr) / 2, y: ht - 4, "text-anchor": "middle" }, "Significance level α (log scale)"));
+  const path = key => "M" + A.map((a, i) => `${x(lx(a)).toFixed(1)},${y(c[i][key]).toFixed(1)}`).join("L");
+  [["cs", "var(--good)", 1.5], ["fs", "var(--bad)", 2], ["mo", "var(--warn)", 2], ["total", "var(--c1)", 3.5]].forEach(([k, col, sw]) => g.append(sv("path", { d: path(k), fill: "none", stroke: col, "stroke-width": sw, "stroke-linejoin": "round" })));
+  const xa = x(lx(A[st.ai]));
+  g.append(sv("line", { x1: xa, x2: xa, y1: mt, y2: ht - mb, stroke: "var(--ink)", "stroke-dasharray": "4 4" }));
+  g.append(sv("text", { x: xa + (xa > w - 90 ? -6 : 6), y: mt + 10, "text-anchor": xa > w - 90 ? "end" : "start", class: "ink" }, "your α"));
+  g.append(sv("circle", { cx: x(lx(A[b])), cy: y(c[b].total), r: 7, fill: "var(--card)", stroke: "var(--c1)", "stroke-width": 3 }));
+  g.append(sv("text", { x: x(lx(A[b])), y: y(c[b].total) + 24, "text-anchor": "middle", class: "strong" }, "cheapest"));
+  host.append(g);
+  $("#best-a").textContent = aLabel(A[b]); $("#best-c").textContent = kmoney(c[b].total); $("#your-c").textContent = kmoney(c[st.ai].total);
+});
+onState(drawCurve);
+const defLect = curve(PLANTS.lecture, 10, 0.7, 1 / 20), bB = bestIdx(defBook), bL = bestIdx(defLect);
+quiz($("#q3a"), {
+  q: "Please keep the default assumptions (i.e. 10 bottles, drift sometimes, typical size) and switch from the book plant to the lecture plant (stop $5,000, overfill $2,000 a day). Does the cheapest α move up or down?",
+  opts: [
+    { t: "Up", k: "right", fb: `With the default assumptions, it moves from ${aLabel(A[bB])} to ${aLabel(A[bL])}. In the lecture plant, a false stop costs 2.5 days of overfill instead of about 4, so the plant can afford more false alarms in exchange for catching drift sooner. That is, the threshold follows the consequences ` + book("§4.5.7", "157") + "." },
+    { t: "Down", k: "wrong", fb: `Please try it. With the default assumptions, it moves from ${aLabel(A[bB])} up to ${aLabel(A[bL])}; that is, when false stops are relatively cheaper, a less conservative threshold pays off.` },
+    { t: "It stays the same", k: "wrong", fb: `Please try it. With the default assumptions, it moves from ${aLabel(A[bB])} to ${aLabel(A[bL])}, because the cheapest α depends on the ratio of the two costs.` }]
+});
+quiz($("#q3b"), {
+  q: "Now please sample 20 bottles a day instead of 10. What happens to the curve?",
+  opts: [
+    { t: "Missed overfill drops at every α, and the total cost falls at almost every α.", k: "right", fb: "More data raises the power, i.e. the test's ability to detect overfill that is really there " + book("§4.5.5", "155") + ". At the highest α levels the curve barely moves, since those settings already catch drift fast and stops dominate the cost. (Please note that this lab ignores the cost of sampling more bottles, which a real plant would have to weigh.)" },
+    { t: "Nothing changes, since α is the only setting that matters.", k: "wrong", fb: "Please try it; the missed-overfill line drops. Sample size is a leadership variable, because it determines how much the test can detect " + book("§4.5.5", "155") + "." },
+    { t: "Costs rise, because there are more chances for a false stop.", k: "wrong", fb: "The false-stop rate on good days is α, regardless of the sample size. What changes is the detection; that is, more bottles mean more power " + book("§4.5.5", "155") + "." }]
+});
+const pB = 0.0255, pL = 0.031;
+$("#contrast").innerHTML = `<strong>The book and the lecture:</strong> Both samples give a p-value near 0.03, namely 0.026 in the book (Table 4.6) and 0.031 for the lecture's sample (mean 12.100 oz, SD 0.149, 10 bottles, one-sided t-test). ` +
+  `On the other hand, the book uses α = 1% and keeps the line running while it steps up monitoring ${book("§4.10.3", "182")}, whereas the slides use the conventional 5% and stop the line. ` +
+  `Under this lab's default assumptions, the cheapest α is ${aLabel(A[bB])} for the book plant (p = 0.026 says <em>${pB < A[bB] ? "stop" : "keep running"}</em>) and ${aLabel(A[bL])} for the lecture plant (p = 0.031 says <em>${pL < A[bL] ? "stop" : "keep running"}</em>). ` +
+  `Whether a p-value of about 0.03 should stop a line therefore depends on what each mistake costs and how often the machine drifts, and should not be a matter of habit ${book("§4.5.7", "157")}.`;
+
+/* ---------- step 4: peeking ---------- */
+quiz($("#q4"), {
+  q: "Please make a prediction first. The two versions are identical, but the team checks every day and stops at the first p &lt; 0.05. How often will it declare a “winner”?",
+  opts: [
+    { t: "About 5% of the time (i.e. the significance level)", k: "wrong", fb: "The 5% is the false-alarm rate for <em>one</em> look, and fourteen looks give fourteen chances. Please run 500 tests to see." },
+    { t: "Roughly 15–25% of the time", k: "right", fb: "Each daily look is another chance for noise to cross 0.05, and the team stops at the first crossing. Please run 500 tests to check." },
+    { t: "About half the time", k: "wrong", fb: "It happens less often than that, because the daily results are strongly related (i.e. each day adds to the same data). Please run 500 tests to see." }]
+});
+const PD = 14, PN = 1000, PR = 0.03;
+function binom(n, p) { let k = 0; for (let i = 0; i < n; i++) if (Math.random() < p) k++; return k; }
+function pval(x1, n1, x2, n2) { const pp = (x1 + x2) / (n1 + n2); const se = Math.sqrt(pp * (1 - pp) * (1 / n1 + 1 / n2)); if (se === 0) return 1; const z = (x2 / n2 - x1 / n1) / se; return 2 * (1 - normCdf(Math.abs(z))); }
+function oneTest() { let a = 0, b = 0; const ps = []; for (let d = 1; d <= PD; d++) { a += binom(PN, PR); b += binom(PN, PR); ps.push(pval(a, d * PN, b, d * PN)); } return ps; }
+let path = null, tally = null;
+const drawPath = charted("c-path", (host, w) => {
+  if (!path) { host.append(h("p", { class: "note" }, "Please press “Run one test”.")); return; }
+  const ml = 38, mr = 10, mt = 10, mb = 30, ht = 200, x = lin(1, PD, ml, w - mr), y = lin(0, 1, ht - mb, mt);
+  const g = sv("svg", { class: "chart", width: w, height: ht, viewBox: `0 0 ${w} ${ht}`, role: "img", "aria-label": "Daily p-value" });
+  [0, 0.25, 0.5, 0.75, 1].forEach(t => { g.append(sv("line", { class: "grid", x1: ml, x2: w - mr, y1: y(t), y2: y(t) })); g.append(sv("text", { x: ml - 6, y: y(t) + 4, "text-anchor": "end" }, t)); });
+  [1, 7, 14].forEach(d => g.append(sv("text", { x: x(d), y: ht - 12, "text-anchor": "middle" }, "day " + d)));
+  g.append(sv("rect", { x: ml, y: y(0.05), width: w - mr - ml, height: y(0) - y(0.05), fill: "var(--bad-soft)" }));
+  g.append(sv("text", { x: w - mr - 4, y: y(0.05) - 4, "text-anchor": "end", style: "fill:var(--bad)" }, "p < 0.05"));
+  g.append(sv("path", { d: "M" + path.map((p, i) => `${x(i + 1)},${y(p)}`).join("L"), fill: "none", stroke: "var(--c1)", "stroke-width": 2.5 }));
+  const first = path.findIndex(p => p < 0.05);
+  path.forEach((p, i) => g.append(sv("circle", { cx: x(i + 1), cy: y(p), r: i === first ? 7 : 3.5, fill: i === first ? "var(--bad)" : "var(--c1)" })));
+  host.append(g);
+});
+const drawBars = charted("c-peekbars", (host, w) => {
+  if (!tally) { host.append(h("p", { class: "note" }, "Please press “Run 500 tests”.")); return; }
+  const rows = [{ label: "A: look once", value: tally.a / tally.n }, { label: "B: look daily", value: tally.b / tally.n }];
+  const lw = 96, rh = 40, ht = rows.length * rh + 26, x = lin(0, 0.4, lw, w - 50);
+  const g = sv("svg", { class: "chart", width: w, height: ht, viewBox: `0 0 ${w} ${ht}`, role: "img" });
+  [0, 0.1, 0.2, 0.3, 0.4].forEach(t => { g.append(sv("line", { class: "grid", x1: x(t), x2: x(t), y1: 2, y2: ht - 20 })); g.append(sv("text", { x: x(t), y: ht - 5, "text-anchor": "middle" }, Math.round(t * 100) + "%")); });
+  g.append(sv("line", { x1: x(0.05), x2: x(0.05), y1: 2, y2: ht - 20, stroke: "var(--ink)", "stroke-dasharray": "4 3" }));
+  rows.forEach((r, i) => { const yy = 4 + i * rh; g.append(sv("text", { x: lw - 8, y: yy + rh / 2 + 2, "text-anchor": "end", class: "ink" }, r.label)); g.append(sv("rect", { x: lw, y: yy + 6, width: x(r.value) - lw, height: rh - 16, rx: 3, fill: i ? "var(--bad)" : "var(--c1)" })); g.append(sv("text", { x: x(r.value) + 6, y: yy + rh / 2 + 2, class: "strong" }, pct(r.value))); });
+  host.append(g);
+});
+$("#peek1").addEventListener("click", () => {
+  path = oneTest(); const first = path.findIndex(p => p < 0.05);
+  $("#peek-note").innerHTML = `Policy A (day 14): p = ${path[PD - 1].toFixed(3)}, ${path[PD - 1] < 0.05 ? "<strong>a false winner</strong>" : "no winner (correct)"}. Policy B: ${first >= 0 ? `<strong>a false winner on day ${first + 1}</strong>` : "no winner in 14 days (correct)"}.`;
+  drawPath();
+});
+$("#peek500").addEventListener("click", () => { // run in small batches so the page stays responsive on phones
+  const btn = $("#peek500"), n = 500; let a = 0, b = 0, done = 0; btn.disabled = true;
+  const batch = () => {
+    for (let i = 0; i < 25 && done < n; i++, done++) { const ps = oneTest(); if (ps[PD - 1] < 0.05) a++; if (ps.some(p => p < 0.05)) b++; }
+    tally = { a, b, n: done }; drawBars();
+    $("#peek-count").textContent = `Out of ${done} tests with no real difference, looking once found a false winner ${a} times, while looking daily found one ${b} times.`;
+    if (done < n) setTimeout(batch, 0); else btn.disabled = false;
+  };
+  batch();
+});
+
+/* ---------- step 5 ---------- */
+const refresh = promptBox($("#prompt"), () => {
+  const p = plant();
+  return `I manage a bottling line that should fill 12-ounce bottles. Each morning we sample ${st.n} bottles and run a one-sided t-test of H0: mean fill = 12 oz against Ha: mean fill > 12 oz. If the test rejects, we stop the line to recalibrate.
+
+Stopping the line costs about ${money(p.S)}. Each day the line overfills without being caught costs about ${money(p.O)}. We think the machine starts overfilling ${FREQ[st.freq][1]}, by about ${(st.d * p.sigma).toFixed(3)} oz (bottle-to-bottle standard deviation about ${p.sigma} oz).
+
+Ask me any questions you need. Then recommend a significance level, and explain with numbers the trade-off between false stops and missed overfill.`;
+});
+onState(refresh);
+whenShown("s5", refresh);
+
+syncControls();
+initSteps();
+
+</script>
+</body>
+</html>

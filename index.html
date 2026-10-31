@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="The nine Decision Labs of QMB 6358 Data Analytics for Business.">
+<title>QMB 6358 Decision Labs</title>
+<style>
+/* Decision Labs: shared styles. Single reading column; step pills on top; each step is a card. */
+:root{
+  --bg:#f4f6f5; --card:#ffffff; --ink:#1d2b30; --muted:#5a6b72; --line:#d6dedb; --soft:#eef3f1;
+  --accent:#0e4d6c; --accent-ink:#ffffff; --accent-soft:#e3eef3;
+  --good:#24723a; --good-soft:#e5f2e8; --warn:#8a5a00; --warn-soft:#fbf0d9; --bad:#a63a2a; --bad-soft:#f8e4e0;
+  --book:#7d6210; --book-soft:#f8f1dc;
+  --c1:#0e4d6c; --c2:#3f8fbf; --c3:#d0862b; --c4:#8c5aa8; --c5:#5d8f3c; --hi:#c2410c;
+  --on-c1:#ffffff; --on-c2:#0b1f29; --on-c3:#24160a; --on-c4:#ffffff;
+  --grid:#e3e8e6;
+  --sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#0f1517; --card:#162024; --ink:#e3ebe8; --muted:#9fb0b3; --line:#2b3a3f; --soft:#1c282c;
+  --accent:#6cb6d8; --accent-ink:#0f1517; --accent-soft:#183342;
+  --good:#6fcf8a; --good-soft:#173322; --warn:#e7b65a; --warn-soft:#33280f; --bad:#f08a78; --bad-soft:#3a1d18;
+  --book:#dcbf6a; --book-soft:#2e2814;
+  --c1:#6cb6d8; --c2:#9ad0ee; --c3:#e8a85a; --c4:#c39ae0; --c5:#93c76e; --hi:#fb8c4a; --grid:#24323a; --on-c1:#0f1517; --on-c2:#0f1517; --on-c3:#0f1517; --on-c4:#0f1517; color-scheme:dark; } }
+:root[data-theme="dark"]{
+  --bg:#0f1517; --card:#162024; --ink:#e3ebe8; --muted:#9fb0b3; --line:#2b3a3f; --soft:#1c282c;
+  --accent:#6cb6d8; --accent-ink:#0f1517; --accent-soft:#183342;
+  --good:#6fcf8a; --good-soft:#173322; --warn:#e7b65a; --warn-soft:#33280f; --bad:#f08a78; --bad-soft:#3a1d18;
+  --book:#dcbf6a; --book-soft:#2e2814;
+  --c1:#6cb6d8; --c2:#9ad0ee; --c3:#e8a85a; --c4:#c39ae0; --c5:#93c76e; --hi:#fb8c4a; --grid:#24323a; --on-c1:#0f1517; --on-c2:#0f1517; --on-c3:#0f1517; --on-c4:#0f1517; color-scheme:dark; }
+
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0; background:var(--bg); color:var(--ink); font:16px/1.55 var(--sans);}
+.wrap{max-width:880px; margin:0 auto; padding:20px max(16px, env(safe-area-inset-right)) 56px max(16px, env(safe-area-inset-left));}
+h1,h2,h3{line-height:1.25; margin:0; text-wrap:balance}
+h1{font-size:clamp(26px, 5vw, 34px); letter-spacing:-0.01em}
+h2{font-size:21px}
+h3{font-size:16px}
+p{margin:0}
+a{color:var(--accent)}
+.eyebrow{font-size:12px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); font-weight:600}
+.lede{color:var(--muted); max-width:62ch}
+.meta{font-size:13px; color:var(--muted)}
+header.lab{display:grid; gap:8px; margin-bottom:16px}
+.num{font-variant-numeric:tabular-nums}
+.mono{font-family:var(--mono)}
+
+/* step pills */
+nav.steps{position:sticky; top:0; z-index:5; background:var(--bg); padding:8px 0 10px; display:flex; gap:6px; overflow-x:auto; scrollbar-width:none; border-bottom:1px solid var(--line); margin-bottom:16px}
+nav.steps::-webkit-scrollbar{display:none}
+.pill{flex:0 0 auto; font:inherit; font-size:14px; border:1px solid var(--line); background:var(--card); color:var(--ink); border-radius:999px; padding:6px 12px; cursor:pointer; white-space:nowrap}
+.pill .n{display:inline-block; min-width:1.4em; font-weight:700; color:var(--muted)}
+.pill[aria-current="step"]{background:var(--accent); border-color:var(--accent); color:var(--accent-ink)}
+.pill[aria-current="step"] .n{color:var(--accent-ink)}
+.pill.done:not([aria-current="step"]) .n{color:var(--good)}
+
+/* step cards */
+section.step{display:none; background:var(--card); border:1px solid var(--line); border-radius:12px; padding:20px; gap:16px}
+section.step.on{display:grid}
+.step > h2 .k{color:var(--muted); font-weight:600; margin-right:6px}
+.row{display:flex; gap:10px; flex-wrap:wrap; align-items:center}
+.spread{justify-content:space-between}
+.grid2{display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:14px}
+@media (max-width:680px){ .grid2{grid-template-columns:1fr} section.step{padding:16px} }
+.panel{background:var(--soft); border-radius:10px; padding:14px; display:grid; gap:10px; min-width:0}
+.note{font-size:14px; color:var(--muted)}
+.callout{border-left:4px solid var(--accent); background:var(--accent-soft); padding:10px 14px; border-radius:0 8px 8px 0; font-size:15px}
+.big{font-size:28px; font-weight:700; font-variant-numeric:tabular-nums; line-height:1.1}
+.stat{display:grid; gap:2px}
+.stat .lab{font-size:12px; color:var(--muted); text-transform:uppercase; letter-spacing:.06em}
+.stats{display:grid; grid-template-columns:repeat(auto-fit, minmax(130px,1fr)); gap:10px}
+
+/* book chip */
+.book{display:inline-flex; align-items:center; gap:4px; font-size:12px; font-weight:600; color:var(--book); background:var(--book-soft); border-radius:999px; padding:2px 9px; white-space:nowrap; vertical-align:1px}
+.book::before{content:""; width:10px; height:8px; border:1.5px solid currentColor; border-radius:1px 1px 2px 2px; border-top-width:1.5px; display:inline-block}
+
+/* buttons and controls */
+button{font:inherit}
+.btn{border:1px solid var(--accent); background:var(--accent); color:var(--accent-ink); border-radius:8px; padding:8px 14px; cursor:pointer; font-weight:600}
+.btn.ghost{background:transparent; color:var(--accent)}
+.btn:disabled{opacity:.5; cursor:default}
+.btn:focus-visible,.pill:focus-visible,.opt:focus-visible,.seg button:focus-visible,input:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+.seg{display:inline-flex; flex-wrap:nowrap; border:1px solid var(--line); border-radius:8px; overflow:hidden; background:var(--card); max-width:100%}
+.rate{display:grid}
+.rate-row{display:grid; grid-template-columns:1fr auto; gap:8px 14px; align-items:center; padding:10px 0; border-bottom:1px solid var(--line)}
+.rate-row:last-child{border-bottom:0}
+@media (max-width:520px){ .rate-row{grid-template-columns:1fr} }
+.seg button{border:0; border-right:1px solid var(--line); background:transparent; color:var(--ink); padding:6px 10px; cursor:pointer; font-size:14px}
+.seg button:last-child{border-right:0}
+.seg button[aria-pressed="true"]{background:var(--accent); color:var(--accent-ink)}
+.ctl{display:grid; gap:4px; min-width:0}
+.ctl > .seg{justify-self:start}
+.ctl label,.ctl .lab{font-size:13px; color:var(--muted); font-weight:600}
+input[type=range]{width:100%; accent-color:var(--accent)}
+.check{display:flex; align-items:center; gap:8px; font-size:15px; padding:4px 0; cursor:pointer}
+.check input{width:18px; height:18px; accent-color:var(--accent)}
+
+/* multiple-choice with instant feedback */
+.quiz{display:grid; gap:10px; border:1px solid var(--line); border-radius:10px; padding:14px}
+.quiz .q{font-weight:600}
+.opts{display:grid; gap:8px}
+.opt{text-align:left; border:1px solid var(--line); background:var(--card); color:var(--ink); border-radius:8px; padding:10px 12px; cursor:pointer; display:flex; gap:10px; align-items:flex-start}
+.opt .mk{flex:0 0 22px; height:22px; border-radius:50%; border:1.5px solid var(--line); display:grid; place-items:center; font-size:13px; font-weight:700; color:var(--muted)}
+.opt:hover{border-color:var(--accent)}
+.opt.picked.right{border-color:var(--good); background:var(--good-soft)}
+.opt.picked.right .mk{border-color:var(--good); background:var(--good); color:var(--card)}
+.opt.picked.wrong{border-color:var(--warn); background:var(--warn-soft)}
+.opt.picked.wrong .mk{border-color:var(--warn); background:var(--warn); color:var(--card)}
+.opt.picked.ok{border-color:var(--accent); background:var(--accent-soft)}
+.opt.picked.ok .mk{border-color:var(--accent); background:var(--accent); color:var(--card)}
+.fb{border-radius:8px; padding:10px 12px; font-size:15px; display:none}
+.fb.show{display:block}
+.fb.right{background:var(--good-soft)}
+.fb.wrong{background:var(--warn-soft)}
+.fb.ok{background:var(--accent-soft)}
+.fb b{display:block; margin-bottom:2px}
+
+/* tables */
+.tbl{overflow-x:auto}
+table{border-collapse:collapse; width:100%; font-size:14px}
+th,td{padding:6px 8px; border-bottom:1px solid var(--line); text-align:left; vertical-align:top}
+th{font-size:12px; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); font-weight:600}
+td.r,th.r{text-align:right; font-variant-numeric:tabular-nums}
+td.r{white-space:nowrap}
+
+/* charts */
+svg.chart{width:100%; height:auto; display:block; overflow:visible}
+svg.chart text{fill:var(--muted); font:12px var(--sans)}
+svg.chart text.ink{fill:var(--ink)}
+svg.chart text.strong{fill:var(--ink); font-weight:700}
+svg.chart .grid{stroke:var(--grid); stroke-width:1}
+svg.chart .axis{stroke:var(--line); stroke-width:1}
+.legend{display:flex; flex-wrap:wrap; gap:6px 14px; font-size:13px; color:var(--muted)}
+.legend span{display:inline-flex; align-items:center; gap:6px}
+.legend i{width:12px; height:12px; border-radius:3px; display:inline-block}
+
+/* risk lights */
+.lights{display:grid; grid-template-columns:repeat(auto-fit, minmax(190px,1fr)); gap:8px}
+.light{display:grid; grid-template-columns:auto 1fr; gap:2px 10px; align-items:start; border:1px solid var(--line); border-radius:8px; padding:8px 10px; font-size:14px}
+.light .dot{width:14px; height:14px; border-radius:50%; background:var(--line); margin-top:3px; grid-row:span 2}
+.light.on{border-color:var(--warn); background:var(--warn-soft)}
+.light.on .dot{background:var(--warn); box-shadow:0 0 0 3px color-mix(in srgb, var(--warn) 25%, transparent)}
+.light .t{font-weight:600}
+.light .d{color:var(--muted); font-size:13px}
+
+/* prompt box */
+.prompt{font-family:var(--mono); font-size:13.5px; line-height:1.5; background:var(--soft); border:1px solid var(--line); border-radius:8px; padding:12px; white-space:pre-wrap; word-break:break-word}
+footer{margin-top:28px; font-size:13px; color:var(--muted); display:grid; gap:6px; max-width:70ch}
+.nav-next{display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap; border-top:1px solid var(--line); padding-top:14px}
+.sr{position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0)}
+@media (prefers-reduced-motion: no-preference){ section.step.on{animation:fade .2s ease-out} @keyframes fade{from{opacity:.4; transform:translateY(3px)} to{opacity:1; transform:none}} }
+
+h2:focus{outline:none}
+@media (max-width:520px){ table{font-size:13px} th,td{padding:6px 5px} th{letter-spacing:.02em} }
+
+.cards{display:grid; gap:12px}
+.card{display:grid; gap:6px; background:var(--card); border:1px solid var(--line); border-radius:12px; padding:16px 18px; color:var(--ink); text-decoration:none}
+.card:hover{border-color:var(--accent)}
+.card p{color:var(--muted)}
+.group{display:grid; gap:12px; margin-top:22px}
+.group > h2{font-size:18px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header class="lab">
+  <span class="eyebrow">QMB 6358 · Data Analytics for Business</span>
+  <h1>Decision Labs</h1>
+  <p class="lede">These short interactive exercises are meant as a supplement to the readings in <em>Business Analytics in the Age of AI</em> (Jank, 2026) and <em>The Math Behind the Machines</em> (Novikov, 2025). Please work through each lab after you have completed the reading for that module or project; your Reading Guide (or the project page) links to it. All you need to do is click buttons and move sliders. Nothing is graded or saved, and the labs also work on a phone.</p>
+</header>
+<section class="group"><h2>Module 1</h2><div class="cards"><a class="card" href="m8-from-question-to-decision.html"><span class="eyebrow">Week 1 · Chapter 1</span><h3>From Question to Decision</h3><p>In this lab you improve one vague request to an AI tool step by step, compare the answers that come back, and decide which change made the biggest difference.</p><span class="meta">About 15 minutes</span></a><a class="card" href="m1-the-mix-trap.html"><span class="eyebrow">Week 1 · Chapter 2</span><h3>The Mix Trap</h3><p>In this lab, one region appears to be the weakest performer. Please follow the chapter's rule for comparing groups and find out what the comparison is really telling you.</p><span class="meta">About 15 minutes</span></a><a class="card" href="m2-the-uncertain-zone.html"><span class="eyebrow">Week 2 · Chapter 3</span><h3>The Uncertain Zone</h3><p>In this lab you run the book's market-share panel 100 times. You will see what &ldquo;95% confident&rdquo; really means, and what to do when an interval straddles the break-even point.</p><span class="meta">About 15 minutes</span></a><a class="card" href="m3-set-the-alarm.html"><span class="eyebrow">Week 3 · Chapter 4</span><h3>Set the Alarm</h3><p>In this lab you run the book's bottling line for a simulated year, choose the significance level, and find the setting with the lowest cost.</p><span class="meta">About 20 minutes</span></a></div></section><section class="group"><h2>Module 2</h2><div class="cards"><a class="card" href="m4-fair-comparisons.html"><span class="eyebrow">Chapter 5</span><h3>Fair Comparisons</h3><p>In this lab you build the productivity regression one driver at a time and see how a large work-mode gap shrinks once we compare like with like.</p><span class="meta">About 20 minutes</span></a></div></section><section class="group"><h2>Module 3</h2><div class="cards"><a class="card" href="m5-bending-the-line.html"><span class="eyebrow">Chapter 5</span><h3>Bending the Line</h3><p>In this lab you find out where a straight line bends in the book's pricing data, switch to a log-log model, and then work out in which product category a price increase would actually raise revenue.</p><span class="meta">About 20 minutes</span></a></div></section><section class="group"><h2>Module 4</h2><div class="cards"><a class="card" href="m6-forecast-ranges.html"><span class="eyebrow">Chapters 5 and 6</span><h3>Forecast Ranges</h3><p>In this lab you build the lecture's Coca-Cola forecast one piece at a time, test it on a year that it has not seen, and then plan for a range of outcomes instead of a single number.</p><span class="meta">About 20 minutes</span></a></div></section><section class="group"><h2>Kaggle Project</h2><div class="cards"><a class="card" href="m7-too-good-to-be-true.html"><span class="eyebrow">With the Kaggle competition</span><h3>Too Good to Be True</h3><p>In this lab you add predictors until the fit looks excellent and then see what happens on the leaderboard, including a feature that is too good to be true. At the end, you review the decisions that an AI tool made for you.</p><span class="meta">About 20 minutes</span></a></div></section><section class="group"><h2>Visualization Project</h2><div class="cards"><a class="card" href="m9-same-data-different-story.html"><span class="eyebrow">With the Tableau dashboard</span><h3>Same Data, Different Story</h3><p>In this lab the data never change, only the chart choices do (e.g. where the axis starts or how wide the bins are). Please watch what a viewer would conclude at each step.</p><span class="meta">About 15 minutes</span></a></div></section>
+<footer><p>This site is part of QMB 6358 Data Analytics for Business. Please note that most labs use synthetic (i.e. simulated) data modeled after the cases in the book, while a few use the course's own data files; each lab says which data it uses.</p></footer>
+</div>
+</body>
+</html>

@@ -1,0 +1,659 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Module 2 Decision Lab: holding other factors constant in regression (Chapter 5).">
+<title>Fair Comparisons · QMB 6358 Decision Lab</title>
+<style>
+/* Decision Labs: shared styles. Single reading column; step pills on top; each step is a card. */
+:root{
+  --bg:#f4f6f5; --card:#ffffff; --ink:#1d2b30; --muted:#5a6b72; --line:#d6dedb; --soft:#eef3f1;
+  --accent:#0e4d6c; --accent-ink:#ffffff; --accent-soft:#e3eef3;
+  --good:#24723a; --good-soft:#e5f2e8; --warn:#8a5a00; --warn-soft:#fbf0d9; --bad:#a63a2a; --bad-soft:#f8e4e0;
+  --book:#7d6210; --book-soft:#f8f1dc;
+  --c1:#0e4d6c; --c2:#3f8fbf; --c3:#d0862b; --c4:#8c5aa8; --c5:#5d8f3c; --hi:#c2410c;
+  --on-c1:#ffffff; --on-c2:#0b1f29; --on-c3:#24160a; --on-c4:#ffffff;
+  --grid:#e3e8e6;
+  --sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#0f1517; --card:#162024; --ink:#e3ebe8; --muted:#9fb0b3; --line:#2b3a3f; --soft:#1c282c;
+  --accent:#6cb6d8; --accent-ink:#0f1517; --accent-soft:#183342;
+  --good:#6fcf8a; --good-soft:#173322; --warn:#e7b65a; --warn-soft:#33280f; --bad:#f08a78; --bad-soft:#3a1d18;
+  --book:#dcbf6a; --book-soft:#2e2814;
+  --c1:#6cb6d8; --c2:#9ad0ee; --c3:#e8a85a; --c4:#c39ae0; --c5:#93c76e; --hi:#fb8c4a; --grid:#24323a; --on-c1:#0f1517; --on-c2:#0f1517; --on-c3:#0f1517; --on-c4:#0f1517; color-scheme:dark; } }
+:root[data-theme="dark"]{
+  --bg:#0f1517; --card:#162024; --ink:#e3ebe8; --muted:#9fb0b3; --line:#2b3a3f; --soft:#1c282c;
+  --accent:#6cb6d8; --accent-ink:#0f1517; --accent-soft:#183342;
+  --good:#6fcf8a; --good-soft:#173322; --warn:#e7b65a; --warn-soft:#33280f; --bad:#f08a78; --bad-soft:#3a1d18;
+  --book:#dcbf6a; --book-soft:#2e2814;
+  --c1:#6cb6d8; --c2:#9ad0ee; --c3:#e8a85a; --c4:#c39ae0; --c5:#93c76e; --hi:#fb8c4a; --grid:#24323a; --on-c1:#0f1517; --on-c2:#0f1517; --on-c3:#0f1517; --on-c4:#0f1517; color-scheme:dark; }
+
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0; background:var(--bg); color:var(--ink); font:16px/1.55 var(--sans);}
+.wrap{max-width:880px; margin:0 auto; padding:20px max(16px, env(safe-area-inset-right)) 56px max(16px, env(safe-area-inset-left));}
+h1,h2,h3{line-height:1.25; margin:0; text-wrap:balance}
+h1{font-size:clamp(26px, 5vw, 34px); letter-spacing:-0.01em}
+h2{font-size:21px}
+h3{font-size:16px}
+p{margin:0}
+a{color:var(--accent)}
+.eyebrow{font-size:12px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); font-weight:600}
+.lede{color:var(--muted); max-width:62ch}
+.meta{font-size:13px; color:var(--muted)}
+header.lab{display:grid; gap:8px; margin-bottom:16px}
+.num{font-variant-numeric:tabular-nums}
+.mono{font-family:var(--mono)}
+
+/* step pills */
+nav.steps{position:sticky; top:0; z-index:5; background:var(--bg); padding:8px 0 10px; display:flex; gap:6px; overflow-x:auto; scrollbar-width:none; border-bottom:1px solid var(--line); margin-bottom:16px}
+nav.steps::-webkit-scrollbar{display:none}
+.pill{flex:0 0 auto; font:inherit; font-size:14px; border:1px solid var(--line); background:var(--card); color:var(--ink); border-radius:999px; padding:6px 12px; cursor:pointer; white-space:nowrap}
+.pill .n{display:inline-block; min-width:1.4em; font-weight:700; color:var(--muted)}
+.pill[aria-current="step"]{background:var(--accent); border-color:var(--accent); color:var(--accent-ink)}
+.pill[aria-current="step"] .n{color:var(--accent-ink)}
+.pill.done:not([aria-current="step"]) .n{color:var(--good)}
+
+/* step cards */
+section.step{display:none; background:var(--card); border:1px solid var(--line); border-radius:12px; padding:20px; gap:16px}
+section.step.on{display:grid}
+.step > h2 .k{color:var(--muted); font-weight:600; margin-right:6px}
+.row{display:flex; gap:10px; flex-wrap:wrap; align-items:center}
+.spread{justify-content:space-between}
+.grid2{display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:14px}
+@media (max-width:680px){ .grid2{grid-template-columns:1fr} section.step{padding:16px} }
+.panel{background:var(--soft); border-radius:10px; padding:14px; display:grid; gap:10px; min-width:0}
+.note{font-size:14px; color:var(--muted)}
+.callout{border-left:4px solid var(--accent); background:var(--accent-soft); padding:10px 14px; border-radius:0 8px 8px 0; font-size:15px}
+.big{font-size:28px; font-weight:700; font-variant-numeric:tabular-nums; line-height:1.1}
+.stat{display:grid; gap:2px}
+.stat .lab{font-size:12px; color:var(--muted); text-transform:uppercase; letter-spacing:.06em}
+.stats{display:grid; grid-template-columns:repeat(auto-fit, minmax(130px,1fr)); gap:10px}
+
+/* book chip */
+.book{display:inline-flex; align-items:center; gap:4px; font-size:12px; font-weight:600; color:var(--book); background:var(--book-soft); border-radius:999px; padding:2px 9px; white-space:nowrap; vertical-align:1px}
+.book::before{content:""; width:10px; height:8px; border:1.5px solid currentColor; border-radius:1px 1px 2px 2px; border-top-width:1.5px; display:inline-block}
+
+/* buttons and controls */
+button{font:inherit}
+.btn{border:1px solid var(--accent); background:var(--accent); color:var(--accent-ink); border-radius:8px; padding:8px 14px; cursor:pointer; font-weight:600}
+.btn.ghost{background:transparent; color:var(--accent)}
+.btn:disabled{opacity:.5; cursor:default}
+.btn:focus-visible,.pill:focus-visible,.opt:focus-visible,.seg button:focus-visible,input:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+.seg{display:inline-flex; flex-wrap:nowrap; border:1px solid var(--line); border-radius:8px; overflow:hidden; background:var(--card); max-width:100%}
+.rate{display:grid}
+.rate-row{display:grid; grid-template-columns:1fr auto; gap:8px 14px; align-items:center; padding:10px 0; border-bottom:1px solid var(--line)}
+.rate-row:last-child{border-bottom:0}
+@media (max-width:520px){ .rate-row{grid-template-columns:1fr} }
+.seg button{border:0; border-right:1px solid var(--line); background:transparent; color:var(--ink); padding:6px 10px; cursor:pointer; font-size:14px}
+.seg button:last-child{border-right:0}
+.seg button[aria-pressed="true"]{background:var(--accent); color:var(--accent-ink)}
+.ctl{display:grid; gap:4px; min-width:0}
+.ctl > .seg{justify-self:start}
+.ctl label,.ctl .lab{font-size:13px; color:var(--muted); font-weight:600}
+input[type=range]{width:100%; accent-color:var(--accent)}
+.check{display:flex; align-items:center; gap:8px; font-size:15px; padding:4px 0; cursor:pointer}
+.check input{width:18px; height:18px; accent-color:var(--accent)}
+
+/* multiple-choice with instant feedback */
+.quiz{display:grid; gap:10px; border:1px solid var(--line); border-radius:10px; padding:14px}
+.quiz .q{font-weight:600}
+.opts{display:grid; gap:8px}
+.opt{text-align:left; border:1px solid var(--line); background:var(--card); color:var(--ink); border-radius:8px; padding:10px 12px; cursor:pointer; display:flex; gap:10px; align-items:flex-start}
+.opt .mk{flex:0 0 22px; height:22px; border-radius:50%; border:1.5px solid var(--line); display:grid; place-items:center; font-size:13px; font-weight:700; color:var(--muted)}
+.opt:hover{border-color:var(--accent)}
+.opt.picked.right{border-color:var(--good); background:var(--good-soft)}
+.opt.picked.right .mk{border-color:var(--good); background:var(--good); color:var(--card)}
+.opt.picked.wrong{border-color:var(--warn); background:var(--warn-soft)}
+.opt.picked.wrong .mk{border-color:var(--warn); background:var(--warn); color:var(--card)}
+.opt.picked.ok{border-color:var(--accent); background:var(--accent-soft)}
+.opt.picked.ok .mk{border-color:var(--accent); background:var(--accent); color:var(--card)}
+.fb{border-radius:8px; padding:10px 12px; font-size:15px; display:none}
+.fb.show{display:block}
+.fb.right{background:var(--good-soft)}
+.fb.wrong{background:var(--warn-soft)}
+.fb.ok{background:var(--accent-soft)}
+.fb b{display:block; margin-bottom:2px}
+
+/* tables */
+.tbl{overflow-x:auto}
+table{border-collapse:collapse; width:100%; font-size:14px}
+th,td{padding:6px 8px; border-bottom:1px solid var(--line); text-align:left; vertical-align:top}
+th{font-size:12px; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); font-weight:600}
+td.r,th.r{text-align:right; font-variant-numeric:tabular-nums}
+td.r{white-space:nowrap}
+
+/* charts */
+svg.chart{width:100%; height:auto; display:block; overflow:visible}
+svg.chart text{fill:var(--muted); font:12px var(--sans)}
+svg.chart text.ink{fill:var(--ink)}
+svg.chart text.strong{fill:var(--ink); font-weight:700}
+svg.chart .grid{stroke:var(--grid); stroke-width:1}
+svg.chart .axis{stroke:var(--line); stroke-width:1}
+.legend{display:flex; flex-wrap:wrap; gap:6px 14px; font-size:13px; color:var(--muted)}
+.legend span{display:inline-flex; align-items:center; gap:6px}
+.legend i{width:12px; height:12px; border-radius:3px; display:inline-block}
+
+/* risk lights */
+.lights{display:grid; grid-template-columns:repeat(auto-fit, minmax(190px,1fr)); gap:8px}
+.light{display:grid; grid-template-columns:auto 1fr; gap:2px 10px; align-items:start; border:1px solid var(--line); border-radius:8px; padding:8px 10px; font-size:14px}
+.light .dot{width:14px; height:14px; border-radius:50%; background:var(--line); margin-top:3px; grid-row:span 2}
+.light.on{border-color:var(--warn); background:var(--warn-soft)}
+.light.on .dot{background:var(--warn); box-shadow:0 0 0 3px color-mix(in srgb, var(--warn) 25%, transparent)}
+.light .t{font-weight:600}
+.light .d{color:var(--muted); font-size:13px}
+
+/* prompt box */
+.prompt{font-family:var(--mono); font-size:13.5px; line-height:1.5; background:var(--soft); border:1px solid var(--line); border-radius:8px; padding:12px; white-space:pre-wrap; word-break:break-word}
+footer{margin-top:28px; font-size:13px; color:var(--muted); display:grid; gap:6px; max-width:70ch}
+.nav-next{display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap; border-top:1px solid var(--line); padding-top:14px}
+.sr{position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0)}
+@media (prefers-reduced-motion: no-preference){ section.step.on{animation:fade .2s ease-out} @keyframes fade{from{opacity:.4; transform:translateY(3px)} to{opacity:1; transform:none}} }
+
+h2:focus{outline:none}
+@media (max-width:520px){ table{font-size:13px} th,td{padding:6px 5px} th{letter-spacing:.02em} }
+
+</style>
+</head>
+<body>
+<noscript><div class="wrap"><p class="callout"><strong>This lab cannot run here.</strong> It needs JavaScript, which this viewer blocks (as Canvas file previews do). Please use the lab link in your Reading Guide, or download this file and open it in your web browser.</p></div></noscript>
+<div class="wrap">
+<header class="lab">
+  <span class="eyebrow">QMB 6358 · Module 2 Decision Lab · after Chapter 5</span>
+  <h1>Fair Comparisons</h1>
+  <p class="lede">At first glance, Hybrid sales reps seem to sell far more than everyone else. Please build the regression yourself, one driver at a time, and watch what happens to that advantage once you compare like with like.</p>
+  <p class="meta">This lab takes about 20 minutes and also works on a phone. Nothing is graded or saved.</p>
+</header>
+<nav class="steps" aria-label="Lab steps"></nav>
+
+<section class="step" id="s1" data-title="Raw gap">
+  <h2><span class="k">1</span>The raw comparison</h2>
+  <p>This is the book's employee-productivity case with 180 B2B sales reps, their sales per rep, and the drivers that leaders can see (i.e. tenure, training, coaching, tooling, workload, team size, territory size and work mode) <span class="book">§5.11.3 · p.&nbsp;277</span>. Each dot is one rep, and the bar marks each group's average.</p>
+  <div id="c-strip"></div>
+  <div class="panel"><h3>The reps in each group are not alike</h3><div class="tbl" id="t-profile"></div></div>
+  <div id="q1"></div>
+</section>
+
+<section class="step" id="s2" data-title="Build the model">
+  <h2><span class="k">2</span>Build the model, one driver at a time</h2>
+  <p>Work mode is always in the model and is coded against <strong>Onsite</strong>. Please add drivers and watch what happens to the Hybrid and Remote gaps. Each gap now measures the difference from an Onsite rep, <strong>holding the other drivers in the model constant</strong> <span class="book">§5.9.2 · p.&nbsp;245</span>.</p>
+  <div class="panel">
+    <div class="row spread"><span class="lab note" style="font-weight:600">Drivers in the model</span><div class="row"><button class="btn ghost" type="button" id="none">Work mode only</button><button class="btn ghost" type="button" id="all">All drivers</button></div></div>
+    <div class="grid2" id="checks"></div>
+    <p class="note">I suggest this order: first tenure, then training. Later, try workload on its own and then add territory size.</p>
+  </div>
+  <div class="grid2">
+    <div class="panel"><h3>Work-mode gaps vs. Onsite</h3><div id="c-gaps"></div><p class="note">The bars are 95% confidence intervals, and the hollow circle is the raw gap from step 1.</p></div>
+    <div class="panel"><h3>Fit</h3><div class="stats"><div class="stat"><span class="lab">R-squared</span><span class="big" id="r2"></span></div><div class="stat"><span class="lab">Adjusted R²</span><span class="big" id="adj"></span></div><div class="stat"><span class="lab">Typical miss</span><span class="big" id="rse"></span></div></div><p class="note">The typical miss is the residual standard error <span class="book">§5.6.3 · p.&nbsp;223</span>. The adjusted R², on the other hand, only rises when a driver earns its place <span class="book">§5.9.6 · p.&nbsp;247</span>.</p></div>
+  </div>
+  <div class="lights" id="lights"></div>
+  <div class="panel"><h3>Coefficients</h3><div class="tbl" id="t-coef"></div></div>
+  <div class="panel"><h3>Your models so far</h3><div class="tbl" id="t-hist"></div></div>
+  <div id="q2a"></div>
+  <div id="q2b"></div>
+</section>
+
+<section class="step" id="s3" data-title="Interpretation">
+  <h2><span class="k">3</span>Interpreting a coefficient</h2>
+  <p>Leaders turn coefficients into sentences (and sentences into budgets), so the wording matters. Below is the training coefficient from the model with all drivers:</p>
+  <p class="callout" id="train-coef"></p>
+  <div id="q3a"></div>
+  <div id="q3b"></div>
+</section>
+
+<section class="step" id="s4" data-title="Predict a rep">
+  <h2><span class="k">4</span>Predict one rep's sales</h2>
+  <p>Please use the all-drivers model to predict one rep's sales. The range is a 95% <strong>prediction interval</strong>, since two reps with identical drivers can still perform quite differently <span class="book">§5.8.3 · p.&nbsp;236</span>. The buttons follow the book's scenarios in Table 5.19 (p.&nbsp;237), where the baseline is an Onsite rep with 67 training hours, coaching 3 and tooling 3. The other drivers are set to this dataset's medians, so the dollar figures will differ from those in the book.</p>
+  <div class="row" id="presets"></div>
+  <div class="panel" id="sliders"></div>
+  <div class="stats"><div class="stat"><span class="lab">Predicted sales</span><span class="big" id="pred"></span></div><div class="stat"><span class="lab">95% prediction interval</span><span class="big" id="pi" style="font-size:20px"></span></div><div class="stat"><span class="lab">Change vs. baseline</span><span class="big" id="delta"></span></div></div>
+  <div id="c-pred"></div>
+  <div class="lights" id="light-x"></div>
+  <div id="q4"></div>
+</section>
+
+<section class="step" id="s5" data-title="Ask your AI">
+  <h2><span class="k">5</span>Optional: ask an AI tool to review your model</h2>
+  <p>The following prompt contains the model that you last built in step 2 and the rep that you planned in step 4, organized around the book's regression request template <span class="book">§5.12.5 · p.&nbsp;285</span>.</p>
+  <div id="prompt"></div>
+  <div class="panel">
+    <h3>Then check the answer</h3>
+    <ul style="margin:0; padding-left:20px; display:grid; gap:6px">
+      <li>Does it interpret each coefficient "holding the other drivers constant", and without causal language?</li>
+      <li>If your model includes both workload and territory size, does it notice their overlap (VIF above 5)?</li>
+      <li>If your scenario was outside the data, does it say so?</li>
+    </ul>
+  </div>
+</section>
+
+<footer>
+  <p>This lab is based on Chapter 5 of <em>Business Analytics in the Age of AI: A New Paradigm for Executives</em> (Jank, 2026). The 180 reps are synthetic; they were generated from coefficients close to Table 5.25 (p.&nbsp;255) with work-mode differences built in, so the numbers will not match the book's tables exactly. Please also note that the VIFs here are computed with an intercept.</p>
+  <p>It is part of QMB 6358; nothing you do here is recorded.</p>
+</footer>
+</div>
+
+<script>
+const DATA = {"mode":[1,0,2,0,1,2,2,0,0,0,1,1,1,1,2,2,2,0,1,0,0,0,0,1,0,0,1,0,1,1,1,0,0,1,0,1,2,1,0,2,0,1,1,2,1,2,0,0,0,2,0,2,1,0,2,1,2,1,2,1,1,0,1,2,1,0,0,1,2,1,2,1,2,1,1,2,2,1,2,2,1,2,1,2,2,2,0,0,1,0,2,0,2,0,0,2,0,0,2,1,0,1,1,0,1,1,0,2,0,2,1,2,1,1,0,0,0,0,1,2,0,1,0,0,1,1,2,1,0,0,0,0,1,0,2,0,1,1,0,0,2,1,0,1,0,2,1,2,2,1,2,0,1,2,0,2,2,2,1,2,0,0,1,0,0,0,0,1,1,2,0,0,0,0,2,0,0,2,1,0],"y":[249605,198869,132006,237484,225450,320707,222507,226910,201370,220545,245574,279812,154537,256333,196969,190009,175024,185330,270746,219514,179921,237499,227278,222064,194784,90467,274646,168160,324965,303142,218633,221410,181576,235865,255264,204714,182068,207170,228298,268025,172265,257221,179311,179256,210185,249881,247909,288273,201796,157748,187502,179139,288760,160408,226333,249573,198489,198636,182157,172761,258063,176155,233455,226185,197606,252980,229035,233111,217026,189737,203032,189791,232830,261038,292188,186081,130702,211304,167455,170104,295070,160547,323276,197538,193284,182658,204163,227817,266727,189021,184082,218461,156139,204923,251117,141334,131295,185692,194414,186714,268720,230052,245811,190090,183211,340474,183687,165717,231187,230104,238659,168307,203417,244364,129127,181824,261784,261690,295260,208577,325027,329253,161270,183102,235784,154840,206990,231718,244505,205187,131113,208099,233884,171773,271436,179694,358473,275902,207017,223622,144575,228221,178737,223955,200952,195188,198485,221389,72568,283534,142932,234489,392208,171331,145235,140517,223819,214718,225496,160033,162865,162617,261822,172683,132774,261214,201779,280982,257826,173677,238866,197644,204618,265574,235053,148107,241201,191887,244670,207854],"train":[89.0,77.0,55.0,79.0,78.0,96.0,53.0,51.0,55.0,69.0,81.0,82.0,65.0,81.0,72.0,56.0,94.0,69.0,95.0,74.0,53.0,88.0,86.0,97.0,58.0,43.0,81.0,82.0,107.0,97.0,90.0,54.0,64.0,79.0,72.0,84.0,71.0,66.0,69.0,95.0,49.0,83.0,62.0,57.0,66.0,64.0,67.0,72.0,55.0,48.0,60.0,50.0,63.0,51.0,74.0,61.0,82.0,76.0,40.0,81.0,71.0,56.0,81.0,57.0,90.0,73.0,78.0,83.0,78.0,76.0,62.0,82.0,64.0,73.0,94.0,71.0,42.0,76.0,57.0,54.0,90.0,64.0,95.0,42.0,69.0,52.0,77.0,70.0,71.0,70.0,53.0,56.0,62.0,69.0,50.0,56.0,37.0,51.0,59.0,79.0,76.0,71.0,69.0,39.0,70.0,107.0,55.0,62.0,75.0,65.0,70.0,61.0,74.0,79.0,49.0,51.0,83.0,88.0,84.0,75.0,95.0,87.0,57.0,66.0,80.0,64.0,54.0,79.0,97.0,56.0,73.0,65.0,65.0,56.0,86.0,66.0,88.0,75.0,77.0,86.0,57.0,76.0,48.0,82.0,74.0,64.0,84.0,64.0,58.0,93.0,47.0,66.0,91.0,44.0,39.0,70.0,54.0,70.0,68.0,42.0,50.0,44.0,83.0,58.0,52.0,93.0,76.0,91.0,73.0,65.0,68.0,79.0,36.0,68.0,83.0,63.0,67.0,75.0,69.0,79.0],"coach":[0.0,4.0,2.0,6.0,1.0,4.0,3.0,3.0,3.0,2.0,6.0,5.0,1.0,5.0,1.0,2.0,2.0,3.0,3.0,3.0,2.0,3.0,4.0,0.0,4.0,3.0,3.0,2.0,6.0,6.0,4.0,4.0,4.0,3.0,4.0,3.0,2.0,2.0,3.0,1.0,7.0,7.0,5.0,3.0,2.0,5.0,4.0,1.0,3.0,4.0,2.0,2.0,7.0,2.0,3.0,4.0,3.0,2.0,2.0,0.0,2.0,2.0,4.0,2.0,5.0,3.0,5.0,4.0,0.0,3.0,2.0,4.0,-0.0,3.0,2.0,1.0,4.0,5.0,4.0,2.0,5.0,2.0,4.0,2.0,0.0,3.0,2.0,6.0,2.0,2.0,3.0,5.0,1.0,4.0,3.0,1.0,3.0,2.0,1.0,5.0,1.0,6.0,4.0,0.0,1.0,3.0,3.0,3.0,3.0,1.0,4.0,3.0,5.0,2.0,0.0,4.0,4.0,4.0,2.0,3.0,2.0,3.0,2.0,2.0,3.0,2.0,3.0,1.0,2.0,1.0,2.0,6.0,3.0,3.0,4.0,4.0,4.0,2.0,4.0,3.0,2.0,4.0,3.0,5.0,3.0,5.0,4.0,4.0,2.0,3.0,0.0,4.0,4.0,3.0,1.0,3.0,4.0,4.0,3.0,6.0,3.0,3.0,5.0,3.0,1.0,5.0,0.0,3.0,4.0,3.0,7.0,3.0,3.0,2.0,2.0,1.0,4.0,1.0,2.0,4.0],"tool":[2.0,3.0,2.9,3.9,3.5,3.6,4.0,3.7,3.8,2.7,4.3,3.0,1.9,4.5,3.8,2.9,2.3,2.7,1.8,3.6,4.2,2.1,4.6,4.4,2.7,4.0,4.4,2.5,3.6,3.3,3.8,3.3,2.9,3.5,2.7,3.1,3.5,2.9,3.2,2.7,3.2,3.4,2.3,2.6,4.1,4.1,3.0,2.8,3.9,4.2,3.0,2.7,5.0,1.8,4.6,4.5,3.6,2.1,2.2,4.2,3.1,1.7,2.5,5.0,3.7,5.0,3.1,3.0,2.1,2.0,2.7,4.1,4.1,3.2,2.5,2.8,2.8,3.0,4.4,5.0,4.3,3.5,3.3,5.0,2.6,2.8,2.3,3.2,3.6,4.2,1.2,2.4,3.5,3.1,4.3,2.3,2.6,3.4,3.1,3.0,2.7,3.1,3.9,1.8,3.5,3.2,1.9,2.0,4.4,2.9,2.5,4.3,2.0,4.0,3.7,4.0,4.4,2.3,3.6,3.2,3.0,5.0,2.0,2.8,3.8,3.5,3.5,4.0,4.2,3.5,2.4,2.4,3.9,2.8,3.6,3.9,3.4,4.3,3.1,3.9,2.6,3.0,3.7,3.4,4.6,4.5,4.7,3.6,2.0,3.2,2.5,2.5,4.9,4.3,4.3,4.3,2.9,3.2,3.1,1.7,3.8,3.2,3.8,4.3,3.1,2.4,2.8,3.3,3.9,4.4,4.4,3.1,3.4,4.1,2.7,3.4,3.5,4.6,2.5,4.1],"tenure":[6.576,3.755,0.3,2.114,4.616,9.216,5.792,1.79,1.082,2.992,3.737,5.268,3.968,4.301,4.103,2.572,5.777,3.916,11.54,5.755,1.26,5.597,4.285,2.886,4.858,0.747,9.277,2.669,9.754,9.909,3.335,1.781,2.701,4.587,5.144,4.313,1.066,5.602,5.368,9.281,3.805,5.304,4.012,3.866,4.973,5.387,8.014,6.844,2.296,0.684,3.065,2.008,4.047,2.605,4.892,3.543,6.719,2.398,0.9,4.064,5.241,1.793,5.2,5.083,3.521,3.747,4.157,7.164,7.911,3.843,2.325,3.414,6.689,3.942,12.0,3.291,1.687,6.324,1.266,1.135,4.921,3.699,8.578,2.135,4.281,2.51,6.517,4.428,4.171,5.463,0.774,4.209,2.298,2.816,3.062,2.456,1.045,4.01,2.409,4.391,8.58,5.392,4.329,3.103,4.371,8.112,3.635,2.404,4.786,3.813,5.1,1.206,3.512,4.543,0.587,1.999,2.6,3.031,5.033,0.3,9.001,8.908,2.979,3.073,3.562,4.444,1.957,3.835,7.636,3.163,2.655,5.963,4.905,2.977,3.246,4.143,6.474,7.91,1.636,2.182,0.603,3.677,4.341,3.176,2.505,2.751,2.711,4.342,0.3,5.394,1.91,5.167,11.701,2.48,1.132,2.845,4.912,3.482,4.878,0.3,1.919,3.734,4.822,3.321,1.953,4.418,1.959,6.043,3.775,1.843,4.541,4.688,3.255,4.579,5.156,1.326,5.419,4.698,4.11,3.767],"workload":[1.389,1.186,1.418,1.325,0.916,1.177,1.323,1.06,1.109,1.366,1.218,0.919,1.505,1.155,1.528,1.153,1.616,1.253,1.19,1.289,1.304,1.161,1.014,1.598,1.12,1.541,0.914,1.065,1.107,1.114,1.622,1.242,0.851,1.293,0.73,1.345,1.013,1.441,1.12,1.178,0.988,1.334,1.351,1.71,1.064,1.407,1.339,0.893,1.19,1.061,0.989,1.42,0.803,1.177,1.357,0.898,1.334,1.28,1.138,0.933,1.265,1.596,1.281,1.195,1.752,1.131,1.015,0.938,1.591,1.086,1.156,1.452,1.304,0.931,1.457,1.42,1.293,1.462,1.135,1.44,1.043,1.129,0.955,1.045,1.509,1.553,1.093,1.119,0.834,1.207,1.613,0.994,1.164,1.005,1.272,1.314,1.381,1.267,1.338,1.636,1.048,1.137,1.347,1.061,1.472,1.235,1.109,1.355,1.063,1.158,1.078,0.977,1.173,1.068,1.299,1.283,1.269,1.034,1.367,1.326,1.087,0.975,0.89,1.281,0.916,1.434,1.379,1.067,1.185,1.144,1.677,1.216,1.092,0.814,0.975,1.167,1.231,1.082,1.004,1.161,1.129,0.912,1.47,1.319,1.792,1.246,1.101,1.551,1.672,1.069,1.716,1.016,0.874,1.546,1.2,1.46,1.121,1.125,1.2,1.328,1.025,1.229,1.213,1.612,1.103,1.471,0.834,0.98,1.186,1.259,1.521,1.4,0.938,1.373,1.209,1.45,1.041,1.476,1.093,1.128],"team":[9.0,11.0,10.0,9.0,10.0,12.0,11.0,11.0,10.0,14.0,11.0,15.0,11.0,8.0,16.0,8.0,18.0,16.0,6.0,9.0,12.0,16.0,11.0,13.0,11.0,15.0,9.0,8.0,10.0,14.0,12.0,13.0,6.0,10.0,7.0,19.0,9.0,16.0,14.0,10.0,5.0,13.0,15.0,12.0,11.0,13.0,15.0,6.0,11.0,4.0,13.0,12.0,6.0,14.0,14.0,10.0,14.0,15.0,9.0,10.0,8.0,11.0,15.0,6.0,19.0,11.0,4.0,12.0,15.0,12.0,5.0,11.0,9.0,4.0,15.0,14.0,12.0,13.0,6.0,12.0,7.0,10.0,8.0,8.0,12.0,13.0,13.0,9.0,8.0,11.0,14.0,4.0,9.0,7.0,11.0,12.0,11.0,8.0,16.0,16.0,12.0,13.0,14.0,12.0,12.0,11.0,11.0,12.0,12.0,10.0,11.0,12.0,12.0,11.0,11.0,11.0,18.0,12.0,12.0,10.0,12.0,6.0,15.0,17.0,7.0,15.0,13.0,12.0,7.0,6.0,16.0,13.0,10.0,8.0,9.0,10.0,12.0,7.0,11.0,12.0,7.0,13.0,15.0,12.0,16.0,10.0,10.0,15.0,10.0,12.0,15.0,9.0,11.0,15.0,14.0,14.0,10.0,13.0,13.0,12.0,11.0,10.0,14.0,16.0,9.0,15.0,8.0,7.0,9.0,11.0,18.0,15.0,8.0,12.0,13.0,12.0,7.0,13.0,11.0,15.0],"terr":[1.664,1.33,1.624,1.339,1.08,1.151,1.187,1.042,1.282,1.49,1.345,1.126,1.614,1.119,1.585,1.462,1.862,1.397,1.342,1.472,1.274,1.065,1.294,1.713,1.238,1.591,1.196,1.07,1.361,1.216,1.656,1.446,0.955,1.41,0.991,1.434,0.939,1.508,1.097,1.317,1.144,1.391,1.485,1.736,1.335,1.413,1.514,1.13,1.32,1.188,0.932,1.361,0.918,1.192,1.447,0.926,1.453,1.311,1.167,0.964,1.232,1.785,1.424,1.173,1.778,1.117,1.179,1.058,1.7,1.086,1.167,1.592,1.444,1.192,1.613,1.619,1.308,1.702,1.269,1.471,1.145,1.194,1.08,1.325,1.532,1.521,1.168,1.181,1.08,1.219,1.599,1.023,1.298,1.12,1.387,1.405,1.473,1.31,1.36,1.522,1.192,1.373,1.455,1.269,1.421,1.266,1.08,1.417,1.227,1.287,1.187,1.208,1.244,1.208,1.518,1.359,1.448,1.29,1.573,1.517,1.15,1.026,1.011,1.487,0.992,1.447,1.491,1.313,1.365,1.293,1.729,1.445,1.219,0.845,1.154,1.223,1.529,1.253,1.303,1.158,1.133,0.886,1.697,1.617,1.876,1.242,1.128,1.694,1.721,1.121,1.72,1.145,1.001,1.657,1.293,1.496,1.132,1.224,1.405,1.321,1.198,1.489,1.41,1.636,1.116,1.715,0.883,1.145,1.243,1.56,1.619,1.592,1.083,1.521,1.245,1.667,1.194,1.565,1.405,1.246]};
+/* Decision Labs: shared helpers (no dependencies). */
+"use strict";
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+const SVGNS = "http://www.w3.org/2000/svg";
+
+function h(tag, attrs, ...kids) {
+  const e = document.createElement(tag);
+  setAttrs(e, attrs);
+  kids.flat().forEach(k => { if (k != null && k !== false) e.append(k.nodeType ? k : document.createTextNode(String(k))); });
+  return e;
+}
+function sv(tag, attrs, ...kids) {
+  const e = document.createElementNS(SVGNS, tag);
+  setAttrs(e, attrs);
+  kids.flat().forEach(k => { if (k != null && k !== false) e.append(k.nodeType ? k : document.createTextNode(String(k))); });
+  return e;
+}
+function setAttrs(e, attrs) {
+  for (const [k, v] of Object.entries(attrs || {})) {
+    if (v == null || v === false) continue;
+    if (k === "html") e.innerHTML = v;
+    else if (k.startsWith("on")) e.addEventListener(k.slice(2), v);
+    else if (k === "style" && typeof v === "object") Object.assign(e.style, v);
+    else e.setAttribute(k, v === true ? "" : v);
+  }
+}
+
+/* ---------- formatting ---------- */
+const money = (x, d = 0) => (x < 0 ? "−$" : "$") + Math.abs(x).toLocaleString("en-US", { minimumFractionDigits: d, maximumFractionDigits: d });
+const kmoney = x => x === 0 ? "$0" : (x < 0 ? "−$" : "$") + (Math.abs(x) >= 1e6 ? (Math.abs(x) / 1e6).toFixed(2) + "M" : Math.round(Math.abs(x) / 1000).toLocaleString("en-US") + "k");
+const pct = (x, d = 1) => (100 * x).toFixed(d) + "%";
+const num = (x, d = 0) => x.toLocaleString("en-US", { minimumFractionDigits: d, maximumFractionDigits: d });
+const signed = (s) => s.replace(/^-/, "−");
+
+/* ---------- random numbers and statistics ---------- */
+function randn() { let u = 0, v = 0; while (u === 0) u = Math.random(); while (v === 0) v = Math.random(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); }
+function erf(x) { // Numerical Recipes erfc approximation (fractional error < 1.2e-7)
+  const t = 1 / (1 + 0.5 * Math.abs(x));
+  const y = 1 - t * Math.exp(-x * x - 1.26551223 + t * (1.00002368 + t * (0.37409196 + t * (0.09678418 + t * (-0.18628806 + t * (0.27886807 + t * (-1.13520398 + t * (1.48851587 + t * (-0.82215223 + t * 0.17087277)))))))));
+  return x >= 0 ? y : -y;
+}
+const normCdf = z => 0.5 * (1 + erf(z / Math.SQRT2));
+function normInv(p) { // Acklam
+  const a = [-3.969683028665376e+01, 2.209460984245205e+02, -2.759285104469687e+02, 1.383577518672690e+02, -3.066479806614716e+01, 2.506628277459239e+00];
+  const b = [-5.447609879822406e+01, 1.615858368580409e+02, -1.556989798598866e+02, 6.680131188771972e+01, -1.328068155288572e+01];
+  const c = [-7.784894002430293e-03, -3.223964580411365e-01, -2.400758277161838e+00, -2.549732539343734e+00, 4.374614347350924e+00, 2.938163982698783e+00];
+  const d = [7.784695709041462e-03, 3.224671290700398e-01, 2.445134137142996e+00, 3.754408661907416e+00];
+  const pl = 0.02425, ph = 1 - pl; let q, r;
+  if (p < pl) { q = Math.sqrt(-2 * Math.log(p)); return (((((c[0] * q + c[1]) * q + c[2]) * q + c[3]) * q + c[4]) * q + c[5]) / ((((d[0] * q + d[1]) * q + d[2]) * q + d[3]) * q + 1); }
+  if (p > ph) { q = Math.sqrt(-2 * Math.log(1 - p)); return -(((((c[0] * q + c[1]) * q + c[2]) * q + c[3]) * q + c[4]) * q + c[5]) / ((((d[0] * q + d[1]) * q + d[2]) * q + d[3]) * q + 1); }
+  q = p - 0.5; r = q * q;
+  return (((((a[0] * r + a[1]) * r + a[2]) * r + a[3]) * r + a[4]) * r + a[5]) * q / (((((b[0] * r + b[1]) * r + b[2]) * r + b[3]) * r + b[4]) * r + 1);
+}
+function tInv(p, df) { // Cornish-Fisher expansion; accurate to ~1e-3 for df >= 5
+  const z = normInv(p), z2 = z * z;
+  return z + (z2 * z + z) / (4 * df) + (5 * z2 * z2 * z + 16 * z2 * z + 3 * z) / (96 * df * df)
+    + (3 * z2 * z2 * z2 * z + 19 * z2 * z2 * z + 17 * z2 * z - 15 * z) / (384 * df * df * df);
+}
+const sum = a => a.reduce((s, x) => s + x, 0);
+const mean = a => sum(a) / a.length;
+function sd(a) { const m = mean(a); return Math.sqrt(sum(a.map(x => (x - m) ** 2)) / (a.length - 1)); }
+function median(a) { const s = [...a].sort((x, y) => x - y), n = s.length; return n % 2 ? s[(n - 1) / 2] : (s[n / 2 - 1] + s[n / 2]) / 2; }
+function wmedian(v, w) { // weighted median (lower median)
+  const idx = v.map((_, i) => i).sort((i, j) => v[i] - v[j]); const tot = sum(w); let c = 0;
+  for (const i of idx) { c += w[i]; if (c >= tot / 2) return v[i]; }
+  return v[idx[idx.length - 1]];
+}
+
+/* ---------- small linear algebra (OLS) ---------- */
+function invert(A) { // Gauss-Jordan; A is square array of arrays
+  const n = A.length, M = A.map((r, i) => [...r, ...Array.from({ length: n }, (_, j) => (i === j ? 1 : 0))]);
+  for (let c = 0; c < n; c++) {
+    let p = c; for (let r = c + 1; r < n; r++) if (Math.abs(M[r][c]) > Math.abs(M[p][c])) p = r;
+    if (Math.abs(M[p][c]) < 1e-12) return null;
+    [M[c], M[p]] = [M[p], M[c]];
+    const pv = M[c][c]; for (let j = 0; j < 2 * n; j++) M[c][j] /= pv;
+    for (let r = 0; r < n; r++) if (r !== c) { const f = M[r][c]; if (f) for (let j = 0; j < 2 * n; j++) M[r][j] -= f * M[c][j]; }
+  }
+  return M.map(r => r.slice(n));
+}
+function ols(y, cols) { // cols: array of predictor columns (no intercept); returns b (with intercept first), se, r2, adjR2, s, XtXi
+  const n = y.length, k = cols.length + 1;
+  const X = (i, j) => (j === 0 ? 1 : cols[j - 1][i]);
+  const XtX = Array.from({ length: k }, () => new Array(k).fill(0)), Xty = new Array(k).fill(0);
+  for (let i = 0; i < n; i++) for (let a = 0; a < k; a++) { const xa = X(i, a); Xty[a] += xa * y[i]; for (let b = a; b < k; b++) XtX[a][b] += xa * X(i, b); }
+  for (let a = 0; a < k; a++) for (let b = 0; b < a; b++) XtX[a][b] = XtX[b][a];
+  const XtXi = invert(XtX); if (!XtXi) return null;
+  const b = XtXi.map(r => sum(r.map((v, j) => v * Xty[j])));
+  let sse = 0; const ym = mean(y); let sst = 0;
+  for (let i = 0; i < n; i++) { let f = 0; for (let a = 0; a < k; a++) f += b[a] * X(i, a); sse += (y[i] - f) ** 2; sst += (y[i] - ym) ** 2; }
+  const df = n - k, s2 = sse / df;
+  return { b, se: XtXi.map((r, i) => Math.sqrt(s2 * r[i])), r2: 1 - sse / sst, adj: 1 - (sse / df) / (sst / (n - 1)), s: Math.sqrt(s2), df, XtXi, n, k };
+}
+
+/* ---------- steps ---------- */
+const Steps = { list: [], onShow: {}, cur: 0 };
+function initSteps() {
+  const nav = $("nav.steps"); Steps.list = $$("section.step");
+  Steps.list.forEach((sec, i) => {
+    const title = sec.dataset.title;
+    nav.append(h("button", { class: "pill", type: "button", "data-i": i, onclick: () => showStep(i) }, h("span", { class: "n" }, i + 1), " ", title));
+    const foot = h("div", { class: "nav-next" });
+    foot.append(i > 0 ? h("button", { class: "btn ghost", type: "button", onclick: () => showStep(i - 1) }, "← Back") : h("span"));
+    if (i < Steps.list.length - 1) foot.append(h("button", { class: "btn", type: "button", onclick: () => showStep(i + 1) }, "Next: " + Steps.list[i + 1].dataset.title + " →"));
+    else foot.append(h("span", { class: "note" }, "This is the end of the lab; nothing was saved or graded."));
+    sec.append(foot);
+  });
+  showStep(0, true);
+}
+function showStep(i, first) {
+  Steps.list.forEach((s, j) => s.classList.toggle("on", j === i));
+  $$("nav.steps .pill").forEach((p, j) => { p.toggleAttribute("aria-current", j === i); if (j === i) p.setAttribute("aria-current", "step"); if (j < i) p.classList.add("done"); });
+  Steps.cur = i;
+  const pill = $$("nav.steps .pill")[i]; if (pill && pill.scrollIntoView) pill.scrollIntoView({ block: "nearest", inline: "nearest" });
+  if (!first) {
+    const top = $("nav.steps").getBoundingClientRect().top + window.scrollY; if (window.scrollY > top) window.scrollTo({ top, behavior: "smooth" });
+    const hd = $("h2", Steps.list[i]); if (hd) { hd.setAttribute("tabindex", "-1"); hd.focus({ preventScroll: true }); }
+  }
+  (Steps.onShow[Steps.list[i].id] || []).forEach(f => f());
+}
+function whenShown(id, f) { (Steps.onShow[id] = Steps.onShow[id] || []).push(f); }
+
+/* ---------- multiple-choice with instant feedback ---------- */
+function quiz(host, spec) {
+  const box = h("div", { class: "quiz" });
+  box.append(h("p", { class: "q", html: spec.q }));
+  const opts = h("div", { class: "opts", role: "group" });
+  const fb = h("div", { class: "fb", "aria-live": "polite" });
+  const head = { right: spec.rightHead || "Right.", wrong: "Not quite.", ok: "A reasonable choice." };
+  spec.opts.forEach((o, i) => {
+    const b = h("button", { class: "opt", type: "button" }, h("span", { class: "mk" }, String.fromCharCode(65 + i)), h("span", { html: o.t }));
+    b.addEventListener("click", () => {
+      $$(".opt", opts).forEach(x => x.classList.remove("picked", "right", "wrong", "ok"));
+      b.classList.add("picked", o.k);
+      fb.className = "fb show " + o.k;
+      fb.innerHTML = "<b>" + (o.head || head[o.k]) + "</b>" + o.fb;
+      if (spec.onAnswer) spec.onAnswer(o, i);
+    });
+    opts.append(b);
+  });
+  box.append(opts, fb);
+  host.append(box);
+  return box;
+}
+const book = (sec, page) => '<span class="book">' + sec + (page ? " · p. " + page : "") + "</span>";
+
+/* ---------- copy-a-prompt ---------- */
+function promptBox(host, getText, note) {
+  const pre = h("div", { class: "prompt", tabindex: "0" });
+  const btn = h("button", { class: "btn", type: "button" }, "Copy prompt");
+  const refresh = () => { pre.textContent = getText(); };
+  btn.addEventListener("click", () => {
+    refresh(); const text = pre.textContent;
+    const done = ok => { btn.textContent = ok ? "Copied" : "Selected - please press Ctrl/Cmd+C"; setTimeout(() => (btn.textContent = "Copy prompt"), 1800); };
+    const fallback = () => { const r = document.createRange(); r.selectNodeContents(pre); const s = window.getSelection(); s.removeAllRanges(); s.addRange(r); done(false); };
+    try { navigator.clipboard.writeText(text).then(() => done(true), fallback); } catch (e) { fallback(); }
+  });
+  host.append(h("div", { class: "row spread" }, h("span", { class: "note" }, note || "Please paste it into the AI tool that you use for this course."), btn), pre);
+  refresh();
+  return refresh;
+}
+
+/* ---------- chart helpers ---------- */
+function niceTicks(lo, hi, count = 5) {
+  const span = hi - lo || 1, step0 = span / count, mag = Math.pow(10, Math.floor(Math.log10(step0))), err = step0 / mag;
+  const step = (err >= 7.5 ? 10 : err >= 3.5 ? 5 : err >= 1.5 ? 2 : 1) * mag;
+  const out = []; for (let v = Math.ceil(lo / step) * step; v <= hi + step * 1e-9; v += step) out.push(+v.toPrecision(12));
+  return out;
+}
+const lin = (d0, d1, r0, r1) => v => r0 + (v - d0) / (d1 - d0 || 1) * (r1 - r0);
+function segButtons(host, items, value, onChange, label) {
+  const seg = h("div", { class: "seg", role: "group", "aria-label": label || "" });
+  items.forEach(([v, t]) => {
+    const b = h("button", { type: "button", "aria-pressed": String(v === value) }, t);
+    b.addEventListener("click", () => { $$("button", seg).forEach(x => x.setAttribute("aria-pressed", "false")); b.setAttribute("aria-pressed", "true"); onChange(v); });
+    seg.append(b);
+  });
+  host.append(seg);
+  return seg;
+}
+
+/* M4 Fair Comparisons */
+const MODES = ["Onsite", "Hybrid", "Remote"];
+const V = [
+  { k: "tenure", lab: "Tenure", per: "per year", min: 0, max: 16, step: 0.5, dec: 1 },
+  { k: "train", lab: "Training hours", per: "per hour", min: 0, max: 200, step: 1, dec: 0 },
+  { k: "coach", lab: "Coaching frequency", per: "per session", min: 0, max: 10, step: 1, dec: 0 },
+  { k: "tool", lab: "Tooling quality (1–5)", per: "per point", min: 1, max: 5, step: 0.1, dec: 1 },
+  { k: "workload", lab: "Workload index", per: "per index unit", min: 0.4, max: 2.4, step: 0.01, dec: 2 },
+  { k: "team", lab: "Team size", per: "per team member", min: 2, max: 30, step: 1, dec: 0 },
+  { k: "terr", lab: "Territory size index", per: "per index unit", min: 0.5, max: 2.5, step: 0.01, dec: 2 }];
+const Y = DATA.y, NR = Y.length;
+const Hd = DATA.mode.map(m => (m === 1 ? 1 : 0)), Rd = DATA.mode.map(m => (m === 2 ? 1 : 0));
+const range = Object.fromEntries(V.map(v => [v.k, [Math.min(...DATA[v.k]), Math.max(...DATA[v.k]), median(DATA[v.k])]]));
+const tcrit = df => tInv(0.975, df);
+
+function fit(keys) {
+  const cols = keys.map(k => DATA[k]).concat([Hd, Rd]);
+  const f = ols(Y, cols); f.names = keys.concat(["Hybrid", "Remote"]); f.cols = cols;
+  const t = tcrit(f.df);
+  f.ci = f.b.map((b, i) => [b - t * f.se[i], b + t * f.se[i]]);
+  f.vif = cols.map((c, j) => { if (cols.length < 2) return 1; const o = ols(c, cols.filter((_, i) => i !== j)); return o ? 1 / Math.max(1e-9, 1 - o.r2) : Infinity; });
+  f.coef = k => f.b[1 + f.names.indexOf(k)];
+  return f;
+}
+const ALL = V.map(v => v.k);
+const FULL = fit(ALL), RAW = fit([]);
+const lab = k => (V.find(v => v.k === k) || { lab: k }).lab;
+const short = { tenure: "tenure", train: "training", coach: "coaching", tool: "tooling", workload: "workload", team: "team size", terr: "territory" };
+
+function charted(hostId, draw) {
+  const host = document.getElementById(hostId);
+  const run = () => { const w = host.clientWidth; if (w > 0) { host.innerHTML = ""; draw(host, w); } };
+  whenShown(host.closest("section.step").id, run);
+  window.addEventListener("resize", run);
+  return run;
+}
+const kf = v => kmoney(v).replace("$-", "−$");
+const sgn = v => (v >= 0 ? "+" : "−") + money(Math.abs(v));
+
+/* ---------- step 1 ---------- */
+const means = MODES.map((_, m) => mean(Y.filter((_, i) => DATA.mode[i] === m)));
+charted("c-strip", (host, w) => {
+  const lw = 70, rh = 64, ht = 3 * rh + 26, lo = 60000, hi = 400000, x = lin(lo, hi, lw, w - 12);
+  const g = sv("svg", { class: "chart", width: w, height: ht, viewBox: `0 0 ${w} ${ht}`, role: "img", "aria-label": "Sales per rep by work mode" });
+  niceTicks(lo, hi, w < 460 ? 3 : 6).forEach(t => { g.append(sv("line", { class: "grid", x1: x(t), x2: x(t), y1: 0, y2: ht - 22 })); g.append(sv("text", { x: x(t), y: ht - 6, "text-anchor": "middle" }, kf(t))); });
+  MODES.forEach((m, j) => {
+    const y0 = j * rh + rh / 2;
+    g.append(sv("text", { x: lw - 10, y: y0 + 4, "text-anchor": "end", class: "ink" }, m));
+    Y.forEach((v, i) => { if (DATA.mode[i] !== j) return; const jit = (((i * 7919) % 97) / 97 - 0.5) * (rh - 24); g.append(sv("circle", { cx: x(v), cy: y0 + jit, r: 3.2, fill: ["var(--c1)", "var(--c3)", "var(--c4)"][j], "fill-opacity": .55 })); });
+    g.append(sv("line", { x1: x(means[j]), x2: x(means[j]), y1: y0 - rh / 2 + 6, y2: y0 + rh / 2 - 6, stroke: "var(--ink)", "stroke-width": 3 }));
+    g.append(sv("text", { x: x(means[j]) + 6, y: y0 - rh / 2 + 16, class: "strong" }, "avg " + kf(means[j])));
+  });
+  host.append(g);
+});
+const prof = [["Reps", m => String(DATA.mode.filter(x => x === m).length)], ["Average sales", m => kf(means[m])], ["Tenure (years)", m => mean(DATA.tenure.filter((_, i) => DATA.mode[i] === m)).toFixed(1)], ["Training hours", m => mean(DATA.train.filter((_, i) => DATA.mode[i] === m)).toFixed(0)], ["Coaching frequency", m => mean(DATA.coach.filter((_, i) => DATA.mode[i] === m)).toFixed(1)], ["Workload index", m => mean(DATA.workload.filter((_, i) => DATA.mode[i] === m)).toFixed(2)], ["Territory size index", m => mean(DATA.terr.filter((_, i) => DATA.mode[i] === m)).toFixed(2)]];
+$("#t-profile").append(h("table", {}, h("thead", {}, h("tr", {}, h("th", {}, "Average"), MODES.map(m => h("th", { class: "r" }, m)))), h("tbody", {}, prof.map(([l, f]) => h("tr", {}, h("td", {}, l), MODES.map((_, m) => h("td", { class: "r" }, f(m))))))));
+quiz($("#q1"), {
+  q: `Hybrid reps average ${kf(means[1] - means[0])} more than Onsite reps, and leadership now asks whether we should move everyone to Hybrid. What would you answer?`,
+  opts: [
+    { t: `Yes, since Hybrid reps sell about ${kf(means[1] - means[0])} more.`, k: "wrong", fb: "Please look at the table again. Hybrid reps also have more tenure and more training, so some (or all) of the gap may belong to those drivers rather than to the work mode. In fact, the book's figure of sales by work mode is there to motivate exactly this kind of fair comparison " + book("Fig. 5.10", "260") + "." },
+    { t: "Not yet, since Hybrid reps also have more tenure and training; we should compare like with like first.", k: "right", fb: "This is exactly the reason to add work mode to a regression as an indicator variable alongside the other drivers, i.e. it compares groups fairly after controlling for other factors " + book("§5.9.5", "247") + ". You will build that model in the next step." },
+    { t: `No, and end remote work: Remote reps sell ${kf(means[0] - means[2])} less than Onsite.`, k: "wrong", fb: "This is the same problem in the other direction. Remote reps have less tenure, less coaching and heavier workloads, and the raw gap mixes all of that together." }]
+});
+
+/* ---------- step 2 ---------- */
+let sel = new Set(), cur = RAW, prevAdj = null, lastAdded = null;
+const hist = [];
+const checks = $("#checks");
+V.forEach(v => {
+  const cb = h("input", { type: "checkbox", id: "cb-" + v.k });
+  cb.addEventListener("change", () => { if (cb.checked) { sel.add(v.k); lastAdded = v.k; } else { sel.delete(v.k); lastAdded = null; } refit(); });
+  checks.append(h("label", { class: "check", for: "cb-" + v.k }, cb, v.lab));
+});
+function setSel(keys) { sel = new Set(keys); V.forEach(v => ($("#cb-" + v.k).checked = sel.has(v.k))); lastAdded = null; refit(); }
+$("#none").addEventListener("click", () => setSel([]));
+$("#all").addEventListener("click", () => setSel(ALL));
+const drawGaps = charted("c-gaps", (host, w) => {
+  const lw = 66, rh = 52, ht = 2 * rh + 30, lo = -40000, hi = 70000, x = lin(lo, hi, lw, w - 14);
+  const g = sv("svg", { class: "chart", width: w, height: ht, viewBox: `0 0 ${w} ${ht}`, role: "img", "aria-label": "Work-mode gaps with confidence intervals" });
+  niceTicks(lo, hi, 4).forEach(t => { g.append(sv("line", { class: "grid", x1: x(t), x2: x(t), y1: 4, y2: ht - 24 })); g.append(sv("text", { x: x(t), y: ht - 8, "text-anchor": "middle" }, kf(t))); });
+  g.append(sv("line", { x1: x(0), x2: x(0), y1: 4, y2: ht - 24, stroke: "var(--ink)", "stroke-width": 1.5 }));
+  ["Hybrid", "Remote"].forEach((m, j) => {
+    const i = 1 + cur.names.indexOf(m), y0 = 10 + j * rh + rh / 2, [a, b] = cur.ci[i], raw = RAW.b[1 + RAW.names.indexOf(m)];
+    g.append(sv("text", { x: lw - 10, y: y0 + 4, "text-anchor": "end", class: "ink" }, m));
+    g.append(sv("line", { x1: x(Math.max(lo, a)), x2: x(Math.min(hi, b)), y1: y0, y2: y0, stroke: j ? "var(--c4)" : "var(--c3)", "stroke-width": 8, "stroke-linecap": "round", opacity: .55 }));
+    g.append(sv("circle", { cx: x(raw), cy: y0, r: 7, fill: "none", stroke: "var(--muted)", "stroke-width": 2, "stroke-dasharray": "3 2" }));
+    g.append(sv("circle", { cx: x(cur.b[i]), cy: y0, r: 7, fill: j ? "var(--c4)" : "var(--c3)", stroke: "var(--card)", "stroke-width": 2 }));
+    g.append(sv("text", { x: x(cur.b[i]), y: y0 - 13, "text-anchor": "middle", class: "strong" }, (cur.b[i] >= 0 ? "+" : "") + kf(cur.b[i])));
+  });
+  host.append(g);
+});
+function light(host, on, title, text, pg) { host.append(h("div", { class: "light" + (on ? " on" : "") }, h("span", { class: "dot", "aria-hidden": "true" }), h("span", { class: "t" }, title, on ? " (on)" : " (off)"), h("span", { class: "d", html: text + " " + book("Risk box", pg) }))); }
+function refit() {
+  const keys = ALL.filter(k => sel.has(k));
+  cur = fit(keys);
+  $("#r2").textContent = cur.r2.toFixed(3); $("#adj").textContent = cur.adj.toFixed(3); $("#rse").textContent = "±" + kf(cur.s);
+  // coefficient table
+  const t = $("#t-coef"); t.innerHTML = "";
+  t.append(h("table", {}, h("thead", {}, h("tr", {}, h("th", {}, "Driver"), h("th", { class: "r" }, "Estimate and 95% interval"), h("th", { class: "r" }, "VIF"))),
+    h("tbody", {}, cur.names.map((nm, j) => {
+      const i = j + 1, v = cur.vif[j], per = nm === "Hybrid" || nm === "Remote" ? "vs. Onsite" : V.find(x => x.k === nm).per;
+      return h("tr", {}, h("td", {}, nm === "Hybrid" || nm === "Remote" ? nm : lab(nm), h("br"), h("span", { class: "note" }, per)), h("td", { class: "r" }, h("strong", {}, sgn(cur.b[i])), h("br"), h("span", { class: "note" }, `${sgn(cur.ci[i][0])} to ${sgn(cur.ci[i][1])}`)), h("td", { class: "r", style: v > 5 ? { color: "var(--warn)", fontWeight: 700 } : {} }, v.toFixed(1)));
+    }))));
+  // lights
+  const L = $("#lights"); L.innerHTML = "";
+  const moved = cur.names.filter((nm, j) => keys.length < ALL.length && Math.abs(cur.b[j + 1] - FULL.coef(nm)) > 2 * FULL.se[1 + FULL.names.indexOf(nm)]);
+  light(L, moved.length > 0, "Important drivers missing", moved.length ? `Adding the drivers you left out would move ${moved.map(n => n === "Hybrid" || n === "Remote" ? "the " + n + " gap" : short[n]).join(", ")} by more than two standard errors.` : (keys.length < ALL.length ? "The drivers you left out would not change these estimates much." : "All drivers are in the model."), "265");
+  const ov = cur.names.filter((_, j) => cur.vif[j] > 5);
+  light(L, ov.length > 0, "Predictors move together", ov.length ? `The VIF is above 5 for ${ov.map(n => short[n] || n).join(" and ")}, so their separate effects are hard to pin down and their intervals widen.` : "No VIF is above 5.", "267");
+  const tooMuch = lastAdded && prevAdj != null && cur.adj < prevAdj;
+  light(L, tooMuch, "Model may be too complex", tooMuch ? `Adding ${short[lastAdded]} lowered the adjusted R², i.e. it does not earn its place.` : lastAdded ? `Adding ${short[lastAdded]} did not lower the adjusted R².` : "Please add a driver to see whether it earns its place.", "266");
+  prevAdj = cur.adj;
+  // history
+  hist.unshift({ label: keys.length === 0 ? "Work mode only" : keys.length === ALL.length ? "All drivers" : "+ " + keys.map(k => short[k]).join(", "), hy: cur.coef("Hybrid"), re: cur.coef("Remote"), adj: cur.adj });
+  if (hist.length > 8) hist.pop();
+  const th = $("#t-hist"); th.innerHTML = "";
+  th.append(h("table", {}, h("thead", {}, h("tr", {}, h("th", {}, "Model"), h("th", { class: "r" }, "Hybrid gap"), h("th", { class: "r" }, "Remote gap"), h("th", { class: "r" }, "Adj. R²"))),
+    h("tbody", {}, hist.map((r, i) => h("tr", { style: i === 0 ? { fontWeight: 600 } : {} }, h("td", {}, r.label), h("td", { class: "r" }, (r.hy >= 0 ? "+" : "") + kf(r.hy)), h("td", { class: "r" }, (r.re >= 0 ? "+" : "") + kf(r.re)), h("td", { class: "r" }, r.adj.toFixed(3)))))));
+  drawGaps();
+  if (typeof refreshPrompt === "function") refreshPrompt();
+}
+const fh = FULL.coef("Hybrid"), fhci = FULL.ci[1 + FULL.names.indexOf("Hybrid")];
+quiz($("#q2a"), {
+  q: "Please click <em>All drivers</em>. What is left of the Hybrid advantage?",
+  opts: [
+    { t: `Still about ${kf(RAW.coef("Hybrid"))}`, k: "wrong", fb: "Please try it; the orange dot moves a long way toward zero once tenure and training are in the model." },
+    { t: "A few thousand dollars, with an interval that includes zero", k: "right", fb: `It is about ${sgn(fh)}, with a 95% interval from ${sgn(fhci[0])} to ${sgn(fhci[1])}. Most of the raw gap therefore belonged to tenure and training. The book reaches the same conclusion, namely that “work mode differences shrink once controls are applied” ` + book("§5.9.10", "253") + "." },
+    { t: "It flips to a large disadvantage", k: "wrong", fb: `Please try it. The gap shrinks to about ${sgn(fh)} and its interval includes zero, but it does not flip to a large negative number.` }]
+});
+const wAlone = fit(["workload"]), wTerr = fit(["workload", "terr"]);
+const wi = f => 1 + f.names.indexOf("workload");
+quiz($("#q2b"), {
+  q: "Please click <em>Work mode only</em>, tick workload, and then also tick territory size. What happens to the workload coefficient?",
+  opts: [
+    { t: "Almost nothing, since coefficients do not depend on what else is in the model.", k: "wrong", fb: `Please try it; you will see that it moves from ${sgn(wAlone.b[wi(wAlone)])} to ${sgn(wTerr.b[wi(wTerr)])}.` },
+    { t: "It changes a lot and its interval gets much wider, because workload and territory size move together.", k: "right", fb: `It moves from ${sgn(wAlone.b[wi(wAlone)])} to ${sgn(wTerr.b[wi(wTerr)])}, and its standard error grows from ${kf(wAlone.se[wi(wAlone)])} to ${kf(wTerr.se[wi(wTerr)])}. Since bigger territories come with heavier workloads, the model struggles to split the credit between them. The forecast can still be fine, but the individual levers are not ` + book("Risk box", "267") + "." },
+    { t: "It changes sign and becomes positive.", k: "wrong", fb: `Not in this case; it stays negative but swings from ${sgn(wAlone.b[wi(wAlone)])} to ${sgn(wTerr.b[wi(wTerr)])}, but in other data a swing like this can flip the sign ` + book("Risk box", "267") + "." }]
+});
+
+/* ---------- step 3 ---------- */
+const ti = 1 + FULL.names.indexOf("train"), tb = FULL.b[ti], tci = FULL.ci[ti];
+$("#train-coef").innerHTML = `<strong>Training hours: ${sgn(tb)} per hour</strong> (95% interval ${sgn(tci[0])} to ${sgn(tci[1])}).`;
+quiz($("#q3a"), {
+  q: "Which sentence would you put in front of the leadership team?",
+  opts: [
+    { t: `“Each extra hour of training causes ${money(tb)} more in sales.”`, k: "wrong", fb: "These are observational data, i.e. nobody assigned training at random, and reps who get more training may differ in ways that the model does not measure. Moreover, causal language creates strategic and legal risk " + book("Risk box", "269") + "." },
+    { t: `“Reps with one more hour of training sell about ${money(tb)} more on average, holding the other drivers in the model constant.”`, k: "right", fb: "This sentence describes an association and makes the comparison explicit. That is exactly the “holding others constant” reading that the book asks for in every multi-factor model " + book("§5.9.2", "245") + "." },
+    { t: `“Training explains ${money(tb)} of every rep's sales.”`, k: "wrong", fb: "A coefficient is a rate of change and does not describe a share of sales. That is, it tells you how predicted sales differ per extra hour, with the other drivers held fixed " + book("§5.9.2", "245") + "." }]
+});
+quiz($("#q3b"), {
+  q: "The book's first scenario adds 20 training hours (Table 5.19). Using this model, about how much higher are predicted sales?",
+  opts: [
+    { t: kf(tb), k: "wrong", fb: "That is the effect of one hour; twenty hours would be twenty times that." },
+    { t: kf(20 * tb), k: "right", fb: `20 × ${money(tb)} ≈ ${money(20 * tb)}. The book's Table 5.19 shows a similar step (from $219,178 to $237,532) ` + book("Table 5.19", "237") + ". You can check this in the next step with the “Training +20” button." },
+    { t: kf(200 * tb), k: "wrong", fb: "That would be 200 hours; please multiply the per-hour coefficient by 20." }]
+});
+
+/* ---------- step 4 ---------- */
+const BASE = { tenure: +range.tenure[2].toFixed(1), train: 67, coach: 3, tool: 3, workload: +range.workload[2].toFixed(2), team: Math.round(range.team[2]), terr: +range.terr[2].toFixed(2), mode: 0 };
+const sc = { ...BASE };
+const sl = {};
+const slHost = $("#sliders");
+const grid = h("div", { class: "grid2" });
+V.forEach(v => {
+  const inp = h("input", { type: "range", min: v.min, max: v.max, step: v.step, value: sc[v.k], "aria-label": v.lab });
+  const l = h("label", {}), note = h("span", { class: "note" }, `In the data: ${range[v.k][0].toFixed(v.dec)} to ${range[v.k][1].toFixed(v.dec)}`);
+  inp.addEventListener("input", () => { sc[v.k] = +inp.value; predict(); });
+  sl[v.k] = { inp, l };
+  grid.append(h("div", { class: "ctl" }, l, inp, note));
+});
+const modeCtl = h("div", { class: "ctl" }, h("span", { class: "lab" }, "Work mode"));
+const modeSeg = segButtons(modeCtl, [[0, "Onsite"], [1, "Hybrid"], [2, "Remote"]], 0, v => { sc.mode = v; predict(); }, "Work mode");
+grid.append(modeCtl);
+slHost.append(grid);
+function setScenario(s) { Object.assign(sc, s); V.forEach(v => (sl[v.k].inp.value = sc[v.k])); $$("button", modeSeg).forEach((b, i) => b.setAttribute("aria-pressed", String(i === sc.mode))); predict(); }
+[["Baseline", {}], ["Training +20", { train: 87 }], ["Coaching +2", { coach: 5 }], ["Tooling +1", { tool: 4 }]].forEach(([l, d]) =>
+  $("#presets").append(h("button", { class: "btn ghost", type: "button", onclick: () => setScenario({ ...BASE, ...d }) }, l)));
+function predictAt(s) {
+  const x0 = [1, ...ALL.map(k => s[k]), s.mode === 1 ? 1 : 0, s.mode === 2 ? 1 : 0];
+  const p = sum(x0.map((v, i) => v * FULL.b[i]));
+  let q = 0; for (let a = 0; a < x0.length; a++) for (let b = 0; b < x0.length; b++) q += x0[a] * FULL.XtXi[a][b] * x0[b];
+  const m = tcrit(FULL.df) * FULL.s * Math.sqrt(1 + q);
+  return { p, lo: p - m, hi: p + m };
+}
+const basePred = predictAt(BASE);
+let lastPred = basePred;
+const drawPred = charted("c-pred", (host, w) => {
+  const lo = 80000, hi = 420000, ht = 74, x = lin(lo, hi, 10, w - 10), r = lastPred;
+  const g = sv("svg", { class: "chart", width: w, height: ht, viewBox: `0 0 ${w} ${ht}`, role: "img", "aria-label": "Prediction and prediction interval" });
+  niceTicks(lo, hi, w < 460 ? 3 : 6).forEach(t => { g.append(sv("line", { class: "grid", x1: x(t), x2: x(t), y1: 6, y2: ht - 22 })); g.append(sv("text", { x: x(t), y: ht - 6, "text-anchor": "middle" }, kf(t))); });
+  g.append(sv("line", { x1: x(Math.max(lo, r.lo)), x2: x(Math.min(hi, r.hi)), y1: 26, y2: 26, stroke: "var(--c1)", "stroke-width": 10, "stroke-linecap": "round", opacity: .45 }));
+  g.append(sv("line", { x1: x(basePred.p), x2: x(basePred.p), y1: 12, y2: 40, stroke: "var(--muted)", "stroke-width": 2, "stroke-dasharray": "3 2" }));
+  g.append(sv("circle", { cx: x(r.p), cy: 26, r: 8, fill: "var(--c1)", stroke: "var(--card)", "stroke-width": 2 }));
+  host.append(g);
+});
+function predict() {
+  V.forEach(v => { sl[v.k].l.innerHTML = `${v.lab}: <strong>${(+sc[v.k]).toFixed(v.dec)}</strong>`; });
+  lastPred = predictAt(sc);
+  $("#pred").textContent = kf(lastPred.p);
+  $("#pi").textContent = `${kf(lastPred.lo)} to ${kf(lastPred.hi)}`;
+  const d = lastPred.p - basePred.p; $("#delta").textContent = (d >= 0 ? "+" : "−") + kf(Math.abs(d));
+  const out = V.filter(v => sc[v.k] < range[v.k][0] || sc[v.k] > range[v.k][1]);
+  const L = $("#light-x"); L.innerHTML = "";
+  light(L, out.length > 0, "Extrapolation", out.length ? `${out.map(v => v.lab).join(", ")} ${out.length > 1 ? "are" : "is"} outside anything in the data. The model still produces a number, but the straight-line effect may no longer hold that far out.` : "Every driver is inside the range that the model was built on.", "268");
+  drawPred();
+  if (typeof refreshPrompt === "function") refreshPrompt();
+}
+predict();
+quiz($("#q4"), {
+  q: "Please set training hours to 180; you will see that the extrapolation light comes on. What does that mean?",
+  opts: [
+    { t: "The prediction is wrong.", k: "wrong", fb: "The prediction is unsupported rather than necessarily wrong. No rep in the data had that much training, so nothing tells you whether the per-hour effect still holds." },
+    { t: "No rep in the data had that much training, so the straight-line effect may not hold there (e.g. because of diminishing returns). We should treat the number as a guess and test it before planning on it.", k: "right", fb: "The book's decision rule is that if a scenario is an extrapolation, you should not treat the prediction as reliable; instead, label it as such and pilot it before committing " + book("Risk box", "268") + "." },
+    { t: "The prediction interval already covers the risk, so the number is safe to use.", k: "wrong", fb: "The prediction interval assumes that the model's straight-line form still holds, but outside the data that assumption is exactly what is in doubt " + book("Risk box", "268") + "." }]
+});
+
+/* ---------- step 5 ---------- */
+var refreshPrompt = promptBox($("#prompt"), () => {
+  const rows = cur.names.map((nm, j) => `- ${nm === "Hybrid" || nm === "Remote" ? nm + " vs. Onsite" : lab(nm) + " (" + V.find(v => v.k === nm).per + ")"}: ${sgn(cur.b[j + 1])} (95% CI ${sgn(cur.ci[j + 1][0])} to ${sgn(cur.ci[j + 1][1])}, VIF ${cur.vif[j].toFixed(1)})`).join("\n");
+  const out = V.filter(v => sc[v.k] < range[v.k][0] || sc[v.k] > range[v.k][1]).map(v => v.lab);
+  return `Use the regression request template from my textbook (Business Analytics in the Age of AI, §5.12.5). I modeled sales per sales rep (180 reps) with linear regression. Work mode is coded against Onsite.
+
+Model output:
+${rows}
+R-squared ${cur.r2.toFixed(3)}, adjusted R-squared ${cur.adj.toFixed(3)}, residual standard error ${money(cur.s)}.
+
+Scenario: a ${MODES[sc.mode]} rep with ${V.map(v => lab(v.k).toLowerCase() + " " + (+sc[v.k]).toFixed(v.dec)).join(", ")}. Predicted sales ${money(lastPred.p)}, 95% prediction interval ${money(lastPred.lo)} to ${money(lastPred.hi)}.${out.length ? " Note: " + out.join(", ") + (out.length > 1 ? " are" : " is") + " outside the range of the data." : ""}
+
+1. Go through the template's requested outputs one by one: which do I have, and which are missing?
+2. Rewrite my interpretation of the Hybrid coefficient in plain language, without causal claims.
+3. Flag any overlap between predictors and any extrapolation, and say what each could change about a staffing decision.`;
+});
+refit();
+initSteps();
+
+</script>
+</body>
+</html>

@@ -1,0 +1,765 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Module 4 Decision Lab: trend, seasons, lags and forecast ranges (Chapter 6).">
+<title>Forecast Ranges · QMB 6358 Decision Lab</title>
+<style>
+/* Decision Labs: shared styles. Single reading column; step pills on top; each step is a card. */
+:root{
+  --bg:#f4f6f5; --card:#ffffff; --ink:#1d2b30; --muted:#5a6b72; --line:#d6dedb; --soft:#eef3f1;
+  --accent:#0e4d6c; --accent-ink:#ffffff; --accent-soft:#e3eef3;
+  --good:#24723a; --good-soft:#e5f2e8; --warn:#8a5a00; --warn-soft:#fbf0d9; --bad:#a63a2a; --bad-soft:#f8e4e0;
+  --book:#7d6210; --book-soft:#f8f1dc;
+  --c1:#0e4d6c; --c2:#3f8fbf; --c3:#d0862b; --c4:#8c5aa8; --c5:#5d8f3c; --hi:#c2410c;
+  --on-c1:#ffffff; --on-c2:#0b1f29; --on-c3:#24160a; --on-c4:#ffffff;
+  --grid:#e3e8e6;
+  --sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#0f1517; --card:#162024; --ink:#e3ebe8; --muted:#9fb0b3; --line:#2b3a3f; --soft:#1c282c;
+  --accent:#6cb6d8; --accent-ink:#0f1517; --accent-soft:#183342;
+  --good:#6fcf8a; --good-soft:#173322; --warn:#e7b65a; --warn-soft:#33280f; --bad:#f08a78; --bad-soft:#3a1d18;
+  --book:#dcbf6a; --book-soft:#2e2814;
+  --c1:#6cb6d8; --c2:#9ad0ee; --c3:#e8a85a; --c4:#c39ae0; --c5:#93c76e; --hi:#fb8c4a; --grid:#24323a; --on-c1:#0f1517; --on-c2:#0f1517; --on-c3:#0f1517; --on-c4:#0f1517; color-scheme:dark; } }
+:root[data-theme="dark"]{
+  --bg:#0f1517; --card:#162024; --ink:#e3ebe8; --muted:#9fb0b3; --line:#2b3a3f; --soft:#1c282c;
+  --accent:#6cb6d8; --accent-ink:#0f1517; --accent-soft:#183342;
+  --good:#6fcf8a; --good-soft:#173322; --warn:#e7b65a; --warn-soft:#33280f; --bad:#f08a78; --bad-soft:#3a1d18;
+  --book:#dcbf6a; --book-soft:#2e2814;
+  --c1:#6cb6d8; --c2:#9ad0ee; --c3:#e8a85a; --c4:#c39ae0; --c5:#93c76e; --hi:#fb8c4a; --grid:#24323a; --on-c1:#0f1517; --on-c2:#0f1517; --on-c3:#0f1517; --on-c4:#0f1517; color-scheme:dark; }
+
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0; background:var(--bg); color:var(--ink); font:16px/1.55 var(--sans);}
+.wrap{max-width:880px; margin:0 auto; padding:20px max(16px, env(safe-area-inset-right)) 56px max(16px, env(safe-area-inset-left));}
+h1,h2,h3{line-height:1.25; margin:0; text-wrap:balance}
+h1{font-size:clamp(26px, 5vw, 34px); letter-spacing:-0.01em}
+h2{font-size:21px}
+h3{font-size:16px}
+p{margin:0}
+a{color:var(--accent)}
+.eyebrow{font-size:12px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); font-weight:600}
+.lede{color:var(--muted); max-width:62ch}
+.meta{font-size:13px; color:var(--muted)}
+header.lab{display:grid; gap:8px; margin-bottom:16px}
+.num{font-variant-numeric:tabular-nums}
+.mono{font-family:var(--mono)}
+
+/* step pills */
+nav.steps{position:sticky; top:0; z-index:5; background:var(--bg); padding:8px 0 10px; display:flex; gap:6px; overflow-x:auto; scrollbar-width:none; border-bottom:1px solid var(--line); margin-bottom:16px}
+nav.steps::-webkit-scrollbar{display:none}
+.pill{flex:0 0 auto; font:inherit; font-size:14px; border:1px solid var(--line); background:var(--card); color:var(--ink); border-radius:999px; padding:6px 12px; cursor:pointer; white-space:nowrap}
+.pill .n{display:inline-block; min-width:1.4em; font-weight:700; color:var(--muted)}
+.pill[aria-current="step"]{background:var(--accent); border-color:var(--accent); color:var(--accent-ink)}
+.pill[aria-current="step"] .n{color:var(--accent-ink)}
+.pill.done:not([aria-current="step"]) .n{color:var(--good)}
+
+/* step cards */
+section.step{display:none; background:var(--card); border:1px solid var(--line); border-radius:12px; padding:20px; gap:16px}
+section.step.on{display:grid}
+.step > h2 .k{color:var(--muted); font-weight:600; margin-right:6px}
+.row{display:flex; gap:10px; flex-wrap:wrap; align-items:center}
+.spread{justify-content:space-between}
+.grid2{display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:14px}
+@media (max-width:680px){ .grid2{grid-template-columns:1fr} section.step{padding:16px} }
+.panel{background:var(--soft); border-radius:10px; padding:14px; display:grid; gap:10px; min-width:0}
+.note{font-size:14px; color:var(--muted)}
+.callout{border-left:4px solid var(--accent); background:var(--accent-soft); padding:10px 14px; border-radius:0 8px 8px 0; font-size:15px}
+.big{font-size:28px; font-weight:700; font-variant-numeric:tabular-nums; line-height:1.1}
+.stat{display:grid; gap:2px}
+.stat .lab{font-size:12px; color:var(--muted); text-transform:uppercase; letter-spacing:.06em}
+.stats{display:grid; grid-template-columns:repeat(auto-fit, minmax(130px,1fr)); gap:10px}
+
+/* book chip */
+.book{display:inline-flex; align-items:center; gap:4px; font-size:12px; font-weight:600; color:var(--book); background:var(--book-soft); border-radius:999px; padding:2px 9px; white-space:nowrap; vertical-align:1px}
+.book::before{content:""; width:10px; height:8px; border:1.5px solid currentColor; border-radius:1px 1px 2px 2px; border-top-width:1.5px; display:inline-block}
+
+/* buttons and controls */
+button{font:inherit}
+.btn{border:1px solid var(--accent); background:var(--accent); color:var(--accent-ink); border-radius:8px; padding:8px 14px; cursor:pointer; font-weight:600}
+.btn.ghost{background:transparent; color:var(--accent)}
+.btn:disabled{opacity:.5; cursor:default}
+.btn:focus-visible,.pill:focus-visible,.opt:focus-visible,.seg button:focus-visible,input:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+.seg{display:inline-flex; flex-wrap:nowrap; border:1px solid var(--line); border-radius:8px; overflow:hidden; background:var(--card); max-width:100%}
+.rate{display:grid}
+.rate-row{display:grid; grid-template-columns:1fr auto; gap:8px 14px; align-items:center; padding:10px 0; border-bottom:1px solid var(--line)}
+.rate-row:last-child{border-bottom:0}
+@media (max-width:520px){ .rate-row{grid-template-columns:1fr} }
+.seg button{border:0; border-right:1px solid var(--line); background:transparent; color:var(--ink); padding:6px 10px; cursor:pointer; font-size:14px}
+.seg button:last-child{border-right:0}
+.seg button[aria-pressed="true"]{background:var(--accent); color:var(--accent-ink)}
+.ctl{display:grid; gap:4px; min-width:0}
+.ctl > .seg{justify-self:start}
+.ctl label,.ctl .lab{font-size:13px; color:var(--muted); font-weight:600}
+input[type=range]{width:100%; accent-color:var(--accent)}
+.check{display:flex; align-items:center; gap:8px; font-size:15px; padding:4px 0; cursor:pointer}
+.check input{width:18px; height:18px; accent-color:var(--accent)}
+
+/* multiple-choice with instant feedback */
+.quiz{display:grid; gap:10px; border:1px solid var(--line); border-radius:10px; padding:14px}
+.quiz .q{font-weight:600}
+.opts{display:grid; gap:8px}
+.opt{text-align:left; border:1px solid var(--line); background:var(--card); color:var(--ink); border-radius:8px; padding:10px 12px; cursor:pointer; display:flex; gap:10px; align-items:flex-start}
+.opt .mk{flex:0 0 22px; height:22px; border-radius:50%; border:1.5px solid var(--line); display:grid; place-items:center; font-size:13px; font-weight:700; color:var(--muted)}
+.opt:hover{border-color:var(--accent)}
+.opt.picked.right{border-color:var(--good); background:var(--good-soft)}
+.opt.picked.right .mk{border-color:var(--good); background:var(--good); color:var(--card)}
+.opt.picked.wrong{border-color:var(--warn); background:var(--warn-soft)}
+.opt.picked.wrong .mk{border-color:var(--warn); background:var(--warn); color:var(--card)}
+.opt.picked.ok{border-color:var(--accent); background:var(--accent-soft)}
+.opt.picked.ok .mk{border-color:var(--accent); background:var(--accent); color:var(--card)}
+.fb{border-radius:8px; padding:10px 12px; font-size:15px; display:none}
+.fb.show{display:block}
+.fb.right{background:var(--good-soft)}
+.fb.wrong{background:var(--warn-soft)}
+.fb.ok{background:var(--accent-soft)}
+.fb b{display:block; margin-bottom:2px}
+
+/* tables */
+.tbl{overflow-x:auto}
+table{border-collapse:collapse; width:100%; font-size:14px}
+th,td{padding:6px 8px; border-bottom:1px solid var(--line); text-align:left; vertical-align:top}
+th{font-size:12px; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); font-weight:600}
+td.r,th.r{text-align:right; font-variant-numeric:tabular-nums}
+td.r{white-space:nowrap}
+
+/* charts */
+svg.chart{width:100%; height:auto; display:block; overflow:visible}
+svg.chart text{fill:var(--muted); font:12px var(--sans)}
+svg.chart text.ink{fill:var(--ink)}
+svg.chart text.strong{fill:var(--ink); font-weight:700}
+svg.chart .grid{stroke:var(--grid); stroke-width:1}
+svg.chart .axis{stroke:var(--line); stroke-width:1}
+.legend{display:flex; flex-wrap:wrap; gap:6px 14px; font-size:13px; color:var(--muted)}
+.legend span{display:inline-flex; align-items:center; gap:6px}
+.legend i{width:12px; height:12px; border-radius:3px; display:inline-block}
+
+/* risk lights */
+.lights{display:grid; grid-template-columns:repeat(auto-fit, minmax(190px,1fr)); gap:8px}
+.light{display:grid; grid-template-columns:auto 1fr; gap:2px 10px; align-items:start; border:1px solid var(--line); border-radius:8px; padding:8px 10px; font-size:14px}
+.light .dot{width:14px; height:14px; border-radius:50%; background:var(--line); margin-top:3px; grid-row:span 2}
+.light.on{border-color:var(--warn); background:var(--warn-soft)}
+.light.on .dot{background:var(--warn); box-shadow:0 0 0 3px color-mix(in srgb, var(--warn) 25%, transparent)}
+.light .t{font-weight:600}
+.light .d{color:var(--muted); font-size:13px}
+
+/* prompt box */
+.prompt{font-family:var(--mono); font-size:13.5px; line-height:1.5; background:var(--soft); border:1px solid var(--line); border-radius:8px; padding:12px; white-space:pre-wrap; word-break:break-word}
+footer{margin-top:28px; font-size:13px; color:var(--muted); display:grid; gap:6px; max-width:70ch}
+.nav-next{display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap; border-top:1px solid var(--line); padding-top:14px}
+.sr{position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0)}
+@media (prefers-reduced-motion: no-preference){ section.step.on{animation:fade .2s ease-out} @keyframes fade{from{opacity:.4; transform:translateY(3px)} to{opacity:1; transform:none}} }
+
+h2:focus{outline:none}
+@media (max-width:520px){ table{font-size:13px} th,td{padding:6px 5px} th{letter-spacing:.02em} }
+
+</style>
+</head>
+<body>
+<noscript><div class="wrap"><p class="callout"><strong>This lab cannot run here.</strong> It needs JavaScript, which this viewer blocks (as Canvas file previews do). Please use the lab link in your Reading Guide, or download this file and open it in your web browser.</p></div></noscript>
+<div class="wrap">
+<header class="lab">
+  <span class="eyebrow">QMB 6358 · Module 4 Decision Lab · Chapters 5 and 6</span>
+  <h1>Forecast Ranges</h1>
+  <p class="lede">In the lecture we forecast Coca-Cola's quarterly sales from 14 years of data. Please build the forecasting model one piece at a time, test it on a year that it has not seen, and then decide how much to plan for when the forecast comes with a range.</p>
+  <p class="meta">This lab takes about 20 minutes and also works on a phone. Nothing is graded or saved.</p>
+</header>
+<nav class="steps" aria-label="Lab steps"></nav>
+
+<section class="step" id="s1" data-title="Trend only">
+  <h2><span class="k">1</span>Trend only</h2>
+  <p>These are the lecture's data, Coca-Cola's quarterly sales (in millions of dollars) from Q1-86 to Q4-99, 56 quarters in all <span class="book">Lecture 4a · slide 2</span>. The line is a straight time trend, Sales = a + b·t, where t counts the quarters from 1 to 56. The book describes most business time series with three components, namely trend, seasonality and shocks <span class="book">§6.5.3 · p.&nbsp;306</span>, and a straight line can only capture the first of them. Please look at what the line misses.</p>
+  <div class="ctl" id="view1"></div>
+  <div id="c-trend"></div>
+  <div class="stats"><div class="stat"><span class="lab">Trend per quarter</span><span class="big" id="tr1"></span></div><div class="stat"><span class="lab">R²</span><span class="big" id="r21"></span></div><div class="stat"><span class="lab">Typical miss</span><span class="big" id="s1v"></span></div></div>
+  <p class="note" id="note1"></p>
+  <div id="q1"></div>
+</section>
+
+<section class="step" id="s2" data-title="Add the quarters">
+  <h2><span class="k">2</span>Add the quarters</h2>
+  <p>To capture the seasonal pattern, we add the quarter as a categorical predictor with three indicators, D_1, D_2 and D_3 (the data file already contains them). Q4 is the baseline, so each coefficient is the difference from a Q4 quarter with the same t <span class="book">§5.9.5 · p.&nbsp;247</span>. The book's sales case uses Q1 as its reference instead <span class="book">§5.9.9 · p.&nbsp;251</span>; that choice changes the coefficients, but it does not change the forecasts. Please add the quarters and watch the misses in the lower panel.</p>
+  <div class="ctl" id="mode2"></div>
+  <div id="c-fit2"></div>
+  <div class="stats"><div class="stat"><span class="lab">R²</span><span class="big" id="r22"></span></div><div class="stat"><span class="lab">Typical miss</span><span class="big" id="s2v"></span></div><div class="stat"><span class="lab">Durbin-Watson</span><span class="big" id="dw2"></span></div></div>
+  <div class="panel"><h3>Trend + quarters (all 56 quarters)</h3><div class="tbl" id="t-coef2"></div><p class="note" id="note2"></p></div>
+  <div id="q2"></div>
+</section>
+
+<section class="step" id="s3" data-title="Add last quarter's sales">
+  <h2><span class="k">3</span>Add last quarter's sales</h2>
+  <p>A lagged variable carries last quarter's sales over into this quarter's model; you get it by shifting the sales column down by one row, and the data file calls it Lag.Sales <span class="book">Lecture 4a · slides 10–11</span>. The book does not cover lagged predictors, but it describes the idea behind them, namely that in a time series "today depends on yesterday" <span class="book">§6.5.1 · p.&nbsp;305</span>. Since Q1-86 has no previous quarter, R Commander fits this model on 55 quarters.</p>
+  <div class="ctl" id="mode3"></div>
+  <div id="c-fit3"></div>
+  <div class="stats"><div class="stat"><span class="lab">R²</span><span class="big" id="r23"></span></div><div class="stat"><span class="lab">Typical miss</span><span class="big" id="s3v"></span></div><div class="stat"><span class="lab">Durbin-Watson</span><span class="big" id="dw3"></span></div></div>
+  <div class="panel"><h3>Trend + quarters + last quarter's sales (55 quarters)</h3><div class="tbl" id="t-coef3"></div></div>
+  <div id="q3a"></div>
+  <div class="panel">
+    <h3>Forecasting more than one quarter ahead</h3>
+    <p class="note">At the end of 1999, please pick the quarter that you need a forecast for. Each forecast needs last quarter's sales, and only Q4-99 is known.</p>
+    <div class="ctl" id="hz3"></div>
+    <div class="tbl" id="t-chain"></div>
+  </div>
+  <div id="q3b"></div>
+</section>
+
+<section class="step" id="s4" data-title="Test on a year the model has not seen">
+  <h2><span class="k">4</span>Test on a year the model has not seen</h2>
+  <p>R² only tells you how well a model fits the quarters it has learned from. The book's rule is to test a model on data it did not use, and for a time series that test has to be a time-based split, i.e. predicting the future from the past <span class="book">§6.7.2 · p.&nbsp;314</span>. Novikov makes the same point about separate training and test data <span class="book">Novikov · p.&nbsp;19</span>. Below, each model is fitted on 1986 to 1998 (t ≤ 52) and then forecasts 1999. The simple baseline "same quarter last year" competes as well, since a model should first beat a baseline <span class="book">§6.9.5 · p.&nbsp;324</span>. Please compare the models.</p>
+  <div class="ctl" id="mode4"></div>
+  <div id="c-test"></div>
+  <div class="legend"><span><i style="background:var(--ink)"></i>Actual sales</span><span><i style="background:var(--c3)"></i>Forecast</span><span><i style="background:var(--bad)"></i>Actual 2000 (slide 2)</span></div>
+  <div class="tbl" id="t-test"></div>
+  <p class="note">MAPE is the mean absolute percentage error, i.e. the average miss in percent of actual sales. The lag model forecasts each quarter from the previous quarter's actual sales, as R Commander does when it predicts from the data file. <span id="dyn-note"></span></p>
+  <div class="row"><button class="btn run" type="button" id="show2000">Show 2000</button><span class="note">This refits every model on all 56 quarters and compares the forecasts for Q1-00 to Q1-01 with what actually happened.</span></div>
+  <div id="q4"></div>
+</section>
+
+<section class="step" id="s5" data-title="A number or a range">
+  <h2><span class="k">5</span>A number or a range</h2>
+  <p>A forecast presented as a single number creates false precision, and the book asks for a range that supports planning choices <span class="book">§6.5.4 · p.&nbsp;306</span>. <span id="pi-text"></span> Suppose that you plan bottling capacity for Q1-00, where unused capacity is expensive, while extra capacity can be added on short notice at a premium. Please choose a base plan.</p>
+  <div class="panel">
+    <div class="ctl"><label for="plan" id="planl"></label><input type="range" id="plan" min="4000" max="6000" step="10" value="4996"></div>
+    <div class="stats"><div class="stat"><span class="lab">Chance sales stay below the plan</span><span class="big" id="pbelow"></span></div><div class="stat"><span class="lab">Chance sales exceed the plan</span><span class="big" id="pabove"></span></div></div>
+    <div id="c-plan"></div>
+    <div class="row"><button class="btn run" type="button" id="reveal1">Show what happened in Q1-00</button></div>
+    <p class="note" id="reveal-note">The chances come from the model's prediction interval (a t distribution around the forecast).</p>
+  </div>
+  <div id="q5a"></div>
+  <h3>When must the model be refit?</h3>
+  <p>Forecast ranges also tell you when a model stops working. A structural break, such as a new competitor or a major pricing change, can make a model that looked accurate unreliable very quickly, and a forecasting team should say in advance what would invalidate its forecast <span class="book">§6.5.6 · p.&nbsp;307</span>. Novikov calls this drift, and he describes how retail forecasting models trained before 2020 had to be retrained quickly when the pandemic changed demand <span class="book">Novikov · pp.&nbsp;83–84</span>. Please add a hypothetical shock that lowers actual sales from Q1-00 on.</p>
+  <div class="panel">
+    <div class="ctl"><label for="shock" id="shockl"></label><input type="range" id="shock" min="0" max="30" step="1" value="0"></div>
+    <div id="c-shock"></div>
+    <div class="stats"><div class="stat"><span class="lab">Outside the 95% range</span><span class="big" id="nout"></span></div><div class="stat"><span class="lab">Below the forecast</span><span class="big" id="nbelow"></span></div><div class="stat"><span class="lab">MAPE</span><span class="big" id="mape5"></span></div></div>
+    <div class="lights" id="light5"></div>
+  </div>
+  <div id="q5b"></div>
+</section>
+
+<section class="step" id="s6" data-title="Ask your AI">
+  <h2><span class="k">6</span>Optional: ask an AI tool to forecast Coca-Cola's sales</h2>
+  <p>The following prompt asks an AI tool to repeat this lab's analysis. Please upload the Module 4 data file CocaCola.csv together with the prompt; these are the lecture's data and contain no personal or confidential information.</p>
+  <div id="prompt"></div>
+  <div class="panel">
+    <h3>Then check the answer</h3>
+    <ul style="margin:0; padding-left:20px; display:grid; gap:6px" id="checks6"></ul>
+  </div>
+</section>
+
+<footer>
+  <p>This lab is based on the Coca-Cola example of Lecture 4a, on Chapters 5 and 6 of <em>Business Analytics in the Age of AI: A New Paradigm for Executives</em> (Jank, 2026), in particular §6.5 (time series and forecasting) and §6.7.2 (out-of-sample testing), and on <em>The Math Behind the Machines</em> (Novikov, 2025). The 56 quarters are the lecture's data file CocaCola.csv (sales in millions of dollars), and the actual sales for Q1-00 to Q1-01 are the red numbers on slide 2. Every model uses all the quarters that R Commander uses (56, or 55 with last quarter's sales), so some numbers differ slightly from the slides, which were computed without Q1-86. The shock in step 5 is hypothetical.</p>
+  <p>It is part of QMB 6358; nothing you do here is recorded.</p>
+</footer>
+</div>
+
+<script>
+const DATA = {"q":["Q1-86","Q2-86","Q3-86","Q4-86","Q1-87","Q2-87","Q3-87","Q4-87","Q1-88","Q2-88","Q3-88","Q4-88","Q1-89","Q2-89","Q3-89","Q4-89","Q1-90","Q2-90","Q3-90","Q4-90","Q1-91","Q2-91","Q3-91","Q4-91","Q1-92","Q2-92","Q3-92","Q4-92","Q1-93","Q2-93","Q3-93","Q4-93","Q1-94","Q2-94","Q3-94","Q4-94","Q1-95","Q2-95","Q3-95","Q4-95","Q1-96","Q2-96","Q3-96","Q4-96","Q1-97","Q2-97","Q3-97","Q4-97","Q1-98","Q2-98","Q3-98","Q4-98","Q1-99","Q2-99","Q3-99","Q4-99"],"s":[1734.83,2244.96,2533.8,2154.96,1547.82,2104.41,2014.36,1991.75,1869.05,2313.63,2128.32,2026.83,1910.6,2331.16,2206.55,2173.97,2148.28,2739.31,2792.75,2556.01,2480.97,3039.52,3172.12,2879.0,2772.0,3550.0,3508.0,3243.86,3056.0,3899.0,3629.0,3373.0,3352.0,4342.0,4461.0,4017.0,3854.0,4936.0,4895.0,4333.0,4194.0,5253.0,4656.0,4443.0,4138.0,5075.0,4954.0,4701.0,4457.0,5151.0,4747.0,4458.0,4428.0,5379.0,5195.0,4803.0],"q2":["Q1-00","Q2-00","Q3-00","Q4-00","Q1-01"],"s2":[4391,5621,5543,4903,4479]};
+/* Decision Labs: shared helpers (no dependencies). */
+"use strict";
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+const SVGNS = "http://www.w3.org/2000/svg";
+
+function h(tag, attrs, ...kids) {
+  const e = document.createElement(tag);
+  setAttrs(e, attrs);
+  kids.flat().forEach(k => { if (k != null && k !== false) e.append(k.nodeType ? k : document.createTextNode(String(k))); });
+  return e;
+}
+function sv(tag, attrs, ...kids) {
+  const e = document.createElementNS(SVGNS, tag);
+  setAttrs(e, attrs);
+  kids.flat().forEach(k => { if (k != null && k !== false) e.append(k.nodeType ? k : document.createTextNode(String(k))); });
+  return e;
+}
+function setAttrs(e, attrs) {
+  for (const [k, v] of Object.entries(attrs || {})) {
+    if (v == null || v === false) continue;
+    if (k === "html") e.innerHTML = v;
+    else if (k.startsWith("on")) e.addEventListener(k.slice(2), v);
+    else if (k === "style" && typeof v === "object") Object.assign(e.style, v);
+    else e.setAttribute(k, v === true ? "" : v);
+  }
+}
+
+/* ---------- formatting ---------- */
+const money = (x, d = 0) => (x < 0 ? "−$" : "$") + Math.abs(x).toLocaleString("en-US", { minimumFractionDigits: d, maximumFractionDigits: d });
+const kmoney = x => x === 0 ? "$0" : (x < 0 ? "−$" : "$") + (Math.abs(x) >= 1e6 ? (Math.abs(x) / 1e6).toFixed(2) + "M" : Math.round(Math.abs(x) / 1000).toLocaleString("en-US") + "k");
+const pct = (x, d = 1) => (100 * x).toFixed(d) + "%";
+const num = (x, d = 0) => x.toLocaleString("en-US", { minimumFractionDigits: d, maximumFractionDigits: d });
+const signed = (s) => s.replace(/^-/, "−");
+
+/* ---------- random numbers and statistics ---------- */
+function randn() { let u = 0, v = 0; while (u === 0) u = Math.random(); while (v === 0) v = Math.random(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); }
+function erf(x) { // Numerical Recipes erfc approximation (fractional error < 1.2e-7)
+  const t = 1 / (1 + 0.5 * Math.abs(x));
+  const y = 1 - t * Math.exp(-x * x - 1.26551223 + t * (1.00002368 + t * (0.37409196 + t * (0.09678418 + t * (-0.18628806 + t * (0.27886807 + t * (-1.13520398 + t * (1.48851587 + t * (-0.82215223 + t * 0.17087277)))))))));
+  return x >= 0 ? y : -y;
+}
+const normCdf = z => 0.5 * (1 + erf(z / Math.SQRT2));
+function normInv(p) { // Acklam
+  const a = [-3.969683028665376e+01, 2.209460984245205e+02, -2.759285104469687e+02, 1.383577518672690e+02, -3.066479806614716e+01, 2.506628277459239e+00];
+  const b = [-5.447609879822406e+01, 1.615858368580409e+02, -1.556989798598866e+02, 6.680131188771972e+01, -1.328068155288572e+01];
+  const c = [-7.784894002430293e-03, -3.223964580411365e-01, -2.400758277161838e+00, -2.549732539343734e+00, 4.374614347350924e+00, 2.938163982698783e+00];
+  const d = [7.784695709041462e-03, 3.224671290700398e-01, 2.445134137142996e+00, 3.754408661907416e+00];
+  const pl = 0.02425, ph = 1 - pl; let q, r;
+  if (p < pl) { q = Math.sqrt(-2 * Math.log(p)); return (((((c[0] * q + c[1]) * q + c[2]) * q + c[3]) * q + c[4]) * q + c[5]) / ((((d[0] * q + d[1]) * q + d[2]) * q + d[3]) * q + 1); }
+  if (p > ph) { q = Math.sqrt(-2 * Math.log(1 - p)); return -(((((c[0] * q + c[1]) * q + c[2]) * q + c[3]) * q + c[4]) * q + c[5]) / ((((d[0] * q + d[1]) * q + d[2]) * q + d[3]) * q + 1); }
+  q = p - 0.5; r = q * q;
+  return (((((a[0] * r + a[1]) * r + a[2]) * r + a[3]) * r + a[4]) * r + a[5]) * q / (((((b[0] * r + b[1]) * r + b[2]) * r + b[3]) * r + b[4]) * r + 1);
+}
+function tInv(p, df) { // Cornish-Fisher expansion; accurate to ~1e-3 for df >= 5
+  const z = normInv(p), z2 = z * z;
+  return z + (z2 * z + z) / (4 * df) + (5 * z2 * z2 * z + 16 * z2 * z + 3 * z) / (96 * df * df)
+    + (3 * z2 * z2 * z2 * z + 19 * z2 * z2 * z + 17 * z2 * z - 15 * z) / (384 * df * df * df);
+}
+const sum = a => a.reduce((s, x) => s + x, 0);
+const mean = a => sum(a) / a.length;
+function sd(a) { const m = mean(a); return Math.sqrt(sum(a.map(x => (x - m) ** 2)) / (a.length - 1)); }
+function median(a) { const s = [...a].sort((x, y) => x - y), n = s.length; return n % 2 ? s[(n - 1) / 2] : (s[n / 2 - 1] + s[n / 2]) / 2; }
+function wmedian(v, w) { // weighted median (lower median)
+  const idx = v.map((_, i) => i).sort((i, j) => v[i] - v[j]); const tot = sum(w); let c = 0;
+  for (const i of idx) { c += w[i]; if (c >= tot / 2) return v[i]; }
+  return v[idx[idx.length - 1]];
+}
+
+/* ---------- small linear algebra (OLS) ---------- */
+function invert(A) { // Gauss-Jordan; A is square array of arrays
+  const n = A.length, M = A.map((r, i) => [...r, ...Array.from({ length: n }, (_, j) => (i === j ? 1 : 0))]);
+  for (let c = 0; c < n; c++) {
+    let p = c; for (let r = c + 1; r < n; r++) if (Math.abs(M[r][c]) > Math.abs(M[p][c])) p = r;
+    if (Math.abs(M[p][c]) < 1e-12) return null;
+    [M[c], M[p]] = [M[p], M[c]];
+    const pv = M[c][c]; for (let j = 0; j < 2 * n; j++) M[c][j] /= pv;
+    for (let r = 0; r < n; r++) if (r !== c) { const f = M[r][c]; if (f) for (let j = 0; j < 2 * n; j++) M[r][j] -= f * M[c][j]; }
+  }
+  return M.map(r => r.slice(n));
+}
+function ols(y, cols) { // cols: array of predictor columns (no intercept); returns b (with intercept first), se, r2, adjR2, s, XtXi
+  const n = y.length, k = cols.length + 1;
+  const X = (i, j) => (j === 0 ? 1 : cols[j - 1][i]);
+  const XtX = Array.from({ length: k }, () => new Array(k).fill(0)), Xty = new Array(k).fill(0);
+  for (let i = 0; i < n; i++) for (let a = 0; a < k; a++) { const xa = X(i, a); Xty[a] += xa * y[i]; for (let b = a; b < k; b++) XtX[a][b] += xa * X(i, b); }
+  for (let a = 0; a < k; a++) for (let b = 0; b < a; b++) XtX[a][b] = XtX[b][a];
+  const XtXi = invert(XtX); if (!XtXi) return null;
+  const b = XtXi.map(r => sum(r.map((v, j) => v * Xty[j])));
+  let sse = 0; const ym = mean(y); let sst = 0;
+  for (let i = 0; i < n; i++) { let f = 0; for (let a = 0; a < k; a++) f += b[a] * X(i, a); sse += (y[i] - f) ** 2; sst += (y[i] - ym) ** 2; }
+  const df = n - k, s2 = sse / df;
+  return { b, se: XtXi.map((r, i) => Math.sqrt(s2 * r[i])), r2: 1 - sse / sst, adj: 1 - (sse / df) / (sst / (n - 1)), s: Math.sqrt(s2), df, XtXi, n, k };
+}
+
+/* ---------- steps ---------- */
+const Steps = { list: [], onShow: {}, cur: 0 };
+function initSteps() {
+  const nav = $("nav.steps"); Steps.list = $$("section.step");
+  Steps.list.forEach((sec, i) => {
+    const title = sec.dataset.title;
+    nav.append(h("button", { class: "pill", type: "button", "data-i": i, onclick: () => showStep(i) }, h("span", { class: "n" }, i + 1), " ", title));
+    const foot = h("div", { class: "nav-next" });
+    foot.append(i > 0 ? h("button", { class: "btn ghost", type: "button", onclick: () => showStep(i - 1) }, "← Back") : h("span"));
+    if (i < Steps.list.length - 1) foot.append(h("button", { class: "btn", type: "button", onclick: () => showStep(i + 1) }, "Next: " + Steps.list[i + 1].dataset.title + " →"));
+    else foot.append(h("span", { class: "note" }, "This is the end of the lab; nothing was saved or graded."));
+    sec.append(foot);
+  });
+  showStep(0, true);
+}
+function showStep(i, first) {
+  Steps.list.forEach((s, j) => s.classList.toggle("on", j === i));
+  $$("nav.steps .pill").forEach((p, j) => { p.toggleAttribute("aria-current", j === i); if (j === i) p.setAttribute("aria-current", "step"); if (j < i) p.classList.add("done"); });
+  Steps.cur = i;
+  const pill = $$("nav.steps .pill")[i]; if (pill && pill.scrollIntoView) pill.scrollIntoView({ block: "nearest", inline: "nearest" });
+  if (!first) {
+    const top = $("nav.steps").getBoundingClientRect().top + window.scrollY; if (window.scrollY > top) window.scrollTo({ top, behavior: "smooth" });
+    const hd = $("h2", Steps.list[i]); if (hd) { hd.setAttribute("tabindex", "-1"); hd.focus({ preventScroll: true }); }
+  }
+  (Steps.onShow[Steps.list[i].id] || []).forEach(f => f());
+}
+function whenShown(id, f) { (Steps.onShow[id] = Steps.onShow[id] || []).push(f); }
+
+/* ---------- multiple-choice with instant feedback ---------- */
+function quiz(host, spec) {
+  const box = h("div", { class: "quiz" });
+  box.append(h("p", { class: "q", html: spec.q }));
+  const opts = h("div", { class: "opts", role: "group" });
+  const fb = h("div", { class: "fb", "aria-live": "polite" });
+  const head = { right: spec.rightHead || "Right.", wrong: "Not quite.", ok: "A reasonable choice." };
+  spec.opts.forEach((o, i) => {
+    const b = h("button", { class: "opt", type: "button" }, h("span", { class: "mk" }, String.fromCharCode(65 + i)), h("span", { html: o.t }));
+    b.addEventListener("click", () => {
+      $$(".opt", opts).forEach(x => x.classList.remove("picked", "right", "wrong", "ok"));
+      b.classList.add("picked", o.k);
+      fb.className = "fb show " + o.k;
+      fb.innerHTML = "<b>" + (o.head || head[o.k]) + "</b>" + o.fb;
+      if (spec.onAnswer) spec.onAnswer(o, i);
+    });
+    opts.append(b);
+  });
+  box.append(opts, fb);
+  host.append(box);
+  return box;
+}
+const book = (sec, page) => '<span class="book">' + sec + (page ? " · p. " + page : "") + "</span>";
+
+/* ---------- copy-a-prompt ---------- */
+function promptBox(host, getText, note) {
+  const pre = h("div", { class: "prompt", tabindex: "0" });
+  const btn = h("button", { class: "btn", type: "button" }, "Copy prompt");
+  const refresh = () => { pre.textContent = getText(); };
+  btn.addEventListener("click", () => {
+    refresh(); const text = pre.textContent;
+    const done = ok => { btn.textContent = ok ? "Copied" : "Selected - please press Ctrl/Cmd+C"; setTimeout(() => (btn.textContent = "Copy prompt"), 1800); };
+    const fallback = () => { const r = document.createRange(); r.selectNodeContents(pre); const s = window.getSelection(); s.removeAllRanges(); s.addRange(r); done(false); };
+    try { navigator.clipboard.writeText(text).then(() => done(true), fallback); } catch (e) { fallback(); }
+  });
+  host.append(h("div", { class: "row spread" }, h("span", { class: "note" }, note || "Please paste it into the AI tool that you use for this course."), btn), pre);
+  refresh();
+  return refresh;
+}
+
+/* ---------- chart helpers ---------- */
+function niceTicks(lo, hi, count = 5) {
+  const span = hi - lo || 1, step0 = span / count, mag = Math.pow(10, Math.floor(Math.log10(step0))), err = step0 / mag;
+  const step = (err >= 7.5 ? 10 : err >= 3.5 ? 5 : err >= 1.5 ? 2 : 1) * mag;
+  const out = []; for (let v = Math.ceil(lo / step) * step; v <= hi + step * 1e-9; v += step) out.push(+v.toPrecision(12));
+  return out;
+}
+const lin = (d0, d1, r0, r1) => v => r0 + (v - d0) / (d1 - d0 || 1) * (r1 - r0);
+function segButtons(host, items, value, onChange, label) {
+  const seg = h("div", { class: "seg", role: "group", "aria-label": label || "" });
+  items.forEach(([v, t]) => {
+    const b = h("button", { type: "button", "aria-pressed": String(v === value) }, t);
+    b.addEventListener("click", () => { $$("button", seg).forEach(x => x.setAttribute("aria-pressed", "false")); b.setAttribute("aria-pressed", "true"); onChange(v); });
+    seg.append(b);
+  });
+  host.append(seg);
+  return seg;
+}
+
+/* M6 Forecast Ranges */
+const QL = DATA.q, S = DATA.s, N = S.length;             // 56 quarters, Q1-86 to Q4-99
+const Q2 = DATA.q2, A2 = DATA.s2, T2 = [57, 58, 59, 60, 61]; // actuals Q1-00 to Q1-01 (slide 2)
+const SALL = S.concat(A2), QALL = QL.concat(Q2);          // index t - 1
+const T = S.map((_, i) => i + 1);
+const qtr = t => (t - 1) % 4 + 1;
+const nov = p => '<span class="book">Novikov · ' + (String(p).includes("-") ? "pp. " + String(p).replace("-", "–") : "p. " + p) + "</span>";
+const lec = (l, s) => '<span class="book">Lecture ' + l + " · " + s + "</span>";
+const tcrit = df => tInv(0.975, df);
+const M = x => (x < 0 ? "−$" : "$") + num(Math.abs(Math.round(x))) + "M";
+const sgn = x => (x >= 0 ? "+" : "−") + num(Math.abs(Math.round(x)));
+const f2 = (x, d = 2) => signed(x.toFixed(d));
+const pc = (x, d = 1) => (100 * x).toFixed(d) + "%";
+
+function charted(hostId, draw) {
+  const host = document.getElementById(hostId);
+  const run = () => { const w = host.clientWidth; if (w > 0) { host.innerHTML = ""; draw(host, w); } };
+  whenShown(host.closest("section.step").id, run);
+  window.addEventListener("resize", run);
+  return run;
+}
+function frame(w, o) {
+  const ml = w < 460 ? 46 : 54, mr = 14, mt = o.ylab ? 22 : 8, mb = 22 + (o.xlab ? 16 : 0), ht = o.h;
+  const x = lin(o.x[0], o.x[1], ml, w - mr), y = lin(o.y[0], o.y[1], ht - mb, mt);
+  const g = sv("svg", { class: "chart", width: w, height: ht, viewBox: `0 0 ${w} ${ht}`, role: "img", "aria-label": o.aria });
+  (o.yt || niceTicks(o.y[0], o.y[1], 4)).forEach(t => { g.append(sv("line", { class: "grid", x1: ml, x2: w - mr, y1: y(t), y2: y(t) })); g.append(sv("text", { x: ml - 6, y: y(t) + 4, "text-anchor": "end" }, o.yf ? o.yf(t) : num(t))); });
+  (o.xt || []).forEach(([t, lab]) => {
+    g.append(sv("line", { class: "grid", x1: x(t), x2: x(t), y1: mt, y2: ht - mb }));
+    g.append(sv("text", { x: x(t), y: ht - mb + 15, "text-anchor": "middle" }, lab));
+  });
+  if (o.zero) g.append(sv("line", { x1: ml, x2: w - mr, y1: y(0), y2: y(0), stroke: "var(--ink)", "stroke-width": 1.2 }));
+  if (o.ylab) g.append(sv("text", { x: 2, y: 12, class: "ink" }, o.ylab));
+  if (o.xlab) g.append(sv("text", { x: w - mr, y: ht - 3, "text-anchor": "end", class: "ink" }, o.xlab));
+  return { g, x, y, ml, mr, mt, mb, ht };
+}
+const dot = (F, xv, yv, c, r = 3, op = 1) => F.g.append(sv("circle", { cx: F.x(xv), cy: F.y(yv), r, fill: c, "fill-opacity": op }));
+const path = (F, pts, c, wd = 2.5, dash) => F.g.append(sv("path", { d: "M" + pts.map(([a, b]) => `${F.x(a).toFixed(1)},${F.y(b).toFixed(1)}`).join("L"), fill: "none", stroke: c, "stroke-width": wd, "stroke-dasharray": dash || null, "stroke-linejoin": "round" }));
+const yearTicks = (t0, t1, w) => { const step = w < 460 ? 16 : 8, out = []; for (let t = 1; t <= t1; t += step) if (t >= t0) out.push([t, "'" + QALL[t - 1].slice(3)]); return out; };
+function light(host, on, title, text) { host.append(h("div", { class: "light" + (on ? " on" : "") }, h("span", { class: "dot", "aria-hidden": "true" }), h("span", { class: "t" }, title, on ? " (on)" : " (off)"), h("span", { class: "d", html: text }))); }
+
+/* t distribution: density and CDF (Simpson's rule), for the planning chances in step 5 */
+function lgamma(z) { const g = 7, c = [0.99999999999980993, 676.5203681218851, -1259.1392167224028, 771.32342877765313, -176.61502916214059, 12.507343278686905, -0.13857109526572012, 9.9843695780195716e-6, 1.5056327351493116e-7]; z -= 1; let a = c[0]; const t = z + g + 0.5; for (let i = 1; i < 9; i++) a += c[i] / (z + i); return 0.5 * Math.log(2 * Math.PI) + (z + 0.5) * Math.log(t) - t + Math.log(a); }
+const tPdf = (x, df) => Math.exp(lgamma((df + 1) / 2) - lgamma(df / 2) - 0.5 * Math.log(df * Math.PI) - (df + 1) / 2 * Math.log(1 + x * x / df));
+function tCdf(x, df) { const n = 400, a = Math.abs(x), hh = a / n; let s = tPdf(0, df) + tPdf(a, df); for (let i = 1; i < n; i++) s += (i % 2 ? 4 : 2) * tPdf(i * hh, df); const half = s * hh / 3; return x >= 0 ? 0.5 + half : 0.5 - half; }
+
+/* ---------- models: "trend", "seas" (trend + quarters), "lag" (+ last quarter's sales); fitted on t <= tmax ---------- */
+function fitModel(kind, tmax) {
+  const ts = T.filter(t => t <= tmax && (kind !== "lag" || t >= 2));
+  const xrow = (t, lag) => { const r = [1, t]; if (kind !== "trend") r.push(+(qtr(t) === 1), +(qtr(t) === 2), +(qtr(t) === 3)); if (kind === "lag") r.push(lag); return r; };
+  const y = ts.map(t => SALL[t - 1]), rows = ts.map(t => xrow(t, SALL[t - 2]));
+  const f = ols(y, rows[0].slice(1).map((_, j) => rows.map(r => r[j + 1])));
+  f.kind = kind; f.ts = ts; f.y = y;
+  f.pred = (t, lag) => sum(xrow(t, lag).map((v, i) => v * f.b[i]));
+  f.fit = ts.map(t => f.pred(t, SALL[t - 2]));
+  f.res = y.map((v, i) => v - f.fit[i]);
+  f.dw = sum(f.res.slice(1).map((e, i) => (e - f.res[i]) ** 2)) / sum(f.res.map(e => e * e));
+  f.pi = (t, lag) => { const x = xrow(t, lag); let q = 0; for (let a = 0; a < x.length; a++) for (let b = 0; b < x.length; b++) q += x[a] * f.XtXi[a][b] * x[b]; const se = f.s * Math.sqrt(1 + q), m = tcrit(f.df) * se, p = f.pred(t, lag); return { p, lo: p - m, hi: p + m, se }; };
+  return f;
+}
+const TR = fitModel("trend", 56), SE = fitModel("seas", 56), LA = fitModel("lag", 56);
+const HOLD = { trend: fitModel("trend", 52), seas: fitModel("seas", 52), lag: fitModel("lag", 52) };
+const mape = (a, f) => mean(a.map((v, i) => Math.abs(v - f[i]) / v));
+const T99 = [53, 54, 55, 56], A99 = T99.map(t => SALL[t - 1]);
+const naive = t => SALL[t - 5];                                // same quarter last year
+const FC99 = { trend: T99.map(t => HOLD.trend.pred(t)), seas: T99.map(t => HOLD.seas.pred(t)), lag: T99.map(t => HOLD.lag.pred(t, SALL[t - 2])), naive: T99.map(naive) };
+const FC00 = { trend: T2.map(t => TR.pred(t)), seas: T2.map(t => SE.pred(t)), lag: T2.map(t => LA.pred(t, SALL[t - 2])), naive: T2.map(naive) };
+const DYN = []; { let prev = SALL[55]; T2.forEach(t => { const v = LA.pred(t, prev); DYN.push(v); prev = v; }); }
+const MAPE99 = Object.fromEntries(Object.entries(FC99).map(([k, f]) => [k, mape(A99, f)]));
+const MAPE00 = Object.fromEntries(Object.entries(FC00).map(([k, f]) => [k, mape(A2, f)]));
+const MAPEDYN = mape(A2, DYN);
+const PI00 = T2.map(t => SE.pi(t));
+const NAMES = { trend: "Trend only", seas: "Trend + quarters", lag: "Trend + quarters + last quarter's sales", naive: "Same quarter last year" };
+const KEYS = ["trend", "seas", "lag", "naive"];
+const signRuns = r => { let ch = 0, run = 1, best = 1; for (let i = 1; i < r.length; i++) { if (Math.sign(r[i]) !== Math.sign(r[i - 1])) { ch++; run = 1; } else { run++; best = Math.max(best, run); } } return { ch, best }; };
+const RUNS = signRuns(SE.res), rho = r => sum(r.slice(1).map((e, i) => e * r[i])) / sum(r.map(e => e * e));
+const coefTable = (host, f, names) => host.append(h("table", {}, h("thead", {}, h("tr", {}, h("th", {}, "Term"), h("th", { class: "r" }, "Estimate"), h("th", { class: "r" }, "Std. error"))),
+  h("tbody", {}, names.map((n, i) => h("tr", {}, h("td", { class: "mono" }, n), h("td", { class: "r" }, f2(f.b[i], i === 5 ? 3 : 2)), h("td", { class: "r" }, f.se[i].toFixed(i === 5 ? 3 : 2)))))));
+
+/* time-series chart with the residual panel below */
+function drawFit(host, w, f, opts) {
+  const F = frame(w, { x: [0, 57], y: [1000, 6000], xt: yearTicks(1, 56, w), yt: [1000, 2000, 3000, 4000, 5000, 6000], yf: t => num(t), h: w < 460 ? 220 : 260, ylab: "Sales ($ millions)", aria: "Quarterly sales with fitted values" });
+  path(F, T.map(t => [t, S[t - 1]]), "var(--muted)", 1.2);
+  T.forEach(t => dot(F, t, S[t - 1], "var(--ink)", 2.6));
+  path(F, f.ts.map((t, i) => [t, f.fit[i]]), "var(--c3)", 2.6);
+  host.append(F.g);
+  const R = frame(w, { x: [0, 57], y: [-700, 1000], xt: yearTicks(1, 56, w), yt: [-500, 0, 500, 1000], yf: t => (t > 0 ? "+" : t < 0 ? "−" : "") + num(Math.abs(t)), h: 130, ylab: "Miss (actual minus fit)", zero: true, aria: "Misses over time" });
+  const bw = Math.max(1.5, (R.x(2) - R.x(1)) * 0.7);
+  f.ts.forEach((t, i) => { const v = f.res[i]; R.g.append(sv("rect", { x: R.x(t) - bw / 2, y: Math.min(R.y(0), R.y(v)), width: bw, height: Math.abs(R.y(v) - R.y(0)), fill: v >= 0 ? "var(--c1)" : "var(--c4)" })); });
+  host.append(R.g);
+  if (opts && opts.legend) host.append(h("div", { class: "legend" }, h("span", {}, h("i", { style: { background: "var(--ink)" } }), "Actual sales"), h("span", {}, h("i", { style: { background: "var(--c3)" } }), "Fitted"), h("span", {}, h("i", { style: { background: "var(--c1)" } }), "Miss above the fit"), h("span", {}, h("i", { style: { background: "var(--c4)" } }), "Miss below the fit")));
+}
+
+/* ---------- step 1 ---------- */
+let view1 = "sales";
+segButtons($("#view1"), [["sales", "Sales and trend"], ["q", "Misses by quarter"]], "sales", v => { view1 = v; draw1(); }, "View");
+const QRES = [1, 2, 3, 4].map(k => TR.res.filter((_, i) => qtr(i + 1) === k));
+const draw1 = charted("c-trend", (host, w) => {
+  if (view1 === "sales") {
+    const F = frame(w, { x: [0, 57], y: [1000, 6000], xt: yearTicks(1, 56, w), yt: [1000, 2000, 3000, 4000, 5000, 6000], h: w < 460 ? 230 : 280, ylab: "Sales ($ millions)", aria: "Quarterly sales with a straight trend" });
+    path(F, T.map(t => [t, S[t - 1]]), "var(--muted)", 1.2);
+    T.forEach(t => dot(F, t, S[t - 1], ["var(--c1)", "var(--c3)", "var(--c4)", "var(--c5)"][qtr(t) - 1], 3.2));
+    path(F, [[1, TR.pred(1)], [56, TR.pred(56)]], "var(--ink)", 2.5);
+    host.append(F.g);
+  } else {
+    const F = frame(w, { x: [0.5, 4.5], y: [-700, 1000], xt: [[1, "Q1"], [2, "Q2"], [3, "Q3"], [4, "Q4"]], yt: [-500, 0, 500, 1000], yf: t => (t > 0 ? "+" : t < 0 ? "−" : "") + num(Math.abs(t)), h: w < 460 ? 230 : 260, ylab: "Miss of the trend line ($ millions)", zero: true, aria: "Misses of the trend line by quarter" });
+    QRES.forEach((r, k) => {
+      r.forEach((v, j) => dot(F, k + 1 + (j - 6.5) * 0.035, v, ["var(--c1)", "var(--c3)", "var(--c4)", "var(--c5)"][k], 3.4, 0.75));
+      const m = mean(r);
+      F.g.append(sv("line", { x1: F.x(k + 0.62), x2: F.x(k + 1.38), y1: F.y(m), y2: F.y(m), stroke: "var(--ink)", "stroke-width": 3 }));
+      F.g.append(sv("text", { x: F.x(k + 1), y: F.y(m) + (m >= 0 ? -10 : 20), "text-anchor": "middle", class: "strong", style: "paint-order:stroke; stroke:var(--card); stroke-width:4px; stroke-linejoin:round" }, "avg " + sgn(m)));
+    });
+    host.append(F.g);
+  }
+  host.append(h("div", { class: "legend" }, ["Q1", "Q2", "Q3", "Q4"].map((q, k) => h("span", {}, h("i", { style: { background: ["var(--c1)", "var(--c3)", "var(--c4)", "var(--c5)"][k] } }), q))));
+});
+$("#tr1").textContent = "+$" + TR.b[1].toFixed(1) + "M";
+$("#r21").textContent = TR.r2.toFixed(4);
+$("#s1v").textContent = "±" + M(TR.s);
+$("#note1").innerHTML = `The trend adds about $${TR.b[1].toFixed(1)}M per quarter. The typical miss is the residual standard error. Please note that R Commander, with all 56 quarters, reports R² = ${TR.r2.toFixed(4)}, while slide 4 shows 0.8851 from a fit without Q1-86.`;
+const qm = QRES.map(mean), qpos = QRES.map(r => r.filter(v => v > 0).length);
+quiz($("#q1"), {
+  q: "Please switch to <em>Misses by quarter</em>. What do you see?",
+  opts: [
+    { t: "Q2 and Q3 sit mostly above the line and Q1 and Q4 below it, year after year, i.e. a seasonal pattern that the trend cannot capture.", k: "right", fb: `The average miss is ${sgn(qm[0])} in Q1, ${sgn(qm[1])} in Q2, ${sgn(qm[2])} in Q3 and ${sgn(qm[3])} in Q4 ($ millions). The line therefore misses in the same direction every year, which is the seasonality component ` + book("§6.5.3", "306") + ". Since this pattern repeats, a good forecast includes it rather than being surprised by it " + book("§6.5.1", "305") + "." },
+    { t: "The misses are random, so the trend is all we need.", k: "wrong", fb: `Please look again: ${qpos[1]} of the 14 Q2 misses are above zero, while ${14 - qpos[0]} of the 14 Q1 misses are below it. Random misses would not sort themselves by quarter.` },
+    { t: "The line is right on average, so the misses do not matter for a forecast.", k: "wrong", fb: `On average the misses are zero, but a forecast from this line would be about ${M(qm[1])} too low for a typical Q2 and about ${M(-qm[0])} too high for a typical Q1. For a quarterly production plan, those are large errors.` }]
+});
+
+/* ---------- step 2 ---------- */
+let mode2 = "trend";
+segButtons($("#mode2"), [["trend", "Trend only"], ["seas", "Trend + quarters"]], "trend", v => { mode2 = v; upd2(); }, "Model");
+const draw2 = charted("c-fit2", (host, w) => drawFit(host, w, mode2 === "trend" ? TR : SE, { legend: true }));
+function upd2() {
+  const f = mode2 === "trend" ? TR : SE;
+  $("#r22").textContent = f.r2.toFixed(4); $("#s2v").textContent = "±" + M(f.s); $("#dw2").textContent = f.dw.toFixed(2);
+  draw2();
+}
+coefTable($("#t-coef2"), SE, ["(Intercept)", "t", "D_1", "D_2", "D_3"]);
+$("#note2").innerHTML = `Slide 7 shows 1,339.61, 67.62, −207.65, 506.92 and 334.66 (R² 0.945), which come from a fit without Q1-86. With all 56 quarters, as in R Commander, you get the numbers above. For instance, a Q2 quarter sells about ${M(SE.b[3])} more than a Q4 quarter with the same t.`;
+quiz($("#q2"), {
+  q: "Please switch to <em>Trend + quarters</em> and look at the misses over time in the lower panel. What do you notice?",
+  opts: [
+    { t: "They look like random noise now, since the quarters fixed the problem.", k: "wrong", fb: `The quarters removed the seasonal pattern (R² rises from ${TR.r2.toFixed(3)} to ${SE.r2.toFixed(3)}), but the misses still come in long runs, e.g. ${RUNS.best} quarters in a row below the fit. Random misses would change sign much more often.` },
+    { t: "They come in long runs, with several quarters in a row above the fit and then several below it. This quarter's miss is linked to last quarter's.", k: "right", fb: `The misses change sign only ${RUNS.ch} times in 56 quarters, and one run lasts ${RUNS.best} quarters. The Durbin-Watson statistic, which is about 2 when the misses are unrelated and close to 0 when they move together, is ${SE.dw.toFixed(2)} here. The book points out that independence often fails in time-based data ` + book("§5.7.2", "231") + ", and Novikov lists independence among the assumptions that regression relies on " + nov(28) + ". In R Commander, please use <em>Models > Numerical diagnostics > Durbin-Watson test</em>." },
+    { t: "They are larger than before.", k: "wrong", fb: `They are smaller (a typical miss of ${M(SE.s)} against ${M(TR.s)}), but they still move together over time, which is what the Durbin-Watson statistic of ${SE.dw.toFixed(2)} picks up.` }]
+});
+
+/* ---------- step 3 ---------- */
+let mode3 = "seas";
+segButtons($("#mode3"), [["seas", "Trend + quarters"], ["lag", "+ last quarter's sales"]], "seas", v => { mode3 = v; upd3(); }, "Model");
+const draw3 = charted("c-fit3", (host, w) => drawFit(host, w, mode3 === "seas" ? SE : LA, { legend: true }));
+function upd3() {
+  const f = mode3 === "seas" ? SE : LA;
+  $("#r23").textContent = f.r2.toFixed(4); $("#s3v").textContent = "±" + M(f.s); $("#dw3").textContent = f.dw.toFixed(2);
+  draw3();
+}
+coefTable($("#t-coef3"), LA, ["(Intercept)", "t", "D_1", "D_2", "D_3", "Lag.Sales"]);
+const bl = LA.b[5];
+quiz($("#q3a"), {
+  q: `The coefficient of last quarter's sales is ${bl.toFixed(2)}. Which reading is right?`,
+  opts: [
+    { t: `Holding the trend and the quarter fixed, $100M more in last quarter's sales goes with about ${M(100 * bl)} more sales this quarter.`, k: "right", fb: `Please also note that the trend coefficient drops from ${SE.b[1].toFixed(1)} to ${LA.b[1].toFixed(1)} per quarter, since last quarter's sales already carry most of the level. The misses now change sign often, and the Durbin-Watson statistic is ${LA.dw.toFixed(2)}, close to 2.` },
+    { t: `For every dollar of sales last quarter, Coca-Cola makes ${Math.round(100 * bl)} cents this quarter.`, k: "wrong", fb: "This is how the narration of slide 11 reads it, but the model also contains the trend and the quarters, so the coefficient is a carry-over on top of them. That is, it compares two quarters with the same t and the same season whose previous quarters differed." },
+    { t: `Sales grow by ${Math.round(100 * bl)}% from one quarter to the next.`, k: "wrong", fb: `The model is in dollars, so ${bl.toFixed(2)} is a dollar-for-dollar carry-over and says nothing about percent growth. In fact, sales grew far more slowly than that.` }]
+});
+let hz = 1;
+const hzIn = h("input", { type: "range", min: 1, max: 5, step: 1, value: 1, "aria-label": "Quarters ahead" }), hzL = h("label", {});
+hzIn.addEventListener("input", () => { hz = +hzIn.value; updChain(); });
+$("#hz3").append(hzL, hzIn);
+function updChain() {
+  hzL.innerHTML = `Forecast for: <strong>${Q2[hz - 1]}</strong> (${hz} quarter${hz > 1 ? "s" : ""} ahead)`;
+  hzIn.setAttribute("aria-valuetext", Q2[hz - 1]);
+  const t = $("#t-chain"); t.innerHTML = "";
+  t.append(h("table", {}, h("thead", {}, h("tr", {}, h("th", {}, "Quarter"), h("th", { class: "r" }, "Last quarter's sales used"), h("th", { class: "r" }, "Forecast"))),
+    h("tbody", {}, T2.slice(0, hz).map((tt, i) => h("tr", { style: i === hz - 1 ? { fontWeight: 700 } : {} }, h("td", {}, Q2[i]),
+      h("td", { class: "r", style: { whiteSpace: "normal" } }, i === 0 ? `${M(SALL[55])} (actual Q4-99)` : `${M(DYN[i - 1])} (forecast for ${Q2[i - 1]})`),
+      h("td", { class: "r" }, M(DYN[i])))))));
+}
+updChain();
+quiz($("#q3b"), {
+  q: "At the end of 1999 you need a forecast for Q3-00. What goes into the model for last quarter's sales?",
+  opts: [
+    { t: "The actual sales of Q2-00", k: "wrong", fb: "Q2-00 has not happened yet at the end of 1999. Please move the slider to Q3-00 and look at the middle column." },
+    { t: `The sales of Q4-99 (${M(SALL[55])}), since that is the last actual number`, k: "wrong", fb: "Q4-99 is last quarter's sales for Q1-00 only. For Q3-00 the model needs Q2-00's sales, which it has to forecast first." },
+    { t: "The model's own forecast for Q2-00, which in turn uses its forecast for Q1-00", k: "right", fb: `Two or more quarters ahead, the lag model feeds on its own forecasts (here ${M(DYN[0])} for Q1-00 and ${M(DYN[1])} for Q2-00), so its errors carry forward. This is one reason why forecast ranges should widen as the horizon grows ` + book("Table 6.5", "308") + "." }]
+});
+
+/* ---------- step 4 ---------- */
+let mode4 = "seas", shown2000 = false;
+segButtons($("#mode4"), [["trend", "Trend"], ["seas", "+ quarters"], ["lag", "+ lag"], ["naive", "Baseline"]], "seas", v => { mode4 = v; upd4(); }, "Model");
+const draw4 = charted("c-test", (host, w) => {
+  const t1 = shown2000 ? 61 : 56, t0 = 37;
+  const F = frame(w, { x: [t0 - 0.7, t1 + 0.7], y: [3500, 6500], xt: (shown2000 ? [37, 41, 45, 49, 53, 57, 61] : [37, 41, 45, 49, 53]).filter((t, i) => w >= 460 || i % 2 === 0).map(t => [t, QALL[t - 1]]), yt: [3500, 4500, 5500, 6500], h: w < 460 ? 230 : 270, ylab: "Sales ($ millions)", aria: "Forecasts against actual sales" });
+  F.g.append(sv("rect", { x: F.x(52.5), y: F.mt, width: F.x(56.5) - F.x(52.5), height: F.ht - F.mb - F.mt, fill: "var(--accent-soft)", opacity: 0.6 }));
+  F.g.append(sv("text", { x: F.x(54.5), y: F.mt + 14, "text-anchor": "middle", class: "ink" }, w < 460 ? "1999" : "1999 test"));
+  if (shown2000) { F.g.append(sv("rect", { x: F.x(56.5), y: F.mt, width: F.x(61.7) - F.x(56.5), height: F.ht - F.mb - F.mt, fill: "var(--bad-soft)", opacity: 0.6 })); F.g.append(sv("text", { x: F.x(59), y: F.mt + 14, "text-anchor": "middle", class: "ink" }, "2000")); }
+  const act = [];
+  for (let t = t0; t <= 56; t++) act.push([t, SALL[t - 1]]);
+  path(F, act, "var(--ink)", 1.6); act.forEach(([t, v]) => dot(F, t, v, "var(--ink)", 2.8));
+  const fh = HOLD[mode4];
+  if (mode4 !== "naive") path(F, fh.ts.filter(t => t >= t0).map(t => [t, fh.fit[fh.ts.indexOf(t)]]), "var(--c3)", 1.6, "2 3");
+  path(F, T99.map((t, i) => [t, FC99[mode4][i]]), "var(--c3)", 2.4, "6 3"); T99.forEach((t, i) => dot(F, t, FC99[mode4][i], "var(--c3)", 4.5));
+  if (shown2000) {
+    path(F, T2.map((t, i) => [t, FC00[mode4][i]]), "var(--c3)", 2.4, "6 3"); T2.forEach((t, i) => dot(F, t, FC00[mode4][i], "var(--c3)", 4.5));
+    path(F, [[56, SALL[55]], ...T2.map((t, i) => [t, A2[i]])], "var(--bad)", 1.6); T2.forEach((t, i) => dot(F, t, A2[i], "var(--bad)", 3.4));
+  }
+  host.append(F.g);
+});
+function upd4() {
+  const t = $("#t-test"); t.innerHTML = "";
+  t.append(h("table", {}, h("thead", {}, h("tr", {}, h("th", {}, "Model"), h("th", { class: "r" }, "R² through 1998"), h("th", { class: "r" }, "1999 MAPE"), h("th", { class: "r" }, "2000 MAPE"))),
+    h("tbody", {}, KEYS.map(k => h("tr", { style: k === mode4 ? { fontWeight: 700, background: "var(--accent-soft)" } : {} }, h("td", {}, NAMES[k]),
+      h("td", { class: "r" }, k === "naive" ? "n/a" : HOLD[k].r2.toFixed(3)), h("td", { class: "r" }, pc(MAPE99[k])), h("td", { class: "r" }, shown2000 ? pc(MAPE00[k]) : "?"))))));
+  $("#dyn-note").textContent = shown2000 ? `If the lag model has to make all five 2000 forecasts at the end of 1999 (with its own forecasts for last quarter's sales), its 2000 MAPE is ${pc(MAPEDYN)}.` : "";
+  draw4();
+}
+$("#show2000").addEventListener("click", () => { shown2000 = true; upd4(); });
+const yr = y => [1, 2, 3, 4].map(q => SALL[4 * (y - 1986) + q - 1]).reduce((a, b) => a + b, 0);
+const growth = (yr(2000) - yr(1995)) / 5, implied = 16 * SE.b[1];
+quiz($("#q4"), {
+  q: `Please press <em>Show 2000</em>. The seasonal model was too high in all five quarters, and every model missed by more than the baseline, which missed by only ${pc(MAPE00.naive)} on average. What is the best conclusion?`,
+  opts: [
+    { t: "The models are useless; we should always use last year's numbers.", k: "wrong", fb: `In 1999 the lag model beat the baseline clearly (${pc(MAPE99.lag)} against ${pc(MAPE99.naive)}), so one bad year is not enough to discard a model. What 2000 shows is that a model has to keep earning its place against the baseline.` },
+    { t: "A model has to beat a simple baseline on recent data before we rely on it, and one good test year is no guarantee: growth slowed, and the 14-year trend kept projecting the old growth.", k: "right", fb: `From 1995 to 2000, annual sales grew by about ${M(growth)} a year, while the trend fitted to all 14 years implies about ${M(implied)} a year. The book's simplicity principle asks for exactly this comparison: start with a baseline and add complexity only if it pays off ` + book("§6.9.5", "324") + ". Novikov adds that good judgment includes knowing when a simple rule works better " + nov(104) + "." },
+    { t: `2000 was just bad luck; an R² of ${SE.r2.toFixed(2)} shows that the seasonal model is a good model.`, k: "wrong", fb: `R² describes the fit to 1986 to 1999. On the quarters it had not seen, the seasonal model missed by ${pc(MAPE00.seas)} on average, and all five of its forecasts were too high, which does not look like bad luck. The book's rule is to judge a model by its out-of-sample performance ` + book("§6.7.2", "314") + "." }]
+});
+
+/* ---------- step 5 ---------- */
+const P0 = PI00[0], DF = SE.df;
+$("#pi-text").innerHTML = `For Q1-00, the seasonal model (trend + quarters, fitted on all 56 quarters) forecasts <strong>${M(P0.p)}</strong>, with a 95% prediction interval from <strong>${M(P0.lo)}</strong> to <strong>${M(P0.hi)}</strong> ` + book("§5.8.3", "236") + ".";
+let plan = Math.round(P0.p / 10) * 10, revealed = false;
+$("#plan").value = plan;
+const below = v => tCdf((v - P0.p) / P0.se, DF);
+function upd5a() {
+  $("#planl").innerHTML = `Base plan for Q1-00: <strong>${M(plan)}</strong>`;
+  $("#plan").setAttribute("aria-valuetext", M(plan));
+  $("#pbelow").textContent = pc(below(plan), 0); $("#pabove").textContent = pc(1 - below(plan), 0);
+  if (revealed) {
+    const d = plan - 4391;
+    $("#reveal-note").innerHTML = `Actual Q1-00 sales were <strong>${M(A2[0])}</strong>, only ${M(A2[0] - P0.lo)} above the lower end of the range (under the model, a result this low or lower had a chance of about ${pc(below(A2[0]), 1)}). ` +
+      (d > 0 ? `Your plan of ${M(plan)} would have left ${M(d)} of capacity unused.` : `Your plan of ${M(plan)} would have needed ${M(-d)} of extra capacity.`);
+  }
+  drawPlan();
+}
+$("#plan").addEventListener("input", () => { plan = +$("#plan").value; upd5a(); });
+$("#reveal1").addEventListener("click", () => { revealed = true; upd5a(); });
+const drawPlan = charted("c-plan", (host, w) => {
+  const lo = 3800, hi = 6200, xs = Array.from({ length: 121 }, (_, i) => lo + (hi - lo) * i / 120), dens = v => tPdf((v - P0.p) / P0.se, DF) / P0.se, top = dens(P0.p) * 1.15;
+  const F = frame(w, { x: [lo, hi], y: [0, top], xt: [4000, 4500, 5000, 5500, 6000].map(v => [v, num(v)]), yt: [], h: w < 460 ? 170 : 190, xlab: "Q1-00 sales ($ millions)", aria: "Forecast distribution for Q1-00 with your plan" });
+  const area = (a, b, fill, op) => { const pts = xs.filter(v => v >= a && v <= b); if (pts.length < 2) return; F.g.append(sv("path", { d: `M${F.x(pts[0])},${F.y(0)}` + pts.map(v => `L${F.x(v).toFixed(1)},${F.y(dens(v)).toFixed(1)}`).join("") + `L${F.x(pts[pts.length - 1])},${F.y(0)}Z`, fill, "fill-opacity": op })); };
+  area(lo, plan, "var(--c2)", 0.35); area(plan, hi, "var(--c3)", 0.35);
+  path(F, xs.map(v => [v, dens(v)]), "var(--ink)", 2);
+  [P0.lo, P0.hi].forEach(v => { F.g.append(sv("line", { x1: F.x(v), x2: F.x(v), y1: F.y(0), y2: F.y(top * 0.62), stroke: "var(--ink)", "stroke-dasharray": "3 3" })); F.g.append(sv("text", { x: F.x(v), y: F.y(top * 0.62) - 5, "text-anchor": "middle" }, num(Math.round(v)))); });
+  F.g.append(sv("text", { x: F.x(P0.p), y: F.y(top * 0.4), "text-anchor": "middle", class: "ink" }, "95% range"));
+  F.g.append(sv("line", { x1: F.x(plan), x2: F.x(plan), y1: F.y(0), y2: F.mt, stroke: "var(--accent)", "stroke-width": 3 }));
+  F.g.append(sv("text", { x: F.x(plan) + (plan > 5600 ? -6 : 6), y: F.mt + 10, "text-anchor": plan > 5600 ? "end" : "start", class: "strong" }, "your plan"));
+  if (revealed) { F.g.append(sv("line", { x1: F.x(A2[0]), x2: F.x(A2[0]), y1: F.y(0), y2: F.mt + 18, stroke: "var(--bad)", "stroke-width": 3 })); F.g.append(sv("text", { x: F.x(A2[0]) - 6, y: F.y(top * 0.25), "text-anchor": "end", class: "strong", style: "fill:var(--bad)" }, "actual")); }
+  host.append(F.g);
+  host.append(h("div", { class: "legend" }, h("span", {}, h("i", { style: { background: "var(--c2)" } }), "Sales below the plan (unused capacity)"), h("span", {}, h("i", { style: { background: "var(--c3)" } }), "Sales above the plan (extra capacity needed)")));
+});
+quiz($("#q5a"), {
+  q: "Unused capacity is the expensive mistake here, while extra capacity can be added at a premium. Which plan would you choose?",
+  opts: [
+    { t: `A base plan at the point forecast (${M(P0.p)}), with extra capacity arranged up to the top of the range (${M(P0.hi)}).`, k: "ok", fb: `This follows the book's retail example, with a base plan at the central expectation and flexibility arranged in case demand lands near the high end ` + book("§6.5.5", "307") + `. Since unused capacity is the expensive mistake here, though, a base plan at the point forecast stays unused with a chance of about 50%, so you might set it lower and rely more on the flexible capacity.` },
+    { t: `${M(P0.hi)}, the top of the range, so that we never run short.`, k: "wrong", fb: `Under the model, sales would stay below this plan with a chance of about ${pc(below(P0.hi), 0)}, leaving idle capacity almost every time, and idle capacity is the expensive mistake here.` },
+    { t: `A base plan in the lower part of the range (e.g. about ${M(4500)}), with extra capacity arranged up to the top of the range.`, k: "right", fb: `When unused capacity is the more expensive mistake, the base plan belongs below the point forecast, and the range tells you how much flexibility to arrange. Under the model, sales stay below ${M(4500)} with a chance of only about ${pc(below(4500), 0)}, so you would rarely be stuck with idle capacity. This is what the book means by using ranges because overstock and understock have different costs ` + book("§6.5.4", "306") + ". Please press <em>Show what happened in Q1-00</em>." }]
+});
+let shock = 0;
+function upd5b() {
+  const a = A2.map(v => v * (1 - shock / 100)), out = a.filter((v, i) => v < PI00[i].lo || v > PI00[i].hi).length, bel = a.filter((v, i) => v < FC00.seas[i]).length;
+  $("#shockl").innerHTML = `Shock from Q1-00 on: sales <strong>${shock}%</strong> lower than what actually happened`;
+  $("#shock").setAttribute("aria-valuetext", shock + "%");
+  $("#nout").textContent = `${out} of 5`; $("#nbelow").textContent = `${bel} of 5`; $("#mape5").textContent = pc(mape(a, FC00.seas));
+  const L = $("#light5"); L.innerHTML = "";
+  light(L, out > 0, "Outside the range", out ? `${out} of the 5 quarters fall outside their 95% range. One miss can be chance, since a 95% range does not mean 100% certainty ${nov(104)}.` : "Every quarter falls inside its 95% range.");
+  light(L, bel === 5, "Misses all on one side", bel === 5 ? `All 5 quarters came in below the forecast, which points to a change in the pattern ${book("§6.5.6", "307")}.` : `${bel} of the 5 quarters came in below the forecast.`);
+  drawShock(a);
+}
+$("#shock").addEventListener("input", () => { shock = +$("#shock").value; upd5b(); });
+let shockA = A2.slice();
+const drawShockC = charted("c-shock", (host, w) => {
+  const a = shockA;
+  const F = frame(w, { x: [0.4, 5.6], y: [2800, 6600], xt: Q2.map((q, i) => [i + 1, q]), yt: [3000, 4000, 5000, 6000], h: w < 460 ? 220 : 240, ylab: "Sales ($ millions)", aria: "Forecast ranges for Q1-00 to Q1-01 and actual sales" });
+  PI00.forEach((p, i) => {
+    F.g.append(sv("line", { x1: F.x(i + 1), x2: F.x(i + 1), y1: F.y(p.lo), y2: F.y(p.hi), stroke: "var(--c2)", "stroke-width": 12, "stroke-linecap": "round", opacity: 0.5 }));
+    F.g.append(sv("line", { x1: F.x(i + 1) - 10, x2: F.x(i + 1) + 10, y1: F.y(p.p), y2: F.y(p.p), stroke: "var(--c1)", "stroke-width": 3 }));
+    const outside = a[i] < p.lo || a[i] > p.hi;
+    dot(F, i + 1, a[i], outside ? "var(--bad)" : "var(--ink)", 6);
+  });
+  host.append(F.g);
+  host.append(h("div", { class: "legend" }, h("span", {}, h("i", { style: { background: "var(--c2)" } }), "95% prediction interval"), h("span", {}, h("i", { style: { background: "var(--c1)" } }), "Forecast"), h("span", {}, h("i", { style: { background: "var(--ink)", borderRadius: "50%" } }), "Actual (with shock)"), h("span", {}, h("i", { style: { background: "var(--bad)", borderRadius: "50%" } }), "Outside the range")));
+});
+function drawShock(a) { shockA = a; drawShockC(); }
+const REFIT = (() => { const ts = T.concat([57, 58, 59, 60]); const rows = ts.map(t => [t, +(qtr(t) === 1), +(qtr(t) === 2), +(qtr(t) === 3)]); const f = ols(ts.map(t => SALL[t - 1]), [0, 1, 2, 3].map(j => rows.map(r => r[j]))); return f.b[0] + f.b[1] * 61 + f.b[2]; })();
+const nOut0 = A2.filter((v, i) => v < PI00[i].lo || v > PI00[i].hi).length;
+quiz($("#q5b"), {
+  q: `Please set the shock to 0%, i.e. what really happened. Only ${nOut0} of the 5 quarters falls outside its 95% range. Should the team have refit or rethought the model during 2000?`,
+  opts: [
+    { t: "No; a 95% range is expected to miss now and then, so one quarter outside the range is no reason to act.", k: "wrong", fb: "One miss on its own could be chance, since a 95% prediction does not mean 100% certainty " + nov(104) + ". All five quarters came in below the forecast, though, and Q1-00 sat at the very bottom of its range. Misses that keep falling on the same side are a sign that the pattern has changed." },
+    { t: "Yes; all five quarters came in below the forecast, which points to a change in the pattern even though only one left its range.", k: "right", fb: `Refitting the same model is not enough on its own, though: adding the four quarters of 2000 lowers the Q1-01 forecast only from ${M(FC00.seas[4])} to ${M(REFIT)} (actual ${M(A2[4])}), since 56 quarters of steady growth dominate the fit. This is why the book suggests weighting recent data more, shortening the planning horizon and communicating wider ranges after a break ` + book("§6.5.6", "307") + ". Novikov's advice for drift is the same, namely to monitor the model continuously and retrain it with fresh data " + nov("83-84") + "." },
+    { t: "Yes, by switching to 99% intervals so that all quarters fall inside again.", k: "wrong", fb: "Wider intervals would hide the problem without fixing it. The misses would still all fall on the same side, and the next plan would still start from a forecast that is too high." }]
+});
+
+/* ---------- step 6 ---------- */
+promptBox($("#prompt"), () => `I am attaching CocaCola.csv with Coca-Cola's quarterly sales in $ millions from Q1-86 to Q4-99 (56 quarters; columns Quarter, t, Sales, Lag.Sales, D_1, D_2, D_3).
+
+1. Fit three linear regressions on all available quarters: Sales ~ t; Sales ~ t + D_1 + D_2 + D_3; and the same plus Lag.Sales. Report R-squared and the Durbin-Watson statistic for each.
+2. Fit each model on t <= 52 only, forecast t = 53 to 56, and report the MAPE of each model and of the baseline "same quarter last year".
+3. Using the second model fitted on all 56 quarters, forecast Q1-00 to Q1-01 with 95% prediction intervals.
+4. The actual sales for Q1-00 to Q1-01 were 4391, 5621, 5543, 4903 and 4479. Compare them with your forecasts and with the baseline. What could have invalidated the forecasts, and what would you change?`);
+$("#checks6").append(...[
+  `Does it fit the first two models on all 56 quarters (R² ${TR.r2.toFixed(4)} and ${SE.r2.toFixed(4)}) and the lag model on 55? An R² of 0.945 for the second model means that it dropped Q1-86, as the slides did.`,
+  `Does it give ranges for its forecasts, and does it notice that Q1-00 (${M(A2[0])}) landed at the very bottom of its range (${M(P0.lo)} to ${M(P0.hi)})?`,
+  `Does it compare its models with the simple baseline (2000 MAPE ${pc(MAPE00.naive)}) before it recommends a more complex method, e.g. ARIMA or exponential smoothing?`,
+  "For the lag model two or more quarters ahead, does it say whether it used actual or forecasted values for last quarter's sales?"
+].map(s => h("li", {}, s)));
+
+upd2(); upd3(); upd4(); upd5a(); upd5b();
+initSteps();
+
+</script>
+</body>
+</html>

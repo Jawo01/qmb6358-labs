@@ -1,0 +1,755 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Module 3 Decision Lab: categories, different slopes and log transformations (Chapter 5).">
+<title>Bending the Line · QMB 6358 Decision Lab</title>
+<style>
+/* Decision Labs: shared styles. Single reading column; step pills on top; each step is a card. */
+:root{
+  --bg:#f4f6f5; --card:#ffffff; --ink:#1d2b30; --muted:#5a6b72; --line:#d6dedb; --soft:#eef3f1;
+  --accent:#0e4d6c; --accent-ink:#ffffff; --accent-soft:#e3eef3;
+  --good:#24723a; --good-soft:#e5f2e8; --warn:#8a5a00; --warn-soft:#fbf0d9; --bad:#a63a2a; --bad-soft:#f8e4e0;
+  --book:#7d6210; --book-soft:#f8f1dc;
+  --c1:#0e4d6c; --c2:#3f8fbf; --c3:#d0862b; --c4:#8c5aa8; --c5:#5d8f3c; --hi:#c2410c;
+  --on-c1:#ffffff; --on-c2:#0b1f29; --on-c3:#24160a; --on-c4:#ffffff;
+  --grid:#e3e8e6;
+  --sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#0f1517; --card:#162024; --ink:#e3ebe8; --muted:#9fb0b3; --line:#2b3a3f; --soft:#1c282c;
+  --accent:#6cb6d8; --accent-ink:#0f1517; --accent-soft:#183342;
+  --good:#6fcf8a; --good-soft:#173322; --warn:#e7b65a; --warn-soft:#33280f; --bad:#f08a78; --bad-soft:#3a1d18;
+  --book:#dcbf6a; --book-soft:#2e2814;
+  --c1:#6cb6d8; --c2:#9ad0ee; --c3:#e8a85a; --c4:#c39ae0; --c5:#93c76e; --hi:#fb8c4a; --grid:#24323a; --on-c1:#0f1517; --on-c2:#0f1517; --on-c3:#0f1517; --on-c4:#0f1517; color-scheme:dark; } }
+:root[data-theme="dark"]{
+  --bg:#0f1517; --card:#162024; --ink:#e3ebe8; --muted:#9fb0b3; --line:#2b3a3f; --soft:#1c282c;
+  --accent:#6cb6d8; --accent-ink:#0f1517; --accent-soft:#183342;
+  --good:#6fcf8a; --good-soft:#173322; --warn:#e7b65a; --warn-soft:#33280f; --bad:#f08a78; --bad-soft:#3a1d18;
+  --book:#dcbf6a; --book-soft:#2e2814;
+  --c1:#6cb6d8; --c2:#9ad0ee; --c3:#e8a85a; --c4:#c39ae0; --c5:#93c76e; --hi:#fb8c4a; --grid:#24323a; --on-c1:#0f1517; --on-c2:#0f1517; --on-c3:#0f1517; --on-c4:#0f1517; color-scheme:dark; }
+
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0; background:var(--bg); color:var(--ink); font:16px/1.55 var(--sans);}
+.wrap{max-width:880px; margin:0 auto; padding:20px max(16px, env(safe-area-inset-right)) 56px max(16px, env(safe-area-inset-left));}
+h1,h2,h3{line-height:1.25; margin:0; text-wrap:balance}
+h1{font-size:clamp(26px, 5vw, 34px); letter-spacing:-0.01em}
+h2{font-size:21px}
+h3{font-size:16px}
+p{margin:0}
+a{color:var(--accent)}
+.eyebrow{font-size:12px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); font-weight:600}
+.lede{color:var(--muted); max-width:62ch}
+.meta{font-size:13px; color:var(--muted)}
+header.lab{display:grid; gap:8px; margin-bottom:16px}
+.num{font-variant-numeric:tabular-nums}
+.mono{font-family:var(--mono)}
+
+/* step pills */
+nav.steps{position:sticky; top:0; z-index:5; background:var(--bg); padding:8px 0 10px; display:flex; gap:6px; overflow-x:auto; scrollbar-width:none; border-bottom:1px solid var(--line); margin-bottom:16px}
+nav.steps::-webkit-scrollbar{display:none}
+.pill{flex:0 0 auto; font:inherit; font-size:14px; border:1px solid var(--line); background:var(--card); color:var(--ink); border-radius:999px; padding:6px 12px; cursor:pointer; white-space:nowrap}
+.pill .n{display:inline-block; min-width:1.4em; font-weight:700; color:var(--muted)}
+.pill[aria-current="step"]{background:var(--accent); border-color:var(--accent); color:var(--accent-ink)}
+.pill[aria-current="step"] .n{color:var(--accent-ink)}
+.pill.done:not([aria-current="step"]) .n{color:var(--good)}
+
+/* step cards */
+section.step{display:none; background:var(--card); border:1px solid var(--line); border-radius:12px; padding:20px; gap:16px}
+section.step.on{display:grid}
+.step > h2 .k{color:var(--muted); font-weight:600; margin-right:6px}
+.row{display:flex; gap:10px; flex-wrap:wrap; align-items:center}
+.spread{justify-content:space-between}
+.grid2{display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:14px}
+@media (max-width:680px){ .grid2{grid-template-columns:1fr} section.step{padding:16px} }
+.panel{background:var(--soft); border-radius:10px; padding:14px; display:grid; gap:10px; min-width:0}
+.note{font-size:14px; color:var(--muted)}
+.callout{border-left:4px solid var(--accent); background:var(--accent-soft); padding:10px 14px; border-radius:0 8px 8px 0; font-size:15px}
+.big{font-size:28px; font-weight:700; font-variant-numeric:tabular-nums; line-height:1.1}
+.stat{display:grid; gap:2px}
+.stat .lab{font-size:12px; color:var(--muted); text-transform:uppercase; letter-spacing:.06em}
+.stats{display:grid; grid-template-columns:repeat(auto-fit, minmax(130px,1fr)); gap:10px}
+
+/* book chip */
+.book{display:inline-flex; align-items:center; gap:4px; font-size:12px; font-weight:600; color:var(--book); background:var(--book-soft); border-radius:999px; padding:2px 9px; white-space:nowrap; vertical-align:1px}
+.book::before{content:""; width:10px; height:8px; border:1.5px solid currentColor; border-radius:1px 1px 2px 2px; border-top-width:1.5px; display:inline-block}
+
+/* buttons and controls */
+button{font:inherit}
+.btn{border:1px solid var(--accent); background:var(--accent); color:var(--accent-ink); border-radius:8px; padding:8px 14px; cursor:pointer; font-weight:600}
+.btn.ghost{background:transparent; color:var(--accent)}
+.btn:disabled{opacity:.5; cursor:default}
+.btn:focus-visible,.pill:focus-visible,.opt:focus-visible,.seg button:focus-visible,input:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+.seg{display:inline-flex; flex-wrap:nowrap; border:1px solid var(--line); border-radius:8px; overflow:hidden; background:var(--card); max-width:100%}
+.rate{display:grid}
+.rate-row{display:grid; grid-template-columns:1fr auto; gap:8px 14px; align-items:center; padding:10px 0; border-bottom:1px solid var(--line)}
+.rate-row:last-child{border-bottom:0}
+@media (max-width:520px){ .rate-row{grid-template-columns:1fr} }
+.seg button{border:0; border-right:1px solid var(--line); background:transparent; color:var(--ink); padding:6px 10px; cursor:pointer; font-size:14px}
+.seg button:last-child{border-right:0}
+.seg button[aria-pressed="true"]{background:var(--accent); color:var(--accent-ink)}
+.ctl{display:grid; gap:4px; min-width:0}
+.ctl > .seg{justify-self:start}
+.ctl label,.ctl .lab{font-size:13px; color:var(--muted); font-weight:600}
+input[type=range]{width:100%; accent-color:var(--accent)}
+.check{display:flex; align-items:center; gap:8px; font-size:15px; padding:4px 0; cursor:pointer}
+.check input{width:18px; height:18px; accent-color:var(--accent)}
+
+/* multiple-choice with instant feedback */
+.quiz{display:grid; gap:10px; border:1px solid var(--line); border-radius:10px; padding:14px}
+.quiz .q{font-weight:600}
+.opts{display:grid; gap:8px}
+.opt{text-align:left; border:1px solid var(--line); background:var(--card); color:var(--ink); border-radius:8px; padding:10px 12px; cursor:pointer; display:flex; gap:10px; align-items:flex-start}
+.opt .mk{flex:0 0 22px; height:22px; border-radius:50%; border:1.5px solid var(--line); display:grid; place-items:center; font-size:13px; font-weight:700; color:var(--muted)}
+.opt:hover{border-color:var(--accent)}
+.opt.picked.right{border-color:var(--good); background:var(--good-soft)}
+.opt.picked.right .mk{border-color:var(--good); background:var(--good); color:var(--card)}
+.opt.picked.wrong{border-color:var(--warn); background:var(--warn-soft)}
+.opt.picked.wrong .mk{border-color:var(--warn); background:var(--warn); color:var(--card)}
+.opt.picked.ok{border-color:var(--accent); background:var(--accent-soft)}
+.opt.picked.ok .mk{border-color:var(--accent); background:var(--accent); color:var(--card)}
+.fb{border-radius:8px; padding:10px 12px; font-size:15px; display:none}
+.fb.show{display:block}
+.fb.right{background:var(--good-soft)}
+.fb.wrong{background:var(--warn-soft)}
+.fb.ok{background:var(--accent-soft)}
+.fb b{display:block; margin-bottom:2px}
+
+/* tables */
+.tbl{overflow-x:auto}
+table{border-collapse:collapse; width:100%; font-size:14px}
+th,td{padding:6px 8px; border-bottom:1px solid var(--line); text-align:left; vertical-align:top}
+th{font-size:12px; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); font-weight:600}
+td.r,th.r{text-align:right; font-variant-numeric:tabular-nums}
+td.r{white-space:nowrap}
+
+/* charts */
+svg.chart{width:100%; height:auto; display:block; overflow:visible}
+svg.chart text{fill:var(--muted); font:12px var(--sans)}
+svg.chart text.ink{fill:var(--ink)}
+svg.chart text.strong{fill:var(--ink); font-weight:700}
+svg.chart .grid{stroke:var(--grid); stroke-width:1}
+svg.chart .axis{stroke:var(--line); stroke-width:1}
+.legend{display:flex; flex-wrap:wrap; gap:6px 14px; font-size:13px; color:var(--muted)}
+.legend span{display:inline-flex; align-items:center; gap:6px}
+.legend i{width:12px; height:12px; border-radius:3px; display:inline-block}
+
+/* risk lights */
+.lights{display:grid; grid-template-columns:repeat(auto-fit, minmax(190px,1fr)); gap:8px}
+.light{display:grid; grid-template-columns:auto 1fr; gap:2px 10px; align-items:start; border:1px solid var(--line); border-radius:8px; padding:8px 10px; font-size:14px}
+.light .dot{width:14px; height:14px; border-radius:50%; background:var(--line); margin-top:3px; grid-row:span 2}
+.light.on{border-color:var(--warn); background:var(--warn-soft)}
+.light.on .dot{background:var(--warn); box-shadow:0 0 0 3px color-mix(in srgb, var(--warn) 25%, transparent)}
+.light .t{font-weight:600}
+.light .d{color:var(--muted); font-size:13px}
+
+/* prompt box */
+.prompt{font-family:var(--mono); font-size:13.5px; line-height:1.5; background:var(--soft); border:1px solid var(--line); border-radius:8px; padding:12px; white-space:pre-wrap; word-break:break-word}
+footer{margin-top:28px; font-size:13px; color:var(--muted); display:grid; gap:6px; max-width:70ch}
+.nav-next{display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap; border-top:1px solid var(--line); padding-top:14px}
+.sr{position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0)}
+@media (prefers-reduced-motion: no-preference){ section.step.on{animation:fade .2s ease-out} @keyframes fade{from{opacity:.4; transform:translateY(3px)} to{opacity:1; transform:none}} }
+
+h2:focus{outline:none}
+@media (max-width:520px){ table{font-size:13px} th,td{padding:6px 5px} th{letter-spacing:.02em} }
+
+</style>
+</head>
+<body>
+<noscript><div class="wrap"><p class="callout"><strong>This lab cannot run here.</strong> It needs JavaScript, which this viewer blocks (as Canvas file previews do). Please use the lab link in your Reading Guide, or download this file and open it in your web browser.</p></div></noscript>
+<div class="wrap">
+<header class="lab">
+  <span class="eyebrow">QMB 6358 · Module 3 Decision Lab · Chapter 5</span>
+  <h1>Bending the Line</h1>
+  <p class="lede">A subscription company has run 200 weeks of pricing experiments in three product categories. Please fit a line through its demand data, find out where the line bends, and then work out in which category a price increase would actually raise revenue.</p>
+  <p class="meta">This lab takes about 20 minutes and also works on a phone. Nothing is graded or saved.</p>
+</header>
+<nav class="steps" aria-label="Lab steps"></nav>
+
+<section class="step" id="s1" data-title="A straight line through a curve">
+  <h2><span class="k">1</span>A straight line through a curve</h2>
+  <p>The data in this lab are modeled on the book's pricing case, i.e. 200 weeks of pricing experiments for a consumer subscription product in three product categories, with weekly units sold as the outcome <span class="book">§5.1.1 · p.&nbsp;197</span>. Each dot below is one week. As in the book, we start with the simplest model, a straight line of units on price, as a first sanity check <span class="book">§5.4.7 · p.&nbsp;207</span>.</p>
+  <div id="c-line"></div>
+  <p class="note" id="line-eq"></p>
+  <div class="row"><button class="btn run" type="button" id="show-miss">Show the misses</button><span class="note">The lower panel then shows each week's miss (actual minus line) and the average miss in five price bands.</span></div>
+  <div id="q1"></div>
+</section>
+
+<section class="step" id="s2" data-title="Percent changes">
+  <h2><span class="k">2</span>Percent changes: the log-log model</h2>
+  <p>Pricing decisions are usually discussed in percent ("a 5% increase") rather than in dollars, which is why the book's pricing case uses a log-log model, i.e. a straight line of log(units) on log(price) <span class="book">§5.5.5 · p.&nbsp;218</span>. In this model the slope is the <strong>price elasticity</strong>, the percent change in units that goes with a 1% change in price. Moreover, weekly units are right-skewed (<span id="skew-note"></span>), and taking logs is a common way to make such a variable easier to model <span class="book">Novikov · p.&nbsp;17</span>. Please switch the chart to the log scale.</p>
+  <div class="ctl" id="view2"></div>
+  <div id="c-log"></div>
+  <div class="stats"><div class="stat"><span class="lab">Elasticity (slope)</span><span class="big" id="el2"></span></div><div class="stat"><span class="lab">95% confidence interval</span><span class="big" id="el2ci" style="font-size:20px"></span></div></div>
+  <div id="q2a"></div>
+  <div class="panel">
+    <h3>Raise the price by x%</h3>
+    <div class="ctl"><label for="xr" id="xl"></label><input type="range" id="xr" min="1" max="50" step="1" value="5"></div>
+    <div class="stats"><div class="stat"><span class="lab">Exact: <span style="text-transform:none">(1 + x)<sup>b</sup> − 1</span></span><span class="big" id="ex"></span></div><div class="stat"><span class="lab">Shortcut: <span style="text-transform:none">b × x</span></span><span class="big" id="sc"></span></div><div class="stat"><span class="lab">Difference</span><span class="big" id="dd"></span></div></div>
+    <div id="c-pct"></div>
+    <p class="note">The shortcut is the one in the book's example, where an elasticity of about −1.2 and a 5% price increase give roughly 6% fewer units <span class="book">§5.5.5 · p.&nbsp;219</span>. It works well for small changes.</p>
+  </div>
+  <div id="q2b"></div>
+</section>
+
+<section class="step" id="s3" data-title="Back to units">
+  <h2><span class="k">3</span>Back to units</h2>
+  <p>The log-log model predicts log(units), but nobody plans production or revenue in log units. To get back to units, you exponentiate the prediction, so that units = e<sup>predicted log(units)</sup>. This is also how the book turns its log-log model into demand and revenue predictions for candidate prices <span class="book">§5.8.6 · p.&nbsp;241</span>. Please pick a price.</p>
+  <div class="panel">
+    <div class="ctl"><label for="pr3" id="pl3"></label><input type="range" id="pr3" min="22" max="48" step="0.5" value="30"></div>
+    <div class="stats"><div class="stat"><span class="lab">Predicted log(units)</span><span class="big" id="lg3"></span></div><div class="stat"><span class="lab">Back in units</span><span class="big" id="un3"></span></div><div class="stat"><span class="lab">Straight line (step 1)</span><span class="big" id="ln3"></span></div></div>
+  </div>
+  <div id="c-back"></div>
+  <div class="legend"><span><i style="background:var(--c1)"></i>Log-log model, back in units</span><span><i style="background:var(--c3)"></i>Straight line from step 1</span></div>
+  <div id="q3"></div>
+  <p class="callout" id="slide33"></p>
+</section>
+
+<section class="step" id="s4" data-title="Three categories">
+  <h2><span class="k">4</span>Three categories</h2>
+  <p>So far one line has described all 200 weeks, although the three categories differ in their baseline demand. The book's pricing model therefore adds category indicators (0/1 columns), so that the price effect is not mixed up with differences between categories <span class="book">§5.9.5 · p.&nbsp;247</span>. One category is left out and becomes the <strong>baseline</strong>; each indicator coefficient is then the difference from that baseline at the same price. Novikov calls these columns one-hot encoding, with one 0/1 column for every category <span class="book">Novikov · pp.&nbsp;16–17</span>. In a regression with an intercept, one of them has to be left out, since the three columns always add up to the intercept column. Please choose the baseline and watch which numbers change.</p>
+  <div class="ctl" id="base4"></div>
+  <div id="c-cat"></div>
+  <div class="legend" id="leg4"></div>
+  <div class="grid2">
+    <div class="panel"><h3>Coefficients (log scale)</h3><div class="tbl" id="t-cat"></div><p class="note" id="na-note"></p></div>
+    <div class="panel"><h3>What the model predicts</h3><div class="tbl" id="t-pred4"></div></div>
+  </div>
+  <div id="q4a"></div>
+  <div id="q4b"></div>
+</section>
+
+<section class="step" id="s5" data-title="Different slopes">
+  <h2><span class="k">5</span>Different slopes</h2>
+  <p>The parallel lines of step 4 assume that customers in every category react to price in the same way. The book's diagnostic question for this case is exactly whether the elasticity is stable across product categories <span class="book">§5.7.5 · p.&nbsp;233</span>, and a scatterplot by category is the first check for such grouped structure <span class="book">§5.3.2 · p.&nbsp;201</span>. To give each category its own slope, we add the interaction of category and log(price), as we did with Far × Salary in the lecture <span class="book">Lecture 3a · slides 13–17</span>. Please switch between one slope and three slopes.</p>
+  <div class="ctl" id="mode5"></div>
+  <div id="c-slopes"></div>
+  <div class="legend" id="leg5"></div>
+  <div class="panel"><h3>Elasticity and a 5% price increase, by category</h3><div class="tbl" id="t-el5"></div><p class="note">The revenue change is computed exactly as 1.05<sup>(1 + elasticity)</sup> − 1, since revenue is price times units <span class="book">§5.8.6 · p.&nbsp;241</span>. The dollar amounts are per week, starting from a price of $35.</p></div>
+  <div class="panel" id="p-coef5"><h3>Regression output with three slopes (baseline A)</h3><div class="tbl" id="t-coef5"></div><p class="note">The B and C rows compare the categories at a price of $1, where log(price) = 0. That is far outside the data, so these two numbers only anchor the lines (just like the intercept in the book's Table 5.10) <span class="book">§5.5.5 · p.&nbsp;219</span>.</p></div>
+  <div id="q5a"></div>
+  <div id="q5b"></div>
+  <p class="callout" id="trees"></p>
+</section>
+
+<section class="step" id="s6" data-title="Ask your AI">
+  <h2><span class="k">6</span>Optional: ask an AI tool to fit the interaction model</h2>
+  <p>Please copy the prompt, and then the data, into the AI tool that you use for this course. The 200 weeks are synthetic, so they contain no personal or confidential information.</p>
+  <div id="prompt"></div>
+  <div class="panel" id="datapanel"></div>
+  <div class="panel">
+    <h3>Then check the answer</h3>
+    <ul style="margin:0; padding-left:20px; display:grid; gap:6px">
+      <li id="chk1"></li>
+      <li>Does its revenue conclusion follow from each category's elasticity compared with −1, and does it say that B is too close to call?</li>
+      <li>Do its coefficients match the regression output in step 5? If it chose a different baseline, which numbers changed and which did not?</li>
+      <li>Does it convert log differences with e<sup>b</sup> − 1 (or (1 + x)<sup>b</sup> − 1) instead of reading them directly as percent?</li>
+    </ul>
+  </div>
+</section>
+
+<footer>
+  <p>This lab is based on Chapter 5 of <em>Business Analytics in the Age of AI: A New Paradigm for Executives</em> (Jank, 2026), in particular the pricing case (§5.1.1, §5.5.5, §5.8.6, §5.11.2), and on <em>The Math Behind the Machines</em> (Novikov, 2025). The 200 weeks are synthetic. I generated them with elasticities of about −1.6, −1.1 and −0.6 for categories A, B and C, together with competitor price, marketing spend and promotions (the data in step 6 include these columns). Since the prices were set in experiments, adding those three controls to the model of step 5 changes no elasticity by more than 0.04, and the lab leaves them out to keep the charts simple. The numbers will therefore not match the book's tables.</p>
+  <p>It is part of QMB 6358; nothing you do here is recorded.</p>
+</footer>
+</div>
+
+<script>
+const DATA = {"cats":["A","B","C"],"c":[0,1,0,0,2,2,1,0,0,0,1,0,2,0,0,2,0,0,2,0,2,1,0,0,2,2,1,0,0,1,0,0,1,0,2,0,0,2,2,2,1,2,1,0,0,2,0,0,1,2,1,2,0,0,1,2,0,1,2,0,1,0,1,1,1,0,2,2,0,0,2,1,1,2,2,0,0,1,1,2,0,2,1,1,2,2,0,1,2,2,1,0,1,1,1,2,2,0,1,1,1,1,0,0,0,2,1,1,2,1,2,1,2,2,0,1,1,2,1,0,2,0,2,1,1,2,0,1,0,2,2,2,1,0,0,0,1,2,1,2,2,0,1,0,0,1,1,2,2,1,1,1,0,0,1,1,0,0,1,2,1,1,1,2,1,2,2,1,1,0,2,2,2,2,2,0,2,2,2,2,1,1,2,2,0,0,0,2,1,1,2,2,0,0,0,0,1,0,1,0],"u":[11958,3102,4234,15491,3849,7547,3881,8414,6429,4418,3917,13218,4483,6787,12693,3618,8789,9656,3703,6161,4349,3575,5783,4298,3540,2791,6024,4742,6468,7214,15662,3378,7887,9963,4535,5815,6382,3222,3650,4678,6497,3972,7966,5433,5241,4960,5563,12742,4127,2945,8991,3817,4068,4634,4817,4693,9467,4125,5476,9046,4741,5014,7367,10828,4875,8057,4057,4664,8108,13767,5167,2447,7327,3933,4030,5219,9411,4684,7726,2195,9091,3251,6473,4955,2917,4239,4837,5900,4688,4279,5946,11721,8865,10681,9158,3535,4155,5980,4734,8669,9233,6370,7422,7616,5992,3713,7678,5089,3360,7335,3339,9038,3641,4299,14251,5751,6903,3917,5619,8071,3525,15320,3910,4453,5661,3577,14857,4586,6014,3087,3560,4328,7189,3963,9032,4108,6838,7030,5379,4855,6719,9137,4849,5236,16663,6968,6237,4291,4578,6141,7590,3524,7810,17671,4099,7373,10356,5300,9027,4282,5672,3755,4054,5056,7946,3541,5108,5565,4762,4771,3437,3870,7200,5065,5464,7356,3666,5072,2700,5658,4550,6130,4183,4118,7662,6209,7707,4562,6496,7467,4450,3672,5270,10424,4772,7275,4626,7797,5459,8080],"p":[27.49,42.62,43.44,25.34,40.98,25.95,34.8,37.65,31.52,41.5,37.46,24.83,28.77,33.08,23.86,34.23,40.37,25.9,33.96,34.33,34.49,36.04,35.42,42.35,32.46,37.98,47.55,38.5,29.32,31.02,23.23,43.03,29.81,27.84,26.65,37.88,35.85,43.48,32.79,43.95,27.47,33.67,32.15,42.69,47.0,29.68,43.58,22.33,40.88,37.5,24.66,33.06,47.73,45.89,31.8,45.77,26.66,38.69,31.36,36.78,35.68,47.16,34.1,23.44,32.55,31.54,35.58,33.65,39.36,22.05,25.29,45.74,26.01,34.91,32.97,38.21,28.33,42.47,25.15,41.32,31.07,39.77,28.27,38.16,33.49,23.96,42.55,30.96,41.34,22.99,27.53,26.61,26.84,22.84,23.65,40.07,32.3,43.69,38.02,26.6,23.47,32.79,34.86,35.66,40.51,43.61,27.57,38.05,46.74,29.88,47.74,24.12,41.6,22.18,25.39,33.93,31.03,46.38,41.13,38.1,24.99,23.23,43.64,44.89,37.95,46.66,25.15,47.11,36.57,36.14,39.11,24.29,22.86,45.32,33.34,46.94,28.38,28.36,44.25,27.71,30.51,27.68,44.19,46.61,22.61,34.04,34.3,32.83,24.07,22.94,22.41,40.51,36.31,23.12,35.43,25.35,29.92,44.8,23.15,35.28,33.06,46.93,34.26,22.84,29.83,41.9,25.11,47.0,34.37,47.39,42.42,45.73,23.98,23.45,26.49,40.88,40.96,26.85,46.73,22.21,38.36,30.05,29.03,29.91,32.43,42.71,32.58,34.9,30.19,27.98,31.79,37.28,39.48,26.24,33.8,34.71,43.45,32.64,35.21,32.9],"cp":[35.28,32.14,40.71,32.04,37.47,44.78,36.11,28.8,38.32,44.59,29.76,34.61,35.55,38.05,42.69,36.18,36.6,36.02,40.44,31.14,38.77,39.18,37.23,33.31,36.75,34.52,40.99,35.75,34.99,40.7,31.31,38.26,43.53,38.92,38.57,41.52,35.18,35.57,44.68,36.26,34.91,36.71,37.87,42.81,44.85,42.27,27.77,35.13,35.58,40.66,42.22,33.56,38.75,32.31,38.45,37.56,38.91,32.2,27.06,40.93,37.51,40.45,33.86,43.17,34.73,37.83,33.98,29.21,41.92,35.09,27.49,32.53,34.47,42.27,36.21,33.37,38.47,31.19,31.7,39.68,36.43,35.49,36.79,41.57,33.14,33.61,34.54,33.84,35.73,30.83,36.33,36.39,39.43,34.11,41.45,33.84,37.98,38.38,35.96,36.92,36.79,38.95,35.46,31.41,36.81,37.01,35.95,32.18,34.96,33.16,42.35,39.23,35.49,34.19,33.81,41.99,36.86,44.01,42.71,38.76,38.41,37.19,40.71,35.74,39.82,33.4,37.69,39.15,35.26,35.59,27.0,32.61,30.56,38.6,30.72,37.81,36.63,37.44,37.6,42.95,38.79,30.82,37.69,38.35,31.61,39.48,34.35,41.55,33.03,35.39,33.02,31.82,31.91,41.25,35.52,28.3,38.34,41.69,31.86,34.79,39.89,40.62,42.04,38.71,41.73,45.35,43.61,37.15,41.94,35.22,36.61,32.66,36.25,32.25,35.99,39.09,35.49,36.34,31.52,41.42,45.66,37.1,33.28,42.18,38.3,31.61,32.47,38.53,40.64,30.58,30.53,34.98,33.9,31.32,32.96,33.71,37.64,36.99,40.3,41.12],"m":[15630,27160,19130,27580,21130,25490,17120,42000,14520,14450,19930,19210,25010,22080,21640,18090,36240,17200,15760,21070,21950,14370,18060,13830,16150,17430,30990,12420,17910,11280,19670,21660,22510,23970,16720,22380,25480,19620,31340,27310,17510,19880,34160,18060,22630,26610,26760,11400,16130,11670,19930,18030,22770,22970,28210,18500,25190,28810,28700,24740,12490,20850,35570,21600,19850,35400,14970,20040,29900,30500,30910,22870,18650,20070,16220,25480,24990,31790,31630,15260,20270,15120,31400,21390,24490,15610,18940,18630,42000,19750,20710,18780,37300,26640,34940,22640,19130,42000,25400,26760,25140,19280,30790,20780,23660,16860,23270,20610,23820,27350,24290,20040,37810,16750,23000,16420,23450,31550,20810,33350,21860,17230,19800,17220,21250,25860,26120,19290,13330,24990,25300,20800,25530,16810,29920,18910,19110,31360,29600,33590,23510,29410,41670,33740,37190,31110,23380,18290,20950,16220,13570,15900,21820,27650,20060,31540,24620,19980,21350,24550,18940,27930,14470,26160,39410,14310,14280,22140,21930,19850,21650,37730,34850,34430,25190,37410,18400,23250,18480,20830,17910,25140,25000,22450,17740,26450,23190,21350,21500,20960,27820,18040,25110,25510,15380,26900,29640,27480,21930,27960],"pr":[2,0,2,1,2,1,1,2,1,0,0,2,0,1,2,0,1,1,1,1,1,1,0,1,0,0,1,0,0,2,1,0,1,0,1,1,1,0,2,1,1,0,0,1,1,2,1,0,0,1,1,0,0,1,0,1,1,2,2,1,2,0,0,1,0,0,2,2,2,0,1,0,1,0,2,1,1,2,0,0,0,1,1,0,0,1,0,2,2,1,2,0,1,0,0,1,0,1,2,1,0,2,0,2,2,1,1,1,1,1,1,0,1,1,2,2,0,1,2,0,1,2,1,1,1,2,2,2,1,0,2,0,0,0,1,0,1,0,0,1,2,1,0,0,0,2,0,1,1,0,2,1,0,1,1,1,1,1,2,1,1,0,0,1,1,2,0,2,1,1,1,0,2,1,1,0,2,2,1,1,0,1,1,0,2,1,1,2,1,1,2,2,1,1,1,2,0,0,0,2]};
+/* Decision Labs: shared helpers (no dependencies). */
+"use strict";
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+const SVGNS = "http://www.w3.org/2000/svg";
+
+function h(tag, attrs, ...kids) {
+  const e = document.createElement(tag);
+  setAttrs(e, attrs);
+  kids.flat().forEach(k => { if (k != null && k !== false) e.append(k.nodeType ? k : document.createTextNode(String(k))); });
+  return e;
+}
+function sv(tag, attrs, ...kids) {
+  const e = document.createElementNS(SVGNS, tag);
+  setAttrs(e, attrs);
+  kids.flat().forEach(k => { if (k != null && k !== false) e.append(k.nodeType ? k : document.createTextNode(String(k))); });
+  return e;
+}
+function setAttrs(e, attrs) {
+  for (const [k, v] of Object.entries(attrs || {})) {
+    if (v == null || v === false) continue;
+    if (k === "html") e.innerHTML = v;
+    else if (k.startsWith("on")) e.addEventListener(k.slice(2), v);
+    else if (k === "style" && typeof v === "object") Object.assign(e.style, v);
+    else e.setAttribute(k, v === true ? "" : v);
+  }
+}
+
+/* ---------- formatting ---------- */
+const money = (x, d = 0) => (x < 0 ? "−$" : "$") + Math.abs(x).toLocaleString("en-US", { minimumFractionDigits: d, maximumFractionDigits: d });
+const kmoney = x => x === 0 ? "$0" : (x < 0 ? "−$" : "$") + (Math.abs(x) >= 1e6 ? (Math.abs(x) / 1e6).toFixed(2) + "M" : Math.round(Math.abs(x) / 1000).toLocaleString("en-US") + "k");
+const pct = (x, d = 1) => (100 * x).toFixed(d) + "%";
+const num = (x, d = 0) => x.toLocaleString("en-US", { minimumFractionDigits: d, maximumFractionDigits: d });
+const signed = (s) => s.replace(/^-/, "−");
+
+/* ---------- random numbers and statistics ---------- */
+function randn() { let u = 0, v = 0; while (u === 0) u = Math.random(); while (v === 0) v = Math.random(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); }
+function erf(x) { // Numerical Recipes erfc approximation (fractional error < 1.2e-7)
+  const t = 1 / (1 + 0.5 * Math.abs(x));
+  const y = 1 - t * Math.exp(-x * x - 1.26551223 + t * (1.00002368 + t * (0.37409196 + t * (0.09678418 + t * (-0.18628806 + t * (0.27886807 + t * (-1.13520398 + t * (1.48851587 + t * (-0.82215223 + t * 0.17087277)))))))));
+  return x >= 0 ? y : -y;
+}
+const normCdf = z => 0.5 * (1 + erf(z / Math.SQRT2));
+function normInv(p) { // Acklam
+  const a = [-3.969683028665376e+01, 2.209460984245205e+02, -2.759285104469687e+02, 1.383577518672690e+02, -3.066479806614716e+01, 2.506628277459239e+00];
+  const b = [-5.447609879822406e+01, 1.615858368580409e+02, -1.556989798598866e+02, 6.680131188771972e+01, -1.328068155288572e+01];
+  const c = [-7.784894002430293e-03, -3.223964580411365e-01, -2.400758277161838e+00, -2.549732539343734e+00, 4.374614347350924e+00, 2.938163982698783e+00];
+  const d = [7.784695709041462e-03, 3.224671290700398e-01, 2.445134137142996e+00, 3.754408661907416e+00];
+  const pl = 0.02425, ph = 1 - pl; let q, r;
+  if (p < pl) { q = Math.sqrt(-2 * Math.log(p)); return (((((c[0] * q + c[1]) * q + c[2]) * q + c[3]) * q + c[4]) * q + c[5]) / ((((d[0] * q + d[1]) * q + d[2]) * q + d[3]) * q + 1); }
+  if (p > ph) { q = Math.sqrt(-2 * Math.log(1 - p)); return -(((((c[0] * q + c[1]) * q + c[2]) * q + c[3]) * q + c[4]) * q + c[5]) / ((((d[0] * q + d[1]) * q + d[2]) * q + d[3]) * q + 1); }
+  q = p - 0.5; r = q * q;
+  return (((((a[0] * r + a[1]) * r + a[2]) * r + a[3]) * r + a[4]) * r + a[5]) * q / (((((b[0] * r + b[1]) * r + b[2]) * r + b[3]) * r + b[4]) * r + 1);
+}
+function tInv(p, df) { // Cornish-Fisher expansion; accurate to ~1e-3 for df >= 5
+  const z = normInv(p), z2 = z * z;
+  return z + (z2 * z + z) / (4 * df) + (5 * z2 * z2 * z + 16 * z2 * z + 3 * z) / (96 * df * df)
+    + (3 * z2 * z2 * z2 * z + 19 * z2 * z2 * z + 17 * z2 * z - 15 * z) / (384 * df * df * df);
+}
+const sum = a => a.reduce((s, x) => s + x, 0);
+const mean = a => sum(a) / a.length;
+function sd(a) { const m = mean(a); return Math.sqrt(sum(a.map(x => (x - m) ** 2)) / (a.length - 1)); }
+function median(a) { const s = [...a].sort((x, y) => x - y), n = s.length; return n % 2 ? s[(n - 1) / 2] : (s[n / 2 - 1] + s[n / 2]) / 2; }
+function wmedian(v, w) { // weighted median (lower median)
+  const idx = v.map((_, i) => i).sort((i, j) => v[i] - v[j]); const tot = sum(w); let c = 0;
+  for (const i of idx) { c += w[i]; if (c >= tot / 2) return v[i]; }
+  return v[idx[idx.length - 1]];
+}
+
+/* ---------- small linear algebra (OLS) ---------- */
+function invert(A) { // Gauss-Jordan; A is square array of arrays
+  const n = A.length, M = A.map((r, i) => [...r, ...Array.from({ length: n }, (_, j) => (i === j ? 1 : 0))]);
+  for (let c = 0; c < n; c++) {
+    let p = c; for (let r = c + 1; r < n; r++) if (Math.abs(M[r][c]) > Math.abs(M[p][c])) p = r;
+    if (Math.abs(M[p][c]) < 1e-12) return null;
+    [M[c], M[p]] = [M[p], M[c]];
+    const pv = M[c][c]; for (let j = 0; j < 2 * n; j++) M[c][j] /= pv;
+    for (let r = 0; r < n; r++) if (r !== c) { const f = M[r][c]; if (f) for (let j = 0; j < 2 * n; j++) M[r][j] -= f * M[c][j]; }
+  }
+  return M.map(r => r.slice(n));
+}
+function ols(y, cols) { // cols: array of predictor columns (no intercept); returns b (with intercept first), se, r2, adjR2, s, XtXi
+  const n = y.length, k = cols.length + 1;
+  const X = (i, j) => (j === 0 ? 1 : cols[j - 1][i]);
+  const XtX = Array.from({ length: k }, () => new Array(k).fill(0)), Xty = new Array(k).fill(0);
+  for (let i = 0; i < n; i++) for (let a = 0; a < k; a++) { const xa = X(i, a); Xty[a] += xa * y[i]; for (let b = a; b < k; b++) XtX[a][b] += xa * X(i, b); }
+  for (let a = 0; a < k; a++) for (let b = 0; b < a; b++) XtX[a][b] = XtX[b][a];
+  const XtXi = invert(XtX); if (!XtXi) return null;
+  const b = XtXi.map(r => sum(r.map((v, j) => v * Xty[j])));
+  let sse = 0; const ym = mean(y); let sst = 0;
+  for (let i = 0; i < n; i++) { let f = 0; for (let a = 0; a < k; a++) f += b[a] * X(i, a); sse += (y[i] - f) ** 2; sst += (y[i] - ym) ** 2; }
+  const df = n - k, s2 = sse / df;
+  return { b, se: XtXi.map((r, i) => Math.sqrt(s2 * r[i])), r2: 1 - sse / sst, adj: 1 - (sse / df) / (sst / (n - 1)), s: Math.sqrt(s2), df, XtXi, n, k };
+}
+
+/* ---------- steps ---------- */
+const Steps = { list: [], onShow: {}, cur: 0 };
+function initSteps() {
+  const nav = $("nav.steps"); Steps.list = $$("section.step");
+  Steps.list.forEach((sec, i) => {
+    const title = sec.dataset.title;
+    nav.append(h("button", { class: "pill", type: "button", "data-i": i, onclick: () => showStep(i) }, h("span", { class: "n" }, i + 1), " ", title));
+    const foot = h("div", { class: "nav-next" });
+    foot.append(i > 0 ? h("button", { class: "btn ghost", type: "button", onclick: () => showStep(i - 1) }, "← Back") : h("span"));
+    if (i < Steps.list.length - 1) foot.append(h("button", { class: "btn", type: "button", onclick: () => showStep(i + 1) }, "Next: " + Steps.list[i + 1].dataset.title + " →"));
+    else foot.append(h("span", { class: "note" }, "This is the end of the lab; nothing was saved or graded."));
+    sec.append(foot);
+  });
+  showStep(0, true);
+}
+function showStep(i, first) {
+  Steps.list.forEach((s, j) => s.classList.toggle("on", j === i));
+  $$("nav.steps .pill").forEach((p, j) => { p.toggleAttribute("aria-current", j === i); if (j === i) p.setAttribute("aria-current", "step"); if (j < i) p.classList.add("done"); });
+  Steps.cur = i;
+  const pill = $$("nav.steps .pill")[i]; if (pill && pill.scrollIntoView) pill.scrollIntoView({ block: "nearest", inline: "nearest" });
+  if (!first) {
+    const top = $("nav.steps").getBoundingClientRect().top + window.scrollY; if (window.scrollY > top) window.scrollTo({ top, behavior: "smooth" });
+    const hd = $("h2", Steps.list[i]); if (hd) { hd.setAttribute("tabindex", "-1"); hd.focus({ preventScroll: true }); }
+  }
+  (Steps.onShow[Steps.list[i].id] || []).forEach(f => f());
+}
+function whenShown(id, f) { (Steps.onShow[id] = Steps.onShow[id] || []).push(f); }
+
+/* ---------- multiple-choice with instant feedback ---------- */
+function quiz(host, spec) {
+  const box = h("div", { class: "quiz" });
+  box.append(h("p", { class: "q", html: spec.q }));
+  const opts = h("div", { class: "opts", role: "group" });
+  const fb = h("div", { class: "fb", "aria-live": "polite" });
+  const head = { right: spec.rightHead || "Right.", wrong: "Not quite.", ok: "A reasonable choice." };
+  spec.opts.forEach((o, i) => {
+    const b = h("button", { class: "opt", type: "button" }, h("span", { class: "mk" }, String.fromCharCode(65 + i)), h("span", { html: o.t }));
+    b.addEventListener("click", () => {
+      $$(".opt", opts).forEach(x => x.classList.remove("picked", "right", "wrong", "ok"));
+      b.classList.add("picked", o.k);
+      fb.className = "fb show " + o.k;
+      fb.innerHTML = "<b>" + (o.head || head[o.k]) + "</b>" + o.fb;
+      if (spec.onAnswer) spec.onAnswer(o, i);
+    });
+    opts.append(b);
+  });
+  box.append(opts, fb);
+  host.append(box);
+  return box;
+}
+const book = (sec, page) => '<span class="book">' + sec + (page ? " · p. " + page : "") + "</span>";
+
+/* ---------- copy-a-prompt ---------- */
+function promptBox(host, getText, note) {
+  const pre = h("div", { class: "prompt", tabindex: "0" });
+  const btn = h("button", { class: "btn", type: "button" }, "Copy prompt");
+  const refresh = () => { pre.textContent = getText(); };
+  btn.addEventListener("click", () => {
+    refresh(); const text = pre.textContent;
+    const done = ok => { btn.textContent = ok ? "Copied" : "Selected - please press Ctrl/Cmd+C"; setTimeout(() => (btn.textContent = "Copy prompt"), 1800); };
+    const fallback = () => { const r = document.createRange(); r.selectNodeContents(pre); const s = window.getSelection(); s.removeAllRanges(); s.addRange(r); done(false); };
+    try { navigator.clipboard.writeText(text).then(() => done(true), fallback); } catch (e) { fallback(); }
+  });
+  host.append(h("div", { class: "row spread" }, h("span", { class: "note" }, note || "Please paste it into the AI tool that you use for this course."), btn), pre);
+  refresh();
+  return refresh;
+}
+
+/* ---------- chart helpers ---------- */
+function niceTicks(lo, hi, count = 5) {
+  const span = hi - lo || 1, step0 = span / count, mag = Math.pow(10, Math.floor(Math.log10(step0))), err = step0 / mag;
+  const step = (err >= 7.5 ? 10 : err >= 3.5 ? 5 : err >= 1.5 ? 2 : 1) * mag;
+  const out = []; for (let v = Math.ceil(lo / step) * step; v <= hi + step * 1e-9; v += step) out.push(+v.toPrecision(12));
+  return out;
+}
+const lin = (d0, d1, r0, r1) => v => r0 + (v - d0) / (d1 - d0 || 1) * (r1 - r0);
+function segButtons(host, items, value, onChange, label) {
+  const seg = h("div", { class: "seg", role: "group", "aria-label": label || "" });
+  items.forEach(([v, t]) => {
+    const b = h("button", { type: "button", "aria-pressed": String(v === value) }, t);
+    b.addEventListener("click", () => { $$("button", seg).forEach(x => x.setAttribute("aria-pressed", "false")); b.setAttribute("aria-pressed", "true"); onChange(v); });
+    seg.append(b);
+  });
+  host.append(seg);
+  return seg;
+}
+
+/* M5 Bending the Line */
+const CATS = DATA.cats, U = DATA.u, P = DATA.p, CAT = DATA.c, NW = U.length;
+const LU = U.map(Math.log), LP = P.map(Math.log);
+const COLS = ["var(--c1)", "var(--c3)", "var(--c4)"];
+const nov = p => '<span class="book">Novikov · ' + (String(p).includes("-") ? "pp. " + String(p).replace("-", "–") : "p. " + p) + "</span>";
+const lec = (l, s) => '<span class="book">Lecture ' + l + " · " + s + "</span>";
+const tcrit = df => tInv(0.975, df);
+const f2 = (x, d = 2) => signed(x.toFixed(d));                                   // −1.08
+const sg = (x, d = 2) => (x >= 0 ? "+" : "−") + Math.abs(x).toFixed(d);          // +1.00 / −0.62
+const pc = (x, d = 1) => signed((100 * x).toFixed(d)) + "%";                       // −24.6%
+const spc = (x, d = 1) => (x >= 0 ? "+" : "−") + Math.abs(100 * x).toFixed(d) + "%";
+const un = x => num(Math.round(x));
+const sgn = x => (x >= 0 ? "+" : "−") + num(Math.abs(Math.round(x)));
+
+function charted(hostId, draw) {
+  const host = document.getElementById(hostId);
+  const run = () => { const w = host.clientWidth; if (w > 0) { host.innerHTML = ""; draw(host, w); } };
+  whenShown(host.closest("section.step").id, run);
+  window.addEventListener("resize", run);
+  return run;
+}
+/* an SVG with grid, ticks and axis titles; returns the scales */
+function frame(w, o) {
+  const ml = w < 460 ? 46 : 54, mr = 14, mt = o.ylab ? 22 : 8, mb = 22 + (o.xf2 ? 14 : 0) + (o.xlab ? 16 : 0), ht = o.h;
+  const x = lin(o.x[0], o.x[1], ml, w - mr), y = lin(o.y[0], o.y[1], ht - mb, mt);
+  const g = sv("svg", { class: "chart", width: w, height: ht, viewBox: `0 0 ${w} ${ht}`, role: "img", "aria-label": o.aria });
+  (o.yt || niceTicks(o.y[0], o.y[1], o.ny || 4)).forEach(t => { g.append(sv("line", { class: "grid", x1: ml, x2: w - mr, y1: y(t), y2: y(t) })); g.append(sv("text", { x: ml - 6, y: y(t) + 4, "text-anchor": "end" }, o.yf ? o.yf(t) : num(t))); });
+  (o.xt || niceTicks(o.x[0], o.x[1], w < 460 ? 4 : 6)).forEach(t => {
+    g.append(sv("line", { class: "grid", x1: x(t), x2: x(t), y1: mt, y2: ht - mb }));
+    g.append(sv("text", { x: x(t), y: ht - mb + 15, "text-anchor": "middle" }, o.xf ? o.xf(t) : num(t)));
+    if (o.xf2) g.append(sv("text", { x: x(t), y: ht - mb + 29, "text-anchor": "middle", style: "font-size:11px" }, o.xf2(t)));
+  });
+  if (o.zero) g.append(sv("line", { x1: ml, x2: w - mr, y1: y(0), y2: y(0), stroke: "var(--ink)", "stroke-width": 1.2 }));
+  if (o.ylab) g.append(sv("text", { x: 2, y: 12, class: "ink" }, o.ylab));
+  if (o.xlab) g.append(sv("text", { x: w - mr, y: ht - 3, "text-anchor": "end", class: "ink" }, o.xlab));
+  return { g, x, y, ml, mr, mt, mb, ht };
+}
+const dot = (F, xv, yv, c, r = 3, op = 0.5) => F.g.append(sv("circle", { cx: F.x(xv), cy: F.y(yv), r, fill: c, "fill-opacity": op }));
+const path = (F, pts, c, wd = 2.5, dash) => F.g.append(sv("path", { d: "M" + pts.map(([a, b]) => `${F.x(a).toFixed(1)},${F.y(b).toFixed(1)}`).join("L"), fill: "none", stroke: c, "stroke-width": wd, "stroke-dasharray": dash || null, "stroke-linejoin": "round" }));
+const grid = (lo, hi, n = 60) => Array.from({ length: n + 1 }, (_, i) => lo + (hi - lo) * i / n);
+
+/* ---------- models ---------- */
+const LINE = ols(U, [P]);                          // step 1: units ~ price
+const LOG = ols(LU, [LP]);                         // step 2: log(units) ~ log(price)
+const IND = [0, 1, 2].map(k => CAT.map(c => (c === k ? 1 : 0)));
+function catModel(base) {
+  const others = [0, 1, 2].filter(k => k !== base), f = ols(LU, [LP, ...others.map(k => IND[k])]);
+  f.others = others; f.base = base;
+  f.pred = (k, lp) => f.b[0] + f.b[1] * lp + (k === base ? 0 : f.b[2 + others.indexOf(k)]);
+  return f;
+}
+const CATM = [0, 1, 2].map(catModel), COMMON = CATM[0];
+const INTER = ols(LU, [LP, IND[1], IND[2], IND[1].map((v, i) => v * LP[i]), IND[2].map((v, i) => v * LP[i])]);
+INTER.pred = (k, lp) => INTER.b[0] + INTER.b[1] * lp + (k === 1 ? INTER.b[2] + INTER.b[4] * lp : 0) + (k === 2 ? INTER.b[3] + INTER.b[5] * lp : 0);
+function lincomb(f, wv) { let q = 0; for (let a = 0; a < wv.length; a++) for (let b = 0; b < wv.length; b++) q += wv[a] * f.XtXi[a][b] * wv[b]; const est = sum(wv.map((v, i) => v * f.b[i])), se = f.s * Math.sqrt(q), t = tcrit(f.df); return { b: est, se, ci: [est - t * se, est + t * se] }; }
+const SLOPES = [0, 1, 2].map(k => lincomb(INTER, [0, 1, 0, 0, k === 1 ? 1 : 0, k === 2 ? 1 : 0]));
+const ONE = lincomb(COMMON, [0, 1, 0, 0]);
+const LOGCI = lincomb(LOG, [0, 1]);
+const bLog = LOG.b[1];
+const predLog = p => LOG.b[0] + bLog * Math.log(p), predLine = p => LINE.b[0] + LINE.b[1] * p;
+
+/* price bands for the residual view */
+const EDGES = [22, 27.2, 32.4, 37.6, 42.8, 48];
+const band = p => { let k = 0; for (let i = 1; i < 5; i++) if (p >= EDGES[i]) k = i; return k; };
+const bandMeans = res => [0, 1, 2, 3, 4].map(k => mean(res.filter((_, i) => band(P[i]) === k)));
+const RES_LINE = U.map((u, i) => u - predLine(P[i])), RES_LOG = LU.map((v, i) => v - predLog(P[i]));
+const BAND_LINE = bandMeans(RES_LINE), BAND_LOG = bandMeans(RES_LOG);
+const umed = median(U), umax = Math.max(...U);
+
+/* scatter of units (or log units) against price, with the residual panel below */
+function drawScatter(host, w, logScale, opts) {
+  const o = opts || {};
+  const F = logScale
+    ? frame(w, { x: [Math.log(21), Math.log(50)], y: [7.6, 9.9], xt: [3.1, 3.3, 3.5, 3.7, 3.9], xf: t => t.toFixed(1), xf2: t => "$" + Math.round(Math.exp(t)), yt: [7.6, 8, 8.4, 8.8, 9.2, 9.6], yf: t => t.toFixed(1), h: w < 460 ? 250 : 290, ylab: "log(units)", xlab: "log(price)", aria: "log of weekly units against log of price" })
+    : frame(w, { x: [20, 50], y: [0, 18000], xt: [20, 25, 30, 35, 40, 45, 50], xf: t => "$" + t, h: w < 460 ? 240 : 280, ylab: "Units per week", xlab: "Price", aria: "Weekly units against price" });
+  const X = i => (logScale ? LP[i] : P[i]), Y = i => (logScale ? LU[i] : U[i]);
+  for (let i = 0; i < NW; i++) dot(F, X(i), Y(i), o.byCat ? COLS[CAT[i]] : "var(--c2)", 3, o.byCat ? 0.6 : 0.5);
+  (o.lines || []).forEach(L => path(F, L.pts, L.c, L.w || 2.8, L.dash));
+  (o.labels || []).forEach(L => F.g.append(sv("text", { x: F.x(L.x) + 4, y: F.y(L.y) - 8, class: "strong", style: `fill:${L.c}; paint-order:stroke; stroke:var(--card); stroke-width:4px; stroke-linejoin:round` }, L.t)));
+  if (o.mark) o.mark(F);
+  host.append(F.g);
+  return F;
+}
+function drawResiduals(host, w, logScale) {
+  const res = logScale ? RES_LOG : RES_LINE, bm = logScale ? BAND_LOG : BAND_LINE;
+  const lim = logScale ? [-1, 0.95] : [-4900, 9300];
+  const F = frame(w, { x: logScale ? [Math.log(21), Math.log(50)] : [20, 50], y: lim, xt: logScale ? [3.1, 3.3, 3.5, 3.7, 3.9] : [20, 25, 30, 35, 40, 45, 50], xf: logScale ? (t => t.toFixed(1)) : (t => "$" + t), yt: logScale ? [-0.8, -0.4, 0, 0.4, 0.8] : [-4000, 0, 4000, 8000], yf: logScale ? (t => sg(t, 1)) : (t => (t > 0 ? "+" : t < 0 ? "−" : "") + num(Math.abs(t))), h: 150, ylab: logScale ? "Miss (log units)" : "Miss (units)", zero: true, aria: "Misses of the line by price" });
+  res.forEach((r, i) => dot(F, logScale ? LP[i] : P[i], r, "var(--muted)", 2.2, 0.35));
+  const xs = k => (logScale ? Math.log(EDGES[k]) : EDGES[k]);
+  const mids = bm.map((v, k) => [(xs(k) + xs(k + 1)) / 2, v]);
+  path(F, mids, "var(--hi)", 2, "4 3");
+  bm.forEach((v, k) => {
+    F.g.append(sv("line", { x1: F.x(xs(k)) + 3, x2: F.x(xs(k + 1)) - 3, y1: F.y(v), y2: F.y(v), stroke: "var(--hi)", "stroke-width": 5, "stroke-linecap": "round" }));
+    const lab = logScale ? spc(Math.exp(v) - 1, 0) : sgn(v);
+    F.g.append(sv("text", { x: F.x(mids[k][0]), y: F.y(v) + (v >= 0 ? -9 : 18), "text-anchor": "middle", class: "strong", style: "fill:var(--hi); paint-order:stroke; stroke:var(--card); stroke-width:4px; stroke-linejoin:round" + (w < 460 ? "; font-size:11px" : "") }, lab));
+  });
+  host.append(F.g);
+}
+
+/* ---------- step 1 ---------- */
+let showMiss = false;
+const drawLine = charted("c-line", (host, w) => {
+  drawScatter(host, w, false, { lines: [{ pts: [[20, predLine(20)], [50, predLine(50)]], c: "var(--c3)" }] });
+  if (showMiss) drawResiduals(host, w, false);
+});
+$("#line-eq").innerHTML = `The straight line is units = ${num(Math.round(LINE.b[0]))} ${LINE.b[1] < 0 ? "−" : "+"} ${Math.abs(LINE.b[1]).toFixed(1)} × price. That is, each extra dollar goes with about ${Math.abs(LINE.b[1]).toFixed(0)} fewer units a week, at $25 just as much as at $45.`;
+$("#show-miss").addEventListener("click", () => { showMiss = true; drawLine(); });
+quiz($("#q1"), {
+  q: "Please press <em>Show the misses</em>. Where does the straight line miss?",
+  opts: [
+    { t: "About equally everywhere; the misses look like random noise.", k: "wrong", fb: `Please look at the band averages again. At low and at high prices the actual weeks sit above the line (by ${sgn(BAND_LINE[0])} and ${sgn(BAND_LINE[4])} units on average), while in the middle band they sit ${num(Math.abs(Math.round(BAND_LINE[2])))} units below it. Random noise would not line up like this.` },
+    { t: "It is too low at both ends and too high in the middle, i.e. the relationship bends.", k: "right", fb: "This is the residual pattern that the book warns about: a curve in the residual plot instead of a random scatter means that one slope cannot describe the whole price range " + book("§5.10.1", "261") + ". Novikov gives the same warning about residual plots that show a curve " + nov(28) + ". In fact, non-linearity is the first of the risks that the book asks you to look for in a scatterplot before any modeling " + book("§5.3.2", "201") + "." },
+    { t: "It is too high at low prices and too low at high prices.", k: "wrong", fb: `It is the other way around at both ends: the weeks priced below about $27 sold ${sgn(BAND_LINE[0])} units more than the line predicts on average, and the weeks priced above about $43 sold ${sgn(BAND_LINE[4])} more. Please look at the dots in the first and the last band.` }]
+});
+
+/* ---------- step 2 ---------- */
+let view2 = "units";
+segButtons($("#view2"), [["units", "Units and price"], ["log", "log(units) and log(price)"]], "units", v => { view2 = v; drawLog(); }, "Scale");
+const drawLog = charted("c-log", (host, w) => {
+  if (view2 === "log") drawScatter(host, w, true, { lines: [{ pts: [[Math.log(21), LOG.b[0] + bLog * Math.log(21)], [Math.log(50), LOG.b[0] + bLog * Math.log(50)]], c: "var(--c1)" }] });
+  else drawScatter(host, w, false, { lines: [{ pts: [[20, predLine(20)], [50, predLine(50)]], c: "var(--c3)" }] });
+  drawResiduals(host, w, view2 === "log");
+  host.append(h("p", { class: "note" }, view2 === "log"
+    ? `On the log scale the band averages stay within ${Math.max(...BAND_LOG.map(v => Math.abs(100 * (Math.exp(v) - 1)))).toFixed(0)}% of the line, so the bend is essentially gone. The labels convert each average miss into percent.`
+    : "These are the misses of the straight line from step 1. Please switch to the log scale and compare."));
+});
+$("#skew-note").textContent = `the median week sold ${un(umed)} units, while the best week sold ${un(umax)}`;
+$("#el2").textContent = f2(bLog);
+$("#el2ci").textContent = `${f2(LOGCI.ci[0])} to ${f2(LOGCI.ci[1])}`;
+quiz($("#q2a"), {
+  q: `On the log scale the slope is ${f2(bLog)}. What does it mean?`,
+  opts: [
+    { t: `A 1% higher price goes with about ${Math.abs(bLog).toFixed(2)}% fewer units, on average.`, k: "right", fb: "That is the book's reading of a log-log slope as the price elasticity " + book("§5.5.5", "218") + ". Please note that this slope pools all three categories; we will separate them in steps 4 and 5." },
+    { t: `A $1 higher price goes with ${Math.abs(bLog).toFixed(2)} fewer units.`, k: "wrong", fb: "That would be the reading of a straight line in units. In the log-log model both sides are in percent, so the slope tells you how many percent the units change when the price changes by 1%." },
+    { t: `A 1% higher price goes with ${Math.abs(bLog).toFixed(2)} fewer units.`, k: "wrong", fb: `The units side is also in percent, so a 1% higher price goes with about ${Math.abs(bLog).toFixed(2)}% fewer units. For a typical week of about ${un(umed)} units, that is roughly ${un(umed * Math.abs(bLog) / 100)} units.` }]
+});
+const exact = (x, b) => Math.pow(1 + x, b) - 1;
+let xPct = 5;
+function upd2() {
+  const x = xPct / 100, e = exact(x, bLog), s = bLog * x;
+  $("#xl").innerHTML = `Price increase x: <strong>${xPct}%</strong>`;
+  $("#xr").setAttribute("aria-valuetext", xPct + "%");
+  $("#ex").textContent = pc(e); $("#sc").textContent = pc(s); $("#dd").textContent = (100 * Math.abs(e - s)).toFixed(1) + " pts";
+  drawPct();
+}
+$("#xr").addEventListener("input", () => { xPct = +$("#xr").value; upd2(); });
+const drawPct = charted("c-pct", (host, w) => {
+  const F = frame(w, { x: [0, 50], y: [-60, 0], xt: [0, 10, 20, 30, 40, 50], xf: t => t + "%", yt: [-60, -40, -20, 0], yf: t => t + "%", h: w < 460 ? 190 : 210, ylab: "Change in units", xlab: "Price increase", aria: "Exact and shortcut change in units" });
+  const xs = grid(0, 50, 50);
+  path(F, xs.map(v => [v, 100 * bLog * v / 100]), "var(--c3)", 2.5, "6 4");
+  path(F, xs.map(v => [v, 100 * exact(v / 100, bLog)]), "var(--c1)", 3);
+  F.g.append(sv("text", { x: F.x(50) - 2, y: F.y(100 * exact(0.5, bLog)) - 8, "text-anchor": "end", class: "strong", style: "fill:var(--c1)" }, "exact"));
+  F.g.append(sv("text", { x: F.x(50) - 2, y: F.y(100 * bLog * 0.5) + 16, "text-anchor": "end", class: "strong", style: "fill:var(--c3)" }, "shortcut"));
+  const x = xPct;
+  F.g.append(sv("line", { x1: F.x(x), x2: F.x(x), y1: F.y(0), y2: F.y(-60), stroke: "var(--ink)", "stroke-dasharray": "3 3" }));
+  dot(F, x, 100 * exact(x / 100, bLog), "var(--c1)", 6, 1); dot(F, x, bLog * x, "var(--c3)", 6, 1);
+  host.append(F.g);
+});
+const e30 = exact(0.3, bLog), s30 = 0.3 * bLog;
+quiz($("#q2b"), {
+  q: "Your team plans to raise the price by 30%, e.g. from $30 to $39. Which change in weekly units should go into the plan?",
+  opts: [
+    { t: `${pc(e30)}, from 1.30<sup>${f2(bLog)}</sup> − 1`, k: "right", fb: `The exact change is ${pc(e30)}, while the shortcut would overstate the loss by about ${(100 * Math.abs(e30 - s30)).toFixed(0)} percentage points. For a 5% change, on the other hand, the two differ by only ${(100 * Math.abs(exact(0.05, bLog) - 0.05 * bLog)).toFixed(1)} points, which is why the shortcut works in the book's example ` + book("§5.5.5", "219") + "." },
+    { t: `${pc(s30)}, the elasticity times 30%`, k: "wrong", fb: `This is the shortcut, which is fine for small changes but overstates the drop for a change this big. Please move the slider to 30% and compare the two numbers.` },
+    { t: `${pc(bLog / 100, 2)}, the elasticity itself`, k: "wrong", fb: "The elasticity is the change that goes with a 1% price increase. A 30% increase moves units by much more than that." }]
+});
+
+/* ---------- step 3 ---------- */
+let p3 = 30;
+function upd3() {
+  $("#pl3").innerHTML = `Price: <strong>$${p3.toFixed(2)}</strong>`;
+  $("#pr3").setAttribute("aria-valuetext", "$" + p3.toFixed(2));
+  $("#lg3").textContent = predLog(p3).toFixed(2);
+  $("#un3").textContent = un(Math.exp(predLog(p3)));
+  $("#ln3").textContent = un(predLine(p3));
+  drawBack();
+}
+$("#pr3").addEventListener("input", () => { p3 = +$("#pr3").value; upd3(); });
+const drawBack = charted("c-back", (host, w) => {
+  const ps = grid(21, 50, 58);
+  drawScatter(host, w, false, {
+    lines: [{ pts: [[20, predLine(20)], [50, predLine(50)]], c: "var(--c3)", w: 2.2, dash: "6 4" }, { pts: ps.map(p => [p, Math.exp(predLog(p))]), c: "var(--c1)", w: 3 }],
+    mark: F => {
+      F.g.append(sv("line", { x1: F.x(p3), x2: F.x(p3), y1: F.y(0), y2: F.y(18000), stroke: "var(--ink)", "stroke-dasharray": "3 3" }));
+      dot(F, p3, Math.exp(predLog(p3)), "var(--c1)", 7, 1); dot(F, p3, predLine(p3), "var(--c3)", 7, 1);
+    }
+  });
+});
+const l30 = predLog(30), l36 = predLog(36), u30 = Math.exp(l30), u36 = Math.exp(l36);
+quiz($("#q3"), {
+  q: `At $30 the log-log model predicts log(units) = ${l30.toFixed(2)}, and at $36 it predicts ${l36.toFixed(2)}. What does it say about raising the price from $30 to $36?`,
+  opts: [
+    { t: `Units fall by ${(l30 - l36).toFixed(2)}, which is hardly anything.`, k: "wrong", fb: `${(l30 - l36).toFixed(2)} is a difference in log units. Please exponentiate both predictions: e<sup>${l30.toFixed(2)}</sup> ≈ ${un(u30)} and e<sup>${l36.toFixed(2)}</sup> ≈ ${un(u36)} units a week.` },
+    { t: `Units fall by about ${(100 * (l30 - l36)).toFixed(0)}%.`, k: "ok", fb: `This reads the log difference directly as a percent, which is the shortcut again. The exact change is e<sup>${f2(l36 - l30)}</sup> − 1 = ${pc(u36 / u30 - 1)}, or about ${un(u30 - u36)} fewer units a week. The shortcut is close here, but it gets worse for bigger differences.` },
+    { t: `Units fall from about ${un(u30)} to ${un(u36)} a week, a drop of ${un(u30 - u36)} units or ${pc(Math.abs(u36 / u30 - 1))}.`, k: "right", fb: `You get there by exponentiating each prediction, or by computing e<sup>${f2(l36 - l30)}</sup> − 1 = ${pc(u36 / u30 - 1)} for the percent change. Please also note that ${pc(u36 / u30 - 1)} is the same number as (1.20)<sup>${f2(bLog)}</sup> − 1 from step 2, since $36 is 20% more than $30.` }]
+});
+const b33 = -0.2358;
+$("#slide33").innerHTML = `<strong>The same correction in the lecture:</strong> Slide 33 of Lecture 3b reads the model log(Qty) = a + b·Price with b = −0.2358 as “a $1 price increase lowers demand by 23.58%”. That is the shortcut b × 100%. The exact change is e<sup>−0.2358</sup> − 1 = ${pc(Math.exp(b33) - 1)}. For the slide's $0.10 example, on the other hand, the shortcut is fine (exact ${pc(Math.exp(b33 / 10) - 1, 2)} against ${pc(b33 / 10, 2)}). Please convert a log difference with e<sup>b</sup> − 1 whenever the change is not small ` + lec("3b", "slide 33") + ".";
+
+/* ---------- step 4 ---------- */
+let base4 = 0;
+segButtons($("#base4"), [[0, "Baseline A"], [1, "Baseline B"], [2, "Baseline C"], [3, "All three columns"]], 0, v => { base4 = v; upd4(); }, "Baseline category");
+$("#leg4").innerHTML = CATS.map((c, k) => `<span><i style="background:${COLS[k]}"></i>Category ${c}</span>`).join("");
+$("#leg5").innerHTML = $("#leg4").innerHTML;
+const L0 = Math.log(22), L1 = Math.log(48);
+const drawCat = charted("c-cat", (host, w) => {
+  drawScatter(host, w, true, { byCat: true, lines: [0, 1, 2].map(k => ({ pts: [[L0, COMMON.pred(k, L0)], [L1, COMMON.pred(k, L1)]], c: COLS[k], w: 3 })), labels: [0, 1, 2].map(k => ({ x: L0, y: COMMON.pred(k, L0), c: COLS[k], t: CATS[k] })) });
+});
+function upd4() {
+  const m = CATM[base4 === 3 ? 2 : base4], all = base4 === 3, bn = CATS[m.base];
+  const rows = [["(Intercept)", m.b[0]], ["log(price)", m.b[1]]];
+  m.others.forEach((k, j) => rows.push([all ? "cat" + CATS[k] : `cat${CATS[k]} (vs ${bn})`, m.b[2 + j]]));
+  if (all) rows.push(["cat" + bn, null]);
+  const t = $("#t-cat"); t.innerHTML = "";
+  t.append(h("table", {}, h("thead", {}, h("tr", {}, h("th", {}, "Term"), h("th", { class: "r" }, "Estimate"))),
+    h("tbody", {}, rows.map(([n, v]) => h("tr", {}, h("td", {}, n), h("td", { class: "r" }, v == null ? h("strong", { style: { color: "var(--warn)" } }, "NA") : f2(v, 3)))))));
+  $("#na-note").innerHTML = all
+    ? `R reports NA for cat${bn}, because the A, B and C columns add up to 1 in every week, which is exactly the intercept column. R therefore drops the last of them, and the result is the same as choosing ${bn} as the baseline. This is the NA that students (and AI tools) get when they one-hot encode every category ` + nov("16-17") + "."
+    : `Each category coefficient is the difference in log(units) from category ${bn} at the same price.`;
+  const tp = $("#t-pred4"); tp.innerHTML = "";
+  tp.append(h("table", {}, h("thead", {}, h("tr", {}, h("th", {}, "Category"), h("th", { class: "r" }, "Units at $35"))),
+    h("tbody", {}, [0, 1, 2].map(k => h("tr", {}, h("td", {}, "Category " + CATS[k]), h("td", { class: "r" }, un(Math.exp(m.pred(k, Math.log(35))))))),
+      h("tr", {}, h("td", {}, "Price slope (elasticity)"), h("td", { class: "r" }, f2(m.b[1]))),
+      h("tr", {}, h("td", {}, "R²"), h("td", { class: "r" }, m.r2.toFixed(3))))));
+}
+upd4();
+const cC = COMMON.b[3], cB = COMMON.b[2], p35 = k => Math.exp(COMMON.pred(k, Math.log(35)));
+quiz($("#q4a"), {
+  q: "Please switch the baseline from A to C. Which numbers change?",
+  opts: [
+    { t: "Everything changes, since we fitted a different model.", k: "wrong", fb: "Please look at the slope, the R² and the predicted units at $35; they do not move. The three versions are the same model, written with a different baseline." },
+    { t: "Only the intercept and the category coefficients; the price slope, the R² and every prediction stay the same.", k: "right", fb: `The baseline only changes what the coefficients are compared with. For instance, C against A is ${f2(cC)}, and A against C is ${sg(-cC)}. The model and its predictions stay the same, which is why an indicator coefficient always has to be read relative to the chosen reference category ` + book("§5.9.5", "247") + ". Please also note that R Commander picks the first category in alphabetical order (here A) unless you change it." },
+    { t: "Nothing changes.", k: "wrong", fb: `The intercept and the category coefficients do change. For instance, C against A is ${f2(cC)}, while A against C is ${sg(-cC)}, which is the same gap seen from the other side.` }]
+});
+quiz($("#q4b"), {
+  q: `With A as the baseline, category C's coefficient is ${f2(cC)}. What does it mean?`,
+  opts: [
+    { t: `At the same price, C sells about ${Math.abs(100 * (Math.exp(cC) - 1)).toFixed(0)}% fewer units than A (e<sup>${f2(cC)}</sup> − 1).`, k: "right", fb: `You can check it with the predicted units at $35: ${un(p35(2))} for C against ${un(p35(0))} for A is a difference of ${pc(p35(2) / p35(0) - 1, 0)}.` },
+    { t: `At the same price, C sells ${Math.abs(100 * cC).toFixed(0)}% fewer units than A.`, k: "wrong", fb: `This reads a log difference as a percent, as in step 3. The exact difference is e<sup>${f2(cC)}</sup> − 1 = ${pc(Math.exp(cC) - 1, 0)}.` },
+    { t: `C's price elasticity is ${Math.abs(cC).toFixed(2)} lower than A's.`, k: "wrong", fb: "In this model all three categories share one slope (the lines are parallel), and the indicator only shifts a line up or down. Different slopes are the topic of the next step." }]
+});
+
+/* ---------- step 5 ---------- */
+let mode5 = "one";
+segButtons($("#mode5"), [["one", "One slope for all"], ["three", "A slope for each category"]], "one", v => { mode5 = v; upd5(); }, "Slopes");
+const drawSlopes = charted("c-slopes", (host, w) => {
+  const M = mode5 === "one" ? COMMON : INTER;
+  drawScatter(host, w, true, { byCat: true, lines: [0, 1, 2].map(k => ({ pts: [[L0, M.pred(k, L0)], [L1, M.pred(k, L1)]], c: COLS[k], w: 3 })), labels: [0, 1, 2].map(k => ({ x: L0, y: M.pred(k, L0), c: COLS[k], t: CATS[k] })) });
+});
+const rev5 = e => Math.pow(1.05, 1 + e) - 1;
+function el5(k) { return mode5 === "one" ? ONE : SLOPES[k]; }
+function upd5() {
+  const M = mode5 === "one" ? COMMON : INTER;
+  const t = $("#t-el5"); t.innerHTML = "";
+  t.append(h("table", {}, h("thead", {}, h("tr", {}, h("th", {}, "Category"), h("th", { class: "r" }, "Elasticity (95% CI)"), h("th", { class: "r" }, "Revenue if the price rises 5%"))),
+    h("tbody", {}, [0, 1, 2].map(k => {
+      const e = el5(k), u = Math.exp(M.pred(k, Math.log(35))), r = rev5(e.b);
+      return h("tr", {}, h("td", {}, CATS[k]), h("td", { class: "r", style: { whiteSpace: "normal" } }, h("strong", {}, f2(e.b)), h("br"), h("span", { class: "note" }, `${f2(e.ci[0])} to ${f2(e.ci[1])}`)),
+        h("td", { class: "r", style: { whiteSpace: "normal" } }, h("strong", { style: { color: r > 0 ? "var(--good)" : "var(--bad)" } }, spc(r)), h("br"), h("span", { class: "note" }, `${(r >= 0 ? "+$" : "−$") + num(Math.abs(Math.round(35 * u * r)))} a week`)));
+    }))));
+  $("#p-coef5").style.display = mode5 === "three" ? "grid" : "none";
+  drawSlopes();
+  if (typeof refreshPrompt === "function") refreshPrompt();
+}
+const cn = ["(Intercept)", "log(price)", "catB", "catC", "log(price):catB", "log(price):catC"];
+$("#t-coef5").append(h("table", {}, h("thead", {}, h("tr", {}, h("th", {}, "Term"), h("th", { class: "r" }, "Estimate"), h("th", { class: "r" }, "Std. error"))),
+  h("tbody", {}, cn.map((n, i) => h("tr", {}, h("td", { class: "mono" }, n), h("td", { class: "r" }, f2(INTER.b[i], 3)), h("td", { class: "r" }, INTER.se[i].toFixed(3)))))));
+quiz($("#q5a"), {
+  q: `Please switch to <em>A slope for each category</em>. The regression output shows log(price) ${f2(INTER.b[1])} and log(price):catC ${sg(INTER.b[5])}. What is category C's price elasticity?`,
+  opts: [
+    { t: `${f2(INTER.b[1])} + ${f2(INTER.b[5])} = ${f2(SLOPES[2].b)}`, k: "right", fb: "A group's slope is the baseline slope plus that group's interaction coefficient, just like the salary slope of the Far customers in the lecture " + lec("3a", "slides 13–17") + ". The table above shows the result for all three categories." },
+    { t: sg(INTER.b[5]), k: "wrong", fb: `This is the most common misreading of an interaction, and AI tools make it too. The interaction coefficient is the difference between C's slope and A's, i.e. how much flatter C's line is. C's own slope is ${f2(INTER.b[1])} + ${f2(INTER.b[5])} = ${f2(SLOPES[2].b)}.` },
+    { t: `${f2(INTER.b[1])}, since the log(price) slope applies to every category`, k: "wrong", fb: "Once the interaction is in the model, the log(price) coefficient is the slope of the baseline category A only. Every other category adds its interaction coefficient to it." }]
+});
+const rA = rev5(SLOPES[0].b), rC = rev5(SLOPES[2].b), uA5 = Math.pow(1.05, SLOPES[0].b) - 1;
+quiz($("#q5b"), {
+  q: "The company considers a 5% price increase. In which category would it raise weekly revenue?",
+  opts: [
+    { t: `In none of them: the one-slope elasticity of ${f2(ONE.b)} says that demand is elastic, so a price increase lowers revenue everywhere.`, k: "wrong", fb: `This is what the pooled elasticity says (its interval, ${f2(ONE.ci[0])} to ${f2(ONE.ci[1])}, lies entirely below −1), and for category C it is wrong. C's own elasticity is about ${f2(SLOPES[2].b)} (interval ${f2(SLOPES[2].ci[0])} to ${f2(SLOPES[2].ci[1])}), so its units fall by less than the price rises, and its revenue goes up by about ${pc(rC)}. One elasticity for all three categories therefore misprices C.` },
+    { t: "In A, since A sells the most units.", k: "wrong", fb: `A sells the most, but its customers are also the most price-sensitive (elasticity about ${f2(SLOPES[0].b)}). A 5% increase would cost about ${pc(Math.abs(uA5))} of its units and about ${pc(Math.abs(rA))} of its revenue.` },
+    { t: `Only in C, where the elasticity is above −1; in A it would lower revenue by about ${pc(Math.abs(rA))}, and B is too close to −1 to call.`, k: "right", fb: `Revenue is price times units, so when units fall by less than 1% for each 1% of price (an elasticity between −1 and 0), a price increase raises revenue, and when they fall by more, it lowers revenue ` + book("§5.8.6", "241") + `. B's interval (${f2(SLOPES[1].ci[0])} to ${f2(SLOPES[1].ci[1])}) includes −1, so these data cannot tell whether a small increase would help or hurt there.` }]
+});
+$("#trees").innerHTML = "A regression only finds different slopes if someone asks for them by adding the interaction. Decision trees, on the other hand, can capture such interactions without extra equations " + nov(44) + ". With a regression, someone has to think of the interaction first, which is why a scatterplot by category is well worth the minute it takes " + book("§5.3.2", "201") + ".";
+upd5();
+
+/* ---------- step 6 ---------- */
+const CSV = "week,units,price,comp_price,mkt_spend,promo,cat\n" + U.map((u, i) => [i + 1, u, P[i].toFixed(2), DATA.cp[i].toFixed(2), DATA.m[i], DATA.pr[i], CATS[CAT[i]]].join(",")).join("\n");
+var refreshPrompt = promptBox($("#prompt"), () => `I have 200 weeks of pricing experiments for a subscription product (synthetic data, pasted below this prompt as CSV). units = weekly units sold, price = own price in USD, cat = product category (A, B or C); the other columns are competitor price, marketing spend and the number of promotions.
+
+1. Fit the regression log(units) ~ log(price) * cat with category A as the baseline, and show the coefficient table.
+2. Explain each coefficient in plain language. What is the price elasticity in each category, with a 95% interval?
+3. The company considers a 5% price increase in every category. In which categories would weekly revenue go up, and in which would it go down? Please use exact percent changes rather than the elasticity times 5%.
+4. What would the model with one elasticity for all categories, log(units) ~ log(price) + cat, get wrong?`);
+(function dataPanel(host) {
+  const pre = h("pre", { class: "prompt", style: { maxHeight: "260px", overflow: "auto", margin: "0" } }, CSV);
+  const det = h("details", {}, h("summary", { style: { cursor: "pointer" } }, "Show the data"), pre);
+  const btn = h("button", { class: "btn", type: "button" }, "Copy the data");
+  btn.addEventListener("click", () => {
+    const done = ok => { btn.textContent = ok ? "Copied" : "Selected - please press Ctrl/Cmd+C"; setTimeout(() => (btn.textContent = "Copy the data"), 1800); };
+    const fallback = () => { det.open = true; const r = document.createRange(); r.selectNodeContents(pre); const s = window.getSelection(); s.removeAllRanges(); s.addRange(r); done(false); };
+    try { navigator.clipboard.writeText(CSV).then(() => done(true), fallback); } catch (e) { fallback(); }
+  });
+  host.append(h("h3", {}, "The data (200 weeks, CSV)"), h("div", { class: "row spread" }, h("span", { class: "note" }, "Please paste the data right after the prompt."), btn), det);
+})($("#datapanel"));
+$("#chk1").innerHTML = `Does it give category C's elasticity as the log(price) slope plus C's interaction coefficient (${f2(INTER.b[1])} + ${f2(INTER.b[5])} = ${f2(SLOPES[2].b)}), or does it read ${sg(INTER.b[5])} as C's own slope? The same check applies to B (${f2(INTER.b[1])} + ${f2(INTER.b[4])} = ${f2(SLOPES[1].b)}).`;
+
+upd2(); upd3();
+initSteps();
+
+</script>
+</body>
+</html>
